@@ -15,6 +15,8 @@ public class TurnManager : MonoBehaviour
     public TurnState currentState;
 
     [SerializeField] private List<EnemyController> enemies = new List<EnemyController>();
+    [Header("玩家回合控制")]
+    [SerializeField] private ChessTurnController playerTurnController;
 
     //[Header("测试")]
     //public bool testPlayerTurnEnd = false;
@@ -62,5 +64,14 @@ public class TurnManager : MonoBehaviour
         Debug.Log("敌人回合结束");
 
         currentState = TurnState.PlayerTurn;
+
+        if (playerTurnController != null)
+        {
+            playerTurnController.BeginNewPlayerRound();
+        }
+        else
+        {
+            Debug.LogWarning("[TurnManager] 未配置 ChessTurnController，无法开始玩家新回合！");
+        }
     }
 }

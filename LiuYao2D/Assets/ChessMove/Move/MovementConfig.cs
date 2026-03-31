@@ -27,4 +27,8 @@ public class MovementConfig : ScriptableObject
 
     [Header("调试")]
     public bool debugDraw = true;
+
+    [Header("轨迹预测参数")]
+    [Tooltip("最大显示距离")]
+    public float maxDisplayDistance = 70f;
 }

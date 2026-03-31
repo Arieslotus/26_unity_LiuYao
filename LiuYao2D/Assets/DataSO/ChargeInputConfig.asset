@@ -9,14 +9,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 69a400809a4fc4044bf0c78028ae420b, type: 3}
-  m_Name: MovementConfig
+  m_Script: {fileID: 11500000, guid: fc5e7008b3733614494fe769989c57eb, type: 3}
+  m_Name: ChargeInputConfig
   m_EditorClassIdentifier: 
-  totalDistance: 30
-  bounceDamping: 0.8
-  baseSpeed: 16
-  minSpeed: 0.5
-  speedDecayPower: 3
-  radius: 0.5
-  debugDraw: 0
-  maxDisplayDistance: 50
+  inputRadius: 1.5
+  stage1MaxDistance: 2
+  stage1MaxPower: 0.5
+  dragDistanceScale: 0.7
+  maxHoldTime: 1
+  minFirePower: 0.05

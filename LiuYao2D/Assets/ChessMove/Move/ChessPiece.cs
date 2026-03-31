@@ -26,4 +26,6 @@ public class ChessPiece : MonoBehaviour
 
         movement.Init(direction, movementConfig, power);
     }
+
+    public bool IsMoving => movement != null && movement.IsMoving;
 }

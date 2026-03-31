@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 
+//挂载在棋子上，负责处理移动逻辑
 public class MovementController : MonoBehaviour
 {
     private MovementConfig config;
@@ -8,6 +9,7 @@ public class MovementController : MonoBehaviour
     private float remainingDistance;
     private float currentSpeed;
     private bool isMoving = false;
+    public bool IsMoving => isMoving;
 
     /// <summary>
     /// 初始化移动（由外部传入配置）
@@ -40,7 +42,7 @@ public class MovementController : MonoBehaviour
         float maxStep = config.radius * 0.5f; // 推荐：半径的一半
         float remainingMoveThisFrame = currentSpeed * Time.deltaTime;
         remainingMoveThisFrame = Mathf.Min(remainingMoveThisFrame, remainingDistance);
-        // ⭐关键限制（防止单帧跨墙）
+        //限制（防止单帧跨墙）
         remainingMoveThisFrame = Mathf.Min(remainingMoveThisFrame, maxStep);
 
         int loopCount = 0;
@@ -52,53 +54,52 @@ public class MovementController : MonoBehaviour
 
             Vector2 currentPos = transform.position;
 
-            RaycastHit2D hit = Physics2D.CircleCast(currentPos, config.radius, direction, remainingMoveThisFrame);
+            var result = PhysicsBounceUtility.SimulateStep(
+                currentPos,
+                direction,
+                remainingMoveThisFrame,
+                config
+            );
 
-            if (config.debugDraw)
+            float traveled = result.traveledDistance;
+
+            // ===== 防止0距离卡死 =====
+            if (traveled <= 0.0001f)
             {
-                Debug.DrawLine(currentPos, currentPos + direction * remainingMoveThisFrame, Color.red);
+                Move(direction * 0.02f);
+                continue;
             }
 
-            if (hit.collider != null)
+            // ===== 更新位置 =====
+            transform.position = result.newPos;
+
+            remainingDistance -= traveled;
+            remainingDistance = Mathf.Max(remainingDistance, 0f);
+
+            remainingMoveThisFrame -= traveled;
+
+            if (result.hit)
             {
-                // ===== 防止0距离死循环 =====
-                if (hit.distance <= 0.0001f)
-                {
-                    Move(direction * 0.02f);
-                    continue;
-                }
+                Debug.Log($"[Movement] 碰撞: 剩余路径:{remainingDistance}");
 
-                // ===== 移动到碰撞点 =====
-                float traveled = hit.distance;
-                transform.position = hit.point;
+                // 更新方向
+                direction = result.newDir;
 
-                remainingDistance -= traveled;
-                remainingDistance = Mathf.Max(remainingDistance, 0f);
-
-                remainingMoveThisFrame -= traveled;
-
-                Debug.Log($"[Movement] 碰撞: {hit.collider.name} | 剩余路径:{remainingDistance}");
-
-                // ===== 反弹 =====
-                direction = Vector2.Reflect(direction, hit.normal).normalized;
-
-                // ===== 推出表面（关键）=====
-                Vector2 safePos = hit.point + hit.normal * (config.radius + 0.001f);
-                transform.position = safePos;
-
-                // 再沿反弹方向推一点，避免再次命中
-                Move(direction * 0.01f);
-
-                // ===== 路径衰减 =====
+                // 路径衰减
                 remainingDistance *= config.bounceDamping;
+
+                Debug.Log(
+    $"[BounceDebug] traveled:{traveled:F4} | " +
+    $"pos:{(Vector2)transform.position} | " +
+    $"dir:{direction} | " +
+    $"remainingMoveThisFrame:{remainingMoveThisFrame:F4}"
+                );
+
             }
             else
             {
-                // ===== 没碰撞，一次走完 =====
-                Move(direction * remainingMoveThisFrame);
-
-                remainingDistance -= remainingMoveThisFrame;
-                remainingMoveThisFrame = 0f;
+                // 没碰撞直接结束
+                break;
             }
         }
 
