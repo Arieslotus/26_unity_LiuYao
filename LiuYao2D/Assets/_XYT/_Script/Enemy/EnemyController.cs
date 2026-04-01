@@ -1,24 +1,43 @@
-﻿using System.Collections;
+﻿using DG.Tweening;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class EnemyController : MonoBehaviour, IAttackable
 {
+    [Header("数值设定")]
     public int maxHP = 10;
     public int currentHP;
 
     public int attackDamage = 3;
     public float moveSpeed = 2f;
-    public float attackRange = 1.2f;
+    float attackDistance = 1.2f; // 攻击玩家时，和玩家的距离
     public float maxChaseDistance = 5f; // 最大可攻击范围（警戒范围）
 
-    public Slider hpSlider; // UI血条
+    [Header("可视化")]
+    public Transform attackVisualizer; // 用于显示攻击范围的物体
+
+    [Header("引用")]
+    public HealthBar healthBar;
 
     private void Start()
     {
+        //ref
+        if(healthBar == null)
+        {
+            healthBar = GetComponentInChildren<HealthBar>();
+        }
+
+        //set
         currentHP = maxHP;
         UpdateHPUI();
+    }
+
+    private void Update()
+    {
+        // visualize
+        UpdateVisualizer();
     }
     public IEnumerator TakeTurn()
     {
@@ -26,44 +45,58 @@ public class EnemyController : MonoBehaviour, IAttackable
         Vector2 startPos = transform.position;
 
         // 👉 找目标
-        IAttackable target = FindNearestTarget();
+        var targets = FindTargetsInRange(2); // 👉 最多打2个
 
-        if (target == null)
-            yield break;
-
-        float distanceToTarget = Vector2.Distance(startPos, target.GetTransform().position);
-
-        // ❗ 如果超出攻击范围 → 直接跳过
-        if (distanceToTarget > maxChaseDistance)
+        if (targets.Count == 0)
         {
-            Debug.Log(name + " 目标太远，不行动");
+            Debug.Log("范围内没有目标");
             yield break;
         }
 
-        // 👉 移动过去
-        yield return MoveToTarget(target.GetTransform());
+        // attack each target
+        foreach (var target in targets)
+        {
+            float distanceToTarget = Vector2.Distance(startPos, target.GetTransform().position);
 
-        // 👉 攻击
-        yield return new WaitForSeconds(0.3f);
+            // ❗ 如果超出攻击范围 → 直接跳过
+            if (distanceToTarget > maxChaseDistance)
+            {
+                Debug.Log(name + " 目标太远，不行动");
+                yield break;
+            }
 
-        target.TakeDamage(attackDamage);
+            // 👉 移动过去
+            yield return MoveToTarget(target.GetTransform());
 
-        Debug.Log(name + " 攻击了 " + target.GetTransform().name);
+            // 👉 攻击
+            yield return new WaitForSeconds(0.3f);
 
-        yield return new WaitForSeconds(0.3f);
+            // 👉 打击反馈
+            yield return DoAttackFeedback();
 
-        // 👉 回到原位
-        yield return MoveBack(startPos);
+            target.TakeDamage(attackDamage);
 
-        yield return new WaitForSeconds(0.2f);
+            Debug.Log(name + " 攻击了 " + target.GetTransform().name);
+
+            yield return new WaitForSeconds(0.3f);
+
+            // 👉 回到原位
+            yield return MoveBack(startPos);
+
+            yield return new WaitForSeconds(0.2f);
+        }
+
     }
 
-    IAttackable FindNearestTarget()
+
+    List<IAttackable> FindTargetsInRange(int maxTargetCount)
     {
         PlayerBallTest[] balls = FindObjectsOfType<PlayerBallTest>();
 
-        float minDist = Mathf.Infinity;
-        IAttackable nearest = null;
+        List<IAttackable> result = new List<IAttackable>();
+
+        // 👉 先筛选“在攻击范围内”的
+        List<PlayerBallTest> inRange = new List<PlayerBallTest>();
 
         foreach (var ball in balls)
         {
@@ -71,42 +104,71 @@ public class EnemyController : MonoBehaviour, IAttackable
 
             float dist = Vector2.Distance(transform.position, ball.transform.position);
 
-            if (dist < minDist)
+            if (dist <= maxChaseDistance) // 👉 用你的攻击/警戒范围
             {
-                minDist = dist;
-                nearest = ball;
+                inRange.Add(ball);
             }
         }
 
-        return nearest;
+        // 👉 按距离排序（从近到远）
+        inRange.Sort((a, b) =>
+        {
+            float da = Vector2.Distance(transform.position, a.transform.position);
+            float db = Vector2.Distance(transform.position, b.transform.position);
+            return da.CompareTo(db);
+        });
+
+        // 👉 取前X个
+        int count = Mathf.Min(maxTargetCount, inRange.Count);
+
+        for (int i = 0; i < count; i++)
+        {
+            result.Add(inRange[i]);
+        }
+
+        return result;
     }
 
     IEnumerator MoveToTarget(Transform target)
     {
-        while (Vector2.Distance(transform.position, target.position) > attackRange)
-        {
-            transform.position = Vector2.MoveTowards(
-                transform.position,
-                target.position,
-                moveSpeed * Time.deltaTime
-            );
+        transform.DOKill();
 
-            yield return null;
-        }
+        Vector2 dir = (target.position - transform.position).normalized;
+        Vector2 targetPos = (Vector2)target.position - dir * attackDistance;
+
+        float distance = Vector2.Distance(transform.position, targetPos);
+        float duration = distance / moveSpeed;
+
+        // 👉 冲刺过去（更有攻击欲望）
+        Tween tween = transform.DOMove(targetPos, duration)
+            .SetEase(Ease.OutQuad);
+
+        yield return tween.WaitForCompletion();
     }
 
     IEnumerator MoveBack(Vector2 startPos)
     {
-        while (Vector2.Distance(transform.position, startPos) > 0.05f)
-        {
-            transform.position = Vector2.MoveTowards(
-                transform.position,
-                startPos,
-                moveSpeed * Time.deltaTime
-            );
+        transform.DOKill();
 
-            yield return null;
-        }
+        float distance = Vector2.Distance(transform.position, startPos);
+        float duration = distance / moveSpeed;
+
+        // 👉 回去带一点弹性（关键手感）
+        Tween tween = transform.DOMove(startPos, duration)
+            .SetEase(Ease.OutBack);
+
+        yield return tween.WaitForCompletion();
+    }
+
+    IEnumerator DoAttackFeedback()
+    {
+        // 👉 轻微抖动（命中感）
+        transform.DOShakePosition(0.15f, 0.2f, 10, 90, false, true);
+
+        // 👉 轻微缩放（打击反馈）
+        transform.DOScale(1.2f, 0.1f).SetLoops(2, LoopType.Yoyo);
+
+        yield return new WaitForSeconds(0.15f);
     }
 
     // 👉 受伤
@@ -132,11 +194,21 @@ public class EnemyController : MonoBehaviour, IAttackable
         return transform;
     }
 
+
+    // update
     void UpdateHPUI()
     {
-        if (hpSlider != null)
+        if (healthBar != null)
         {
-            hpSlider.value = (float)currentHP / maxHP;
+            healthBar.HealthNormalized = (float)((float)currentHP / (float)maxHP); // *
+            Debug.Log(name + " HP: " + currentHP + "/" + maxHP + "==" + healthBar.HealthNormalized);
+        }
+    }
+    void UpdateVisualizer()
+    {
+        if (attackVisualizer != null)
+        {
+            attackVisualizer.localScale = Vector3.one * (maxChaseDistance * 2f - 1f);
         }
     }
 
