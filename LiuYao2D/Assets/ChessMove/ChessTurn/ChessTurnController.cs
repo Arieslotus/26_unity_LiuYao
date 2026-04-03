@@ -91,7 +91,7 @@ public class ChessTurnController : MonoBehaviour
 
         if (currentIndex >= pieces.Count)
         {
-            Debug.Log("[ChessTurnController] 所有棋子已操作完，通知 TurnManager 进入敌人回合。");
+            Debug.Log("[ChessTurnController] 所有棋子已操作完");
 
             if (input != null)
             {
@@ -100,11 +100,15 @@ public class ChessTurnController : MonoBehaviour
 
             if (TurnManager.Instance != null)
             {
+                Debug.Log("[ChessTurnController] 敌人回合：通知 TurnManager 进入敌人回合。");
                 TurnManager.Instance.EndPlayerTurn();
             }
             else
             {
-                Debug.LogWarning("[ChessTurnController] 未找到 TurnManager，无法进入敌人回合！");
+                //Debug.LogWarning("[ChessTurnController] 未找到 TurnManager，无法进入敌人回合！");
+
+                Debug.Log("[ChessTurnController] 跳过敌人回合：直接进入下一回合。");
+                BeginNewPlayerRound();
             }
 
             return;
