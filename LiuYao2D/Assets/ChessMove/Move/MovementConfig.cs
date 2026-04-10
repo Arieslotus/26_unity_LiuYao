@@ -15,7 +15,7 @@ public class MovementConfig : ScriptableObject
     [Tooltip("基础速度")]
     public float baseSpeed = 10f;
 
-    [Tooltip("最小速度（低于此值停止）")]
+    [Tooltip("最小速度（低于此值不停止）")]
     public float minSpeed = 0.1f;
 
     [Tooltip("速度衰减指数（推荐2~3）")]
