@@ -14,7 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   obstacleBounceMultiplier: 0.8
   enemyBounceMultiplier: 0.3
-  coinBounceMultiplier: 0.2
+  coinBounceMultiplier: 0.6
   coinTransferDistanceRatio: 0.2
   coinTransferSpeedRatio: 1
   coinCollisionCooldown: 0.1
+  enableFlip: 1
+  fullChargeThreshold: 0.999
+  flipOnlyOncePerShot: 1
+  flipOnEnemy: 1
+  flipOnPlayerCoin: 1
+  flipOnObstacle: 0
+  flipReturnDistance: 0.6
+  flipReturnSpeedScale: 0.35
+  enableSeparationAfterFlip: 1
+  separationSkin: 0.02
+  maxSeparationIterations: 3

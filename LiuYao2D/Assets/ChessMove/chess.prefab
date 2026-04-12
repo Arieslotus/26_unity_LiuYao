@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 5759004497808891228}
   - component: {fileID: 6810179209052809052}
   - component: {fileID: -8676463384303797913}
+  - component: {fileID: -6555377701146787185}
   - component: {fileID: 1116285678706524676}
   m_Layer: 0
   m_Name: chess
@@ -30,13 +31,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3920441238586259897}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0.2987076, y: 0, z: 0, w: 0.9543447}
   m_LocalPosition: {x: -3.32, y: -2.68, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 1.3, y: 1.3, z: 1.3}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 34.76, y: 0, z: 0}
 --- !u!212 &8833648498802964059
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -102,6 +103,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   movementConfig: {fileID: 11400000, guid: 3d85606a5b0fae34da81362c8b59ec71, type: 2}
+  canBeControlledThisTurn: 1
+  startFrontSide: 1
 --- !u!114 &5759004497808891228
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -141,6 +144,24 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 2
+--- !u!114 &-6555377701146787185
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3920441238586259897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3f4ce8c13f9c0a4d8cd85b34bf2b25e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetRenderer: {fileID: 8833648498802964059}
+  frontColor: {r: 1, g: 1, b: 1, a: 1}
+  backColor: {r: 0, g: 0, b: 0, a: 1}
+  flipDuration: 0.12
+  flipMinScaleX: 0.15
+  activeScaleMultiplier: 1.12
 --- !u!58 &1116285678706524676
 CircleCollider2D:
   m_ObjectHideFlags: 0
