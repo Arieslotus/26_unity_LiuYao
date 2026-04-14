@@ -1,11 +1,12 @@
 ﻿/// <summary>
-/// 实现功能：表现层。负责硬币的正反面显示、翻面动画与当前回合高亮显示。
+/// 实现功能：负责硬币的正反面显示、翻面动画与当前回合高亮显示。
 /// 挂在每个硬币上
 /// </summary>
+using System;
 using System.Collections;
 using UnityEngine;
 
-public class ChessVisualController : MonoBehaviour
+public class CoinVisualController : MonoBehaviour
 {
     [Header("显示引用")]
     [SerializeField] private SpriteRenderer targetRenderer;
@@ -27,6 +28,9 @@ public class ChessVisualController : MonoBehaviour
     private Vector3 baseScale;
     private float flipScaleX = 1f;
     private Coroutine flipCoroutine;
+    private Action pendingFlipComplete;
+
+    public bool IsFlipAnimating => flipCoroutine != null;
 
     private void Awake()
     {
@@ -42,20 +46,33 @@ public class ChessVisualController : MonoBehaviour
 
     public void SetFaceImmediate(bool isFront)
     {
+        StopFlipAnimationInternal(false);
+
         isFrontSide = isFront;
+        flipScaleX = 1f;
+
         RefreshColor();
+        RefreshScale();
     }
 
-    public void PlayFlipToFace(bool isFront)
+    public void PlayFlipToFace(bool isFront, Action onComplete = null)
     {
+        StopFlipAnimationInternal(false);
+
         isFrontSide = isFront;
-
-        if (flipCoroutine != null)
-        {
-            StopCoroutine(flipCoroutine);
-        }
-
+        pendingFlipComplete = onComplete;
         flipCoroutine = StartCoroutine(CoPlayFlip());
+    }
+
+    public void CancelFlipAndSetFace(bool isFront)
+    {
+        StopFlipAnimationInternal(false);
+
+        isFrontSide = isFront;
+        flipScaleX = 1f;
+
+        RefreshColor();
+        RefreshScale();
     }
 
     public void SetTurnHighlight(bool highlighted)
@@ -64,7 +81,6 @@ public class ChessVisualController : MonoBehaviour
         RefreshScale();
     }
 
-    //翻面表现：先缩放X轴到flipMinScaleX，再切换颜色，最后缩放回正常
     private IEnumerator CoPlayFlip()
     {
         float halfDuration = Mathf.Max(0.001f, flipDuration * 0.5f);
@@ -96,7 +112,29 @@ public class ChessVisualController : MonoBehaviour
 
         flipScaleX = 1f;
         RefreshScale();
+
         flipCoroutine = null;
+
+        Action callback = pendingFlipComplete;
+        pendingFlipComplete = null;
+        callback?.Invoke();
+    }
+
+    private void StopFlipAnimationInternal(bool invokeCallback)
+    {
+        if (flipCoroutine != null)
+        {
+            StopCoroutine(flipCoroutine);
+            flipCoroutine = null;
+        }
+
+        Action callback = pendingFlipComplete;
+        pendingFlipComplete = null;
+
+        if (invokeCallback)
+        {
+            callback?.Invoke();
+        }
     }
 
     private void RefreshColor()
