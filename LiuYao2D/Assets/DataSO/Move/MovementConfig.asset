@@ -17,6 +17,6 @@ MonoBehaviour:
   baseSpeed: 16
   minSpeed: 0.5
   speedDecayPower: 3
-  radius: 0.5
+  radius: 0.8
   debugDraw: 0
   maxDisplayDistance: 50

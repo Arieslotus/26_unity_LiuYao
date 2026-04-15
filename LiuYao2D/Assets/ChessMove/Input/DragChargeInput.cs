@@ -304,7 +304,8 @@ public class DragChargeInput : MonoBehaviour
         trajectoryRenderer.UpdateTrajectory(
             piece.transform.position,
             currentDirection,
-            currentPower
+            currentPower,
+            piece.GetComponent<Collider2D>()
         );
     }
 

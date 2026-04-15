@@ -2,10 +2,12 @@
 using UnityEngine;
 
 [RequireComponent(typeof(LineRenderer))]
+[RequireComponent(typeof(Collider2D))]
 public class TrajectoryRenderer : MonoBehaviour
 {
     [Header("引用")]
     [SerializeField] private MovementConfig config;
+    [SerializeField] private CollisionConfig collisionConfig;
 
     private LineRenderer line;
 
@@ -14,9 +16,9 @@ public class TrajectoryRenderer : MonoBehaviour
         line = GetComponent<LineRenderer>();
     }
 
-    public void UpdateTrajectory(Vector2 startPos, Vector2 direction, float power)
+    public void UpdateTrajectory(Vector2 startPos, Vector2 direction, float power, Collider2D selfCollider)
     {
-        if (config == null)
+        if (config == null || collisionConfig == null)
         {
             Clear();
             return;
@@ -26,6 +28,8 @@ public class TrajectoryRenderer : MonoBehaviour
             startPos,
             direction,
             config,
+            collisionConfig,
+            selfCollider,
             power
         );
 
