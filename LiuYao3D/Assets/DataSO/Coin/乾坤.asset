@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 87626918519eb774ebc5c63acd4c4e1e, type: 3}
+  m_Name: "\u4E7E\u5764"
+  m_EditorClassIdentifier: 
+  coinName: "\u4E7E\u5764"
+  frontTrigram: 0
+  backTrigram: 1
+  frontSprite: {fileID: -1567795553, guid: ec354aa422b2159468308416735b02a8, type: 3}
+  backSprite: {fileID: -1567795553, guid: ec354aa422b2159468308416735b02a8, type: 3}
