@@ -19,7 +19,7 @@ public class TurnManager : MonoBehaviour
     public TurnState currentState;
 
     [Header("敌人列表")]
-    //[SerializeField] private List<EnemyController> enemies = new List<EnemyController>();
+    [SerializeField] private List<EnemyController> enemies = new List<EnemyController>();
 
     [Header("玩家回合控制")]
     [SerializeField] private ChessTurnController playerTurnController;
@@ -42,18 +42,18 @@ public class TurnManager : MonoBehaviour
 
     private void Start()
     {
-        //FindAllEnemies();
+        FindAllEnemies();
         BeginPlayerTurn();
     }
 
     /// <summary>
     /// 搜索场景中的敌人
     /// </summary>
-    //private void FindAllEnemies()
-    //{
-    //    enemies.Clear();
-    //    enemies.AddRange(FindObjectsOfType<EnemyController>());
-    //}
+    private void FindAllEnemies()
+    {
+        enemies.Clear();
+        enemies.AddRange(FindObjectsOfType<EnemyController>());
+    }
 
     /// <summary>
     /// 开始玩家回合
@@ -98,38 +98,39 @@ public class TurnManager : MonoBehaviour
             return;
         }
 
-        BeginPlayerTurn();
+        //BeginPlayerTurn();
+        BeginEnemyTurn();
     }
 
     /// <summary>
     /// 开始敌人回合
     /// </summary>
-    //private void BeginEnemyTurn()
-    //{
-    //    currentState = TurnState.EnemyTurn;
-    //    isEnemyTurnRunning = true;
+    private void BeginEnemyTurn()
+    {
+        currentState = TurnState.EnemyTurn;
+        isEnemyTurnRunning = true;
 
-    //    Debug.Log("[TurnManager] 敌人回合开始");
+        Debug.Log("[TurnManager] 敌人回合开始");
 
-    //    StartCoroutine(EnemyTurnCoroutine());
-    //}
+        StartCoroutine(EnemyTurnCoroutine());
+    }
 
     /// <summary>
     /// 敌人回合协程
     /// </summary>
-    //private IEnumerator EnemyTurnCoroutine()
-    //{
-    //    for (int i = 0; i < enemies.Count; i++)
-    //    {
-    //        EnemyController enemy = enemies[i];
-    //        if (enemy == null)
-    //            continue;
+    private IEnumerator EnemyTurnCoroutine()
+    {
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            EnemyController enemy = enemies[i];
+            if (enemy == null)
+                continue;
 
-    //        yield return enemy.TakeTurn();
-    //    }
+            yield return enemy.TakeTurn();
+        }
 
-    //    EndEnemyTurn();
-    //}
+        EndEnemyTurn();
+    }
 
     /// <summary>
     /// 结束敌人回合，切回玩家回合

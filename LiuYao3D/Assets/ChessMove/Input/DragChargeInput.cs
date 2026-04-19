@@ -1,16 +1,10 @@
-﻿using UnityEngine;
-
-/// <summary>
-/// 拖拽蓄力输入系统（V3）
-/// 1. 只能在棋子周围指定半径内按下才会激活
-/// 2. 拖拽方向为发射方向的反向
-/// 3. 阶段1：拖拽距离蓄力
-/// 4. 阶段2：达到阶段1上限后，按住时间继续蓄力
-/// 5. 满蓄力后立刻原地翻面，松手后按普通规则发射
-/// 6. 若在翻面动画中松手，则等待动画结束后再发射
-/// 7. 右键取消时恢复到本次蓄力开始前的初始态
-/// 8. 实时更新预测轨迹
+﻿/// <summary>
+/// 实现功能：处理当前棋子的拖拽蓄力输入，支持两段式蓄力、满蓄力翻面、松手发射、右键取消。
+/// 适配 3D 项目，逻辑使用 XZ 平面，Y 轴仅作为表现层高度。
+/// 轨迹预测功能当前暂时关闭，后续再接回。
 /// </summary>
+using UnityEngine;
+
 public class DragChargeInput : MonoBehaviour
 {
     private enum ChargeStage
@@ -26,6 +20,10 @@ public class DragChargeInput : MonoBehaviour
     [SerializeField] private TrajectoryRenderer trajectoryRenderer;
     [SerializeField] private ChargeInputConfig chargeConfig;
     [SerializeField] private ChessTurnController turnController;
+
+    [Header("射线平面")]
+    [Tooltip("输入投射所使用的逻辑平面高度")]
+    [SerializeField] private float inputPlaneY = 0f;
 
     [Header("调试")]
     [SerializeField] private bool debugLog = true;
@@ -130,6 +128,8 @@ public class DragChargeInput : MonoBehaviour
             return;
 
         UpdateCharge(currentMouseWorld);
+
+        
         UpdateTrajectoryPreview();
 
         if (Input.GetMouseButtonUp(0))
@@ -150,8 +150,12 @@ public class DragChargeInput : MonoBehaviour
         }
 
         pieceCenter = piece.transform.position;
+        pieceCenter.y = inputPlaneY;
 
-        float distanceToCenter = Vector3.Distance(mouseWorldPos, pieceCenter);
+        Vector3 flatOffset = mouseWorldPos - pieceCenter;
+        flatOffset.y = 0f;
+
+        float distanceToCenter = flatOffset.magnitude;
         if (distanceToCenter > chargeConfig.inputRadius)
         {
             if (debugLog)
@@ -185,17 +189,19 @@ public class DragChargeInput : MonoBehaviour
     private void UpdateCharge(Vector3 mouseWorldPos)
     {
         pieceCenter = piece.transform.position;
+        pieceCenter.y = inputPlaneY;
 
         Vector3 dragVector = pieceCenter - mouseWorldPos;
-        dragVector.y = 0;
-        float rawDragDistance = dragVector.magnitude;
+        dragVector.y = 0f;
 
+        float rawDragDistance = dragVector.magnitude;
         float scaledDragDistance = rawDragDistance * chargeConfig.dragDistanceScale;
         currentScaledDragDistance = scaledDragDistance;
 
         if (dragVector.sqrMagnitude > 0.0001f)
         {
             currentDirection = dragVector.normalized;
+            currentDirection.y = 0f;
         }
 
         float normalizedDistance = chargeConfig.stage1MaxDistance <= 0.0001f
@@ -293,27 +299,32 @@ public class DragChargeInput : MonoBehaviour
 
     private void UpdateTrajectoryPreview()
     {
-        return;
-        //if (trajectoryRenderer == null)
-        //    return;
+        if (trajectoryRenderer == null || piece == null)
+            return;
 
-        //if (currentDirection.sqrMagnitude <= 0.0001f || currentPower <= 0.0001f)
-        //{
-        //    trajectoryRenderer.Clear();
-        //    return;
-        //}
+        Vector3 dir = currentDirection;
+        dir.y = 0;
 
-        //trajectoryRenderer.UpdateTrajectory(
-        //    piece.transform.position,
-        //    currentDirection,
-        //    currentPower,
-        //    piece.GetComponent<Collider2D>()
-        //);
+        if (dir.sqrMagnitude <= 0.0001f)
+        {
+            trajectoryRenderer.Clear();
+            return;
+        }
+
+        trajectoryRenderer.UpdateTrajectory(
+            piece.transform.position,
+            dir.normalized,
+            currentPower,
+            piece.GetComponent<Collider>()
+        );
     }
 
     private void ReleaseCharge()
     {
-        if (currentDirection.sqrMagnitude <= 0.0001f)
+        Vector3 flatDir = currentDirection;
+        flatDir.y = 0f;
+
+        if (flatDir.sqrMagnitude <= 0.0001f)
         {
             if (debugLog)
             {
@@ -339,7 +350,7 @@ public class DragChargeInput : MonoBehaviour
         {
             pendingFireAfterFlip = true;
             isWaitingDelayedFire = true;
-            queuedFireDirection = currentDirection;
+            queuedFireDirection = flatDir.normalized;
             queuedFirePower = currentPower;
 
             if (debugLog)
@@ -352,7 +363,7 @@ public class DragChargeInput : MonoBehaviour
             return;
         }
 
-        ExecuteFire(currentDirection, currentPower);
+        ExecuteFire(flatDir.normalized, currentPower);
     }
 
     private void ExecuteFire(Vector3 fireDirection, float firePower)
@@ -360,12 +371,26 @@ public class DragChargeInput : MonoBehaviour
         if (piece == null)
             return;
 
-        if (debugLog)
+        Vector3 flatDir = fireDirection;
+        flatDir.y = 0f;
+
+        if (flatDir.sqrMagnitude <= 0.0001f)
         {
-            Debug.Log($"[DragChargeInput] 发射 | 方向:{fireDirection} | Power:{firePower:F2} | 已翻面:{hasTriggeredChargeFlip}");
+            if (debugLog)
+            {
+                Debug.LogWarning("[DragChargeInput] ExecuteFire 失败：fireDirection 无效");
+            }
+            return;
         }
 
-        piece.Fire(fireDirection, firePower);
+        flatDir.Normalize();
+
+        if (debugLog)
+        {
+            Debug.Log($"[DragChargeInput] 发射 | 方向:{flatDir} | Power:{firePower:F2} | 已翻面:{hasTriggeredChargeFlip}");
+        }
+
+        piece.Fire(flatDir, firePower);
 
         if (turnController != null)
         {
@@ -427,11 +452,13 @@ public class DragChargeInput : MonoBehaviour
     private Vector3 GetMouseWorldPosition()
     {
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
-        Plane plane = new Plane(Vector3.up, Vector3.zero);
+        Plane plane = new Plane(Vector3.up, new Vector3(0f, inputPlaneY, 0f));
 
         if (plane.Raycast(ray, out float distance))
         {
-            return ray.GetPoint(distance);
+            Vector3 hitPoint = ray.GetPoint(distance);
+            hitPoint.y = inputPlaneY;
+            return hitPoint;
         }
 
         return Vector3.zero;
@@ -458,12 +485,16 @@ public class DragChargeInput : MonoBehaviour
             return;
 
         Vector3 center = piece.transform.position;
+        center.y = inputPlaneY;
 
         DrawCircle(center, chargeConfig.inputRadius, Color.yellow);
 
-        if (currentDirection.sqrMagnitude > 0.0001f)
+        Vector3 flatDir = currentDirection;
+        flatDir.y = 0f;
+
+        if (flatDir.sqrMagnitude > 0.0001f)
         {
-            Debug.DrawLine(center, center + currentDirection * debugArrowLength, Color.cyan);
+            Debug.DrawLine(center, center + flatDir.normalized * debugArrowLength, Color.cyan);
         }
 
         Debug.DrawLine(center, currentMouseWorld, Color.magenta);
@@ -472,12 +503,12 @@ public class DragChargeInput : MonoBehaviour
     private void DrawCircle(Vector3 center, float radius, Color color, int segments = 32)
     {
         float angleStep = 360f / segments;
-        Vector3 prevPoint = center + new Vector3(radius, 0f);
+        Vector3 prevPoint = center + new Vector3(radius, 0f, 0f);
 
         for (int i = 1; i <= segments; i++)
         {
             float angle = angleStep * i * Mathf.Deg2Rad;
-            Vector3 nextPoint = center + new Vector3(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+            Vector3 nextPoint = center + new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius);
             Debug.DrawLine(prevPoint, nextPoint, color);
             prevPoint = nextPoint;
         }

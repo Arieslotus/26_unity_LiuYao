@@ -1,10 +1,9 @@
-﻿using UnityEngine;
-
-/// <summary>
-/// 蓄力输入可视化
-/// 1. 显示阶段1最大有效拖拽距离圆
-/// 2. 显示当前有效拖拽距离线
+﻿/// <summary>
+/// 实现功能：显示蓄力输入可视化，包括阶段1最大有效拖拽圆，以及当前有效拖拽距离线。
+/// 适配 3D 项目，逻辑绘制平面为 XZ，Y 轴仅作为显示高度偏移。（会随着相机视角倾斜而倾斜）
 /// </summary>
+using UnityEngine;
+
 public class ChargeInputVisualizer : MonoBehaviour
 {
     [Header("引用")]
@@ -16,6 +15,10 @@ public class ChargeInputVisualizer : MonoBehaviour
 
     [Header("圆参数")]
     [SerializeField] private int circleSegments = 48;
+
+    [Header("显示参数")]
+    [Tooltip("可视化线条离地高度，避免与地面重叠闪烁")]
+    [SerializeField] private float visualHeight = 0.05f;
 
     private void Awake()
     {
@@ -33,12 +36,18 @@ public class ChargeInputVisualizer : MonoBehaviour
         {
             Debug.LogError("[ChargeInputVisualizer] 未绑定 dragLineRenderer。");
         }
+
+        SetupRenderer(circleRenderer);
+        SetupRenderer(dragLineRenderer);
     }
 
     private void LateUpdate()
     {
         if (input == null)
+        {
+            HideAll();
             return;
+        }
 
         ChessPiece currentPiece = input.CurrentPiece;
         if (currentPiece == null)
@@ -46,7 +55,6 @@ public class ChargeInputVisualizer : MonoBehaviour
             HideAll();
             return;
         }
-
 
         ChargeInputConfig config = input.ChargeConfig;
         if (config == null)
@@ -61,10 +69,19 @@ public class ChargeInputVisualizer : MonoBehaviour
             return;
         }
 
-        Vector2 center = currentPiece.transform.position;
+        Vector3 center = currentPiece.transform.position;
+        center.y += visualHeight;
 
         DrawCircle(center, config.stage1MaxDistance);
         DrawDragLine(center, input.CurrentDirection, input.CurrentScaledDragDistance, config.stage1MaxDistance);
+    }
+
+    private void SetupRenderer(LineRenderer lineRenderer)
+    {
+        if (lineRenderer == null)
+            return;
+
+        lineRenderer.useWorldSpace = true;
     }
 
     private void HideAll()
@@ -80,7 +97,7 @@ public class ChargeInputVisualizer : MonoBehaviour
         }
     }
 
-    private void DrawCircle(Vector2 center, float radius)
+    private void DrawCircle(Vector3 center, float radius)
     {
         if (circleRenderer == null)
             return;
@@ -99,17 +116,23 @@ public class ChargeInputVisualizer : MonoBehaviour
             float t = (float)i / segments;
             float angle = t * Mathf.PI * 2f;
 
-            Vector2 point = center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+            float x = Mathf.Cos(angle) * radius;
+            float z = Mathf.Sin(angle) * radius;
+
+            Vector3 point = center + new Vector3(x, 0f, z);
             circleRenderer.SetPosition(i, point);
         }
     }
 
-    private void DrawDragLine(Vector2 center, Vector2 direction, float scaledDistance, float maxDistance)
+    private void DrawDragLine(Vector3 center, Vector3 direction, float scaledDistance, float maxDistance)
     {
         if (dragLineRenderer == null)
             return;
 
-        if (direction.sqrMagnitude <= 0.0001f)
+        Vector3 flatDirection = direction;
+        flatDirection.y = 0f;
+
+        if (flatDirection.sqrMagnitude <= 0.0001f)
         {
             dragLineRenderer.positionCount = 0;
             return;
@@ -117,10 +140,11 @@ public class ChargeInputVisualizer : MonoBehaviour
 
         float lineLength = Mathf.Clamp(scaledDistance, 0f, maxDistance);
 
-        Vector2 dragDir = -direction; // 改为拖拽方向
+        // 显示“拖拽方向”，因此取发射方向的反向
+        Vector3 dragDir = -flatDirection.normalized;
 
         dragLineRenderer.positionCount = 2;
         dragLineRenderer.SetPosition(0, center);
-        dragLineRenderer.SetPosition(1, center + dragDir.normalized * lineLength);
+        dragLineRenderer.SetPosition(1, center + dragDir * lineLength);
     }
 }

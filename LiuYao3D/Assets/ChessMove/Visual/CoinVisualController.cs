@@ -1,6 +1,7 @@
 ﻿/// <summary>
-/// 实现功能：负责硬币的正反面 Sprite 显示、翻面旋转动画与当前回合高亮显示。
-/// 挂在每个硬币上
+/// 实现功能：负责硬币模型的翻面旋转动画与当前回合高亮显示。
+/// 挂在每个硬币上。
+/// 适配 3D 项目：通过旋转模型节点实现正反面切换，不再依赖 Sprite 切换。
 /// </summary>
 using System;
 using System.Collections;
@@ -8,15 +9,26 @@ using UnityEngine;
 
 public class CoinVisualController : MonoBehaviour
 {
+    private enum FlipAxis
+    {
+        X,
+        Y,
+        Z
+    }
+
     [Header("显示引用")]
-    [SerializeField] private SpriteRenderer targetRenderer;
+    [Tooltip("实际执行翻面旋转的模型节点。若不指定，默认使用当前物体自身。")]
+    [SerializeField] private Transform visualRoot;
 
     [Header("翻面动画")]
     [Tooltip("整段翻面动画时长")]
     [SerializeField] private float flipDuration = 0.16f;
 
-    [Tooltip("翻面时 Y 轴最大旋转角度，通常为 180")]
-    [SerializeField] private float flipAngleY = 180f;
+    [Tooltip("翻面旋转轴。俯视/斜视硬币通常推荐 X 或 Z，不推荐 Y。")]
+    [SerializeField] private FlipAxis flipAxis = FlipAxis.X;
+
+    [Tooltip("翻面旋转角度，通常为 180")]
+    [SerializeField] private float flipAngle = 180f;
 
     [Header("当前回合高亮")]
     [Tooltip("当前回合棋子的整体高亮缩放倍率")]
@@ -26,6 +38,7 @@ public class CoinVisualController : MonoBehaviour
     private bool isHighlighted = false;
 
     private Vector3 baseScale;
+    private Quaternion baseRotation;
     private Coroutine flipCoroutine;
     private Action pendingFlipComplete;
     private CoinDefinition currentDefinition;
@@ -34,16 +47,21 @@ public class CoinVisualController : MonoBehaviour
 
     private void Awake()
     {
-        if (targetRenderer == null)
+        if (visualRoot == null)
         {
-            targetRenderer = GetComponent<SpriteRenderer>();
+            visualRoot = transform;
         }
 
-        baseScale = transform.localScale;
-        RefreshSprite();
+        baseScale = visualRoot.localScale;
+        baseRotation = visualRoot.localRotation;
+
         RefreshTransformVisual();
+        ApplyFaceRotationImmediate();
     }
 
+    /// <summary>
+    /// 立即设置当前正反面，不播放动画
+    /// </summary>
     public void SetFaceImmediate(bool isFront, CoinDefinition definition)
     {
         StopFlipAnimationInternal(false);
@@ -51,21 +69,29 @@ public class CoinVisualController : MonoBehaviour
         isFrontSide = isFront;
         currentDefinition = definition;
 
-        ApplyFinalRotation();
-        RefreshSprite();
+        ApplyFaceRotationImmediate();
         RefreshTransformVisual();
     }
 
+    /// <summary>
+    /// 播放翻面到目标面的动画
+    /// </summary>
     public void PlayFlipToFace(bool isFront, CoinDefinition definition, Action onComplete = null)
     {
         StopFlipAnimationInternal(false);
 
+        bool previousFace = isFrontSide;
+
         isFrontSide = isFront;
         currentDefinition = definition;
         pendingFlipComplete = onComplete;
-        flipCoroutine = StartCoroutine(CoPlayFlip());
+
+        flipCoroutine = StartCoroutine(CoPlayFlip(previousFace, isFrontSide));
     }
 
+    /// <summary>
+    /// 取消当前翻面，并立即设置到指定面
+    /// </summary>
     public void CancelFlipAndSetFace(bool isFront, CoinDefinition definition)
     {
         StopFlipAnimationInternal(false);
@@ -73,50 +99,47 @@ public class CoinVisualController : MonoBehaviour
         isFrontSide = isFront;
         currentDefinition = definition;
 
-        ApplyFinalRotation();
-        RefreshSprite();
+        ApplyFaceRotationImmediate();
         RefreshTransformVisual();
     }
 
+    /// <summary>
+    /// 设置当前回合高亮
+    /// </summary>
     public void SetTurnHighlight(bool highlighted)
     {
         isHighlighted = highlighted;
         RefreshTransformVisual();
     }
 
-    private IEnumerator CoPlayFlip()
+    private IEnumerator CoPlayFlip(bool fromFront, bool toFront)
     {
-        float halfDuration = Mathf.Max(0.001f, flipDuration * 0.5f);
+        if (visualRoot == null)
+        {
+            flipCoroutine = null;
+            Action callbackFallback = pendingFlipComplete;
+            pendingFlipComplete = null;
+            callbackFallback?.Invoke();
+            yield break;
+        }
+
+        float duration = Mathf.Max(0.001f, flipDuration);
+
+        Quaternion startRotation = GetFaceRotation(fromFront);
+        Quaternion endRotation = GetFaceRotation(toFront);
 
         float timer = 0f;
-        while (timer < halfDuration)
+        while (timer < duration)
         {
             timer += Time.deltaTime;
-            float t = Mathf.Clamp01(timer / halfDuration);
+            float t = Mathf.Clamp01(timer / duration);
 
-            float currentY = Mathf.Lerp(0f, flipAngleY * 0.5f, t);
-            ApplyRotation(currentY);
+            visualRoot.localRotation = Quaternion.Slerp(startRotation, endRotation, t);
             RefreshTransformVisual();
             yield return null;
         }
 
-        ApplyRotation(flipAngleY * 0.5f);
-        RefreshSprite();
-        RefreshTransformVisual();
-
-        timer = 0f;
-        while (timer < halfDuration)
-        {
-            timer += Time.deltaTime;
-            float t = Mathf.Clamp01(timer / halfDuration);
-
-            float currentY = Mathf.Lerp(flipAngleY * 0.5f, flipAngleY, t);
-            ApplyRotation(currentY);
-            RefreshTransformVisual();
-            yield return null;
-        }
-
-        ApplyFinalRotation();
+        visualRoot.localRotation = endRotation;
         RefreshTransformVisual();
 
         flipCoroutine = null;
@@ -143,36 +166,35 @@ public class CoinVisualController : MonoBehaviour
         }
     }
 
-    private void RefreshSprite()
-    {
-        if (targetRenderer == null)
-            return;
-
-        if (currentDefinition == null)
-        {
-            targetRenderer.sprite = null;
-            Debug.LogWarning($"[CoinVisualController] {name} 未绑定 CoinDefinition，无法显示正反面 Sprite。");
-            return;
-        }
-
-        targetRenderer.sprite = isFrontSide
-            ? currentDefinition.frontSprite
-            : currentDefinition.backSprite;
-    }
-
     private void RefreshTransformVisual()
     {
+        if (visualRoot == null)
+            return;
+
         float highlightScale = isHighlighted ? activeScaleMultiplier : 1f;
-        transform.localScale = baseScale * highlightScale;
+        visualRoot.localScale = baseScale * highlightScale;
     }
 
-    private void ApplyRotation(float yAngle)
+    private void ApplyFaceRotationImmediate()
     {
-        transform.localRotation = Quaternion.Euler(0f, yAngle, 0f);
+        if (visualRoot == null)
+            return;
+
+        visualRoot.localRotation = GetFaceRotation(isFrontSide);
     }
 
-    private void ApplyFinalRotation()
+    private Quaternion GetFaceRotation(bool frontSide)
     {
-        transform.localRotation = Quaternion.identity;
+        float angle = frontSide ? 0f : flipAngle;
+
+        Quaternion offsetRotation = flipAxis switch
+        {
+            FlipAxis.X => Quaternion.Euler(angle, 0f, 0f),
+            FlipAxis.Y => Quaternion.Euler(0f, angle, 0f),
+            FlipAxis.Z => Quaternion.Euler(0f, 0f, angle),
+            _ => Quaternion.identity
+        };
+
+        return baseRotation * offsetRotation;
     }
 }

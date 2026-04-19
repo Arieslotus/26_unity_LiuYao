@@ -1,19 +1,14 @@
+/// <summary>
+/// 实现功能：3D（XZ平面）轨迹预测，完全复用真实 Movement + Bounce 逻辑，保证预测路径与实际一致。
+/// </summary>
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// 轨迹预测（按当前真实碰撞规则预测“当前棋子自身”的路径）
-/// 只预测当前棋子自身：
-/// - 撞障碍物：继续反弹并按 obstacleBounceMultiplier 衰减
-/// - 撞敌人：继续反弹并按 enemyBounceMultiplier 衰减
-/// - 撞己方硬币：继续反弹并按 coinBounceMultiplier 衰减
-/// 不预测被撞对象自身后续轨迹。
-/// </summary>
 public static class TrajectoryPredictor
 {
-    public static List<Vector2> CalculatePath(
-        Vector2 startPos,
-        Vector2 direction,
+    public static List<Vector3> CalculatePath(
+        Vector3 startPos,
+        Vector3 direction,
         MovementConfig movementConfig,
         CollisionConfig collisionConfig,
         Collider selfCollider,
@@ -21,7 +16,7 @@ public static class TrajectoryPredictor
         int maxBounceCount = 20
     )
     {
-        List<Vector2> points = new List<Vector2>();
+        List<Vector3> points = new List<Vector3>();
 
         if (movementConfig == null || collisionConfig == null)
             return points;
@@ -32,8 +27,11 @@ public static class TrajectoryPredictor
         if (power <= 0.0001f)
             return points;
 
-        Vector2 pos = startPos;
-        Vector2 dir = direction.normalized;
+        Vector3 pos = startPos;
+        pos.y = startPos.y;
+
+        Vector3 dir = direction.normalized;
+        dir.y = 0;
 
         float accumulatedDistance = 0f;
         float remainingDistance = movementConfig.totalDistance * power;
@@ -65,8 +63,8 @@ public static class TrajectoryPredictor
             if (traveled <= 0.0001f)
                 break;
 
-            // 这一段路径终点 / 折点
-            Vector2 pathPoint = pos + dir * traveled;
+            // ✅ 用真实安全位置（核心修复点）
+            Vector3 pathPoint = bounceResult.newPos;
             points.Add(pathPoint);
 
             accumulatedDistance += traveled;
@@ -76,7 +74,7 @@ public static class TrajectoryPredictor
             if (!bounceResult.hit)
                 break;
 
-            // ===== 命中后，按当前真实规则处理“当前棋子自身” =====
+            // ===== 碰撞处理（完全复用真实规则） =====
             CollisionTarget target = null;
             if (bounceResult.collider != null)
             {
@@ -85,14 +83,12 @@ public static class TrajectoryPredictor
 
             float distanceMultiplier = GetDistanceMultiplier(target, collisionConfig);
 
-            // 方向与真实逻辑一致：仍按法线反射
             dir = bounceResult.newDir;
+            dir.y = 0;
 
-            // 路径衰减按碰撞对象类型决定
             remainingDistance *= distanceMultiplier;
             remainingDistance = Mathf.Max(remainingDistance, 0f);
 
-            // 下一次模拟从安全位置继续
             pos = bounceResult.newPos;
         }
 

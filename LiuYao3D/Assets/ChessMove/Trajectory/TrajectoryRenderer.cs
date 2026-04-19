@@ -1,22 +1,28 @@
-﻿using System.Collections.Generic;
+﻿/// <summary>
+/// 实现功能：根据预测路径绘制3D轨迹（XZ平面），使用LineRenderer显示。
+/// </summary>
+using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(LineRenderer))]
-[RequireComponent(typeof(Collider2D))]
 public class TrajectoryRenderer : MonoBehaviour
 {
     [Header("引用")]
     [SerializeField] private MovementConfig config;
     [SerializeField] private CollisionConfig collisionConfig;
 
+    [Header("显示")]
+    [SerializeField] private float lineHeight = 0.05f; // 防止Z-Fighting
+
     private LineRenderer line;
 
     private void Awake()
     {
         line = GetComponent<LineRenderer>();
+        line.useWorldSpace = true;
     }
 
-    public void UpdateTrajectory(Vector2 startPos, Vector2 direction, float power, Collider selfCollider)
+    public void UpdateTrajectory(Vector3 startPos, Vector3 direction, float power, Collider selfCollider)
     {
         if (config == null || collisionConfig == null)
         {
@@ -24,7 +30,7 @@ public class TrajectoryRenderer : MonoBehaviour
             return;
         }
 
-        List<Vector2> points = TrajectoryPredictor.CalculatePath(
+        List<Vector3> points = TrajectoryPredictor.CalculatePath(
             startPos,
             direction,
             config,
@@ -33,7 +39,7 @@ public class TrajectoryRenderer : MonoBehaviour
             power
         );
 
-        if (points == null || points.Count <= 0)
+        if (points == null || points.Count == 0)
         {
             Clear();
             return;
@@ -43,7 +49,9 @@ public class TrajectoryRenderer : MonoBehaviour
 
         for (int i = 0; i < points.Count; i++)
         {
-            line.SetPosition(i, points[i]);
+            Vector3 p = points[i];
+            p.y += lineHeight; // 防止贴地闪烁
+            line.SetPosition(i, p);
         }
     }
 
