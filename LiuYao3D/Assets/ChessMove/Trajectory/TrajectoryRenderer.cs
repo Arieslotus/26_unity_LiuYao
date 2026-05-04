@@ -1,5 +1,5 @@
 ﻿/// <summary>
-/// 实现功能：根据预测路径绘制3D轨迹（XZ平面），使用LineRenderer显示。
+/// 实现功能：根据预测路径绘制3D轨迹（XZ平面），使用 LineRenderer 显示；碰撞体中心与半径统一读取 MovementController。
 /// </summary>
 using System.Collections.Generic;
 using UnityEngine;
@@ -9,10 +9,10 @@ public class TrajectoryRenderer : MonoBehaviour
 {
     [Header("引用")]
     [SerializeField] private MovementConfig config;
-    [SerializeField] private CollisionConfig collisionConfig;
+    [SerializeField] private MovementController movement;
 
     [Header("显示")]
-    [SerializeField] private float lineHeight = 0.05f; // 防止Z-Fighting
+    [SerializeField] private float lineHeight = 0.05f;
 
     private LineRenderer line;
 
@@ -20,22 +20,35 @@ public class TrajectoryRenderer : MonoBehaviour
     {
         line = GetComponent<LineRenderer>();
         line.useWorldSpace = true;
+
+        if (movement == null)
+        {
+            movement = GetComponent<MovementController>();
+        }
+
+        if (movement == null)
+        {
+            Debug.LogError($"[TrajectoryRenderer] {name} 缺少 MovementController，轨迹预测无法统一碰撞体。");
+        }
     }
 
-    public void UpdateTrajectory(Vector3 startPos, Vector3 direction, float power, Collider selfCollider)
+    public void UpdateTrajectory(Vector3 direction, float power)
     {
-        if (config == null || collisionConfig == null)
+        if (config == null || movement == null || movement.CollisionConfig == null)
         {
             Clear();
             return;
         }
-        float collisionRadius = GetColliderRadius(selfCollider);
+
+        Vector3 startCenter = movement.GetCollisionCenter();
+        float collisionRadius = movement.GetCollisionRadius();
+        Collider selfCollider = movement.selfCollider;
 
         List<Vector3> points = TrajectoryPredictor.CalculatePath(
-            startPos,
+            startCenter,
             direction,
             config,
-            collisionConfig,
+            movement.CollisionConfig,
             selfCollider,
             collisionRadius,
             power
@@ -52,7 +65,7 @@ public class TrajectoryRenderer : MonoBehaviour
         for (int i = 0; i < points.Count; i++)
         {
             Vector3 p = points[i];
-            p.y += lineHeight; // 防止贴地闪烁
+            p.y += lineHeight;
             line.SetPosition(i, p);
         }
     }
@@ -60,17 +73,5 @@ public class TrajectoryRenderer : MonoBehaviour
     public void Clear()
     {
         line.positionCount = 0;
-    }
-
-    private float GetColliderRadius(Collider collider)
-    {
-        if (collider is SphereCollider sphere)
-        {
-            Vector3 scale = sphere.transform.lossyScale;
-            float maxScale = Mathf.Max(scale.x, scale.y, scale.z);
-            return sphere.radius * maxScale;
-        }
-
-        return config != null ? config.radius : 0.5f;
     }
 }

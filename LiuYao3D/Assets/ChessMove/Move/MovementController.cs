@@ -12,14 +12,17 @@ public class MovementController : MonoBehaviour
     private float currentSpeed;
     private bool isMoving = false;
     private ShotContext shotContext;
-    private Collider selfCollider;
-    private SphereCollider selfSphereCollider;
+
+    public Collider selfCollider;
+    public SphereCollider selfSphereCollider;
 
     private float speedScaleMultiplier = 1f;
 
     [Header("碰撞配置")]
     [SerializeField] private CollisionConfig collisionConfig;
 
+    [Header("卦象技能配置")]
+    [SerializeField] private TrigramSkillDatabase skillDatabase;
     public bool IsMoving => isMoving;
     public float RemainingDistance => remainingDistance;
     public Vector3 CurrentDirection => direction;
@@ -27,8 +30,7 @@ public class MovementController : MonoBehaviour
 
     private void Awake()
     {
-        selfCollider = GetComponent<Collider>();
-        selfSphereCollider = GetComponent<SphereCollider>();
+        selfCollider = selfSphereCollider;
 
         if (selfCollider == null)
         {
@@ -185,6 +187,8 @@ public class MovementController : MonoBehaviour
         remainingDistance *= result.remainingDistanceMultiplier;
         remainingDistance = Mathf.Max(remainingDistance, 0f);
 
+        TryTriggerTrigramSkill(result);
+
         if (result.triggerOtherCoinMove && result.otherCoin != null)
         {
             result.otherCoin.ActivateByCollision(
@@ -203,6 +207,52 @@ public class MovementController : MonoBehaviour
         }
 
         Debug.Log($"[BounceDebug] 物体:{name} | dir:{direction} | remainingDistance:{remainingDistance:F4}");
+    }
+
+    private void TryTriggerTrigramSkill(CollisionResult result)
+    {
+        if (!result.triggerOtherCoinMove || result.otherCoin == null)
+            return;
+
+        if (skillDatabase == null)
+        {
+            Debug.LogWarning($"[卦象技能] {name} 未配置 TrigramSkillDatabase。");
+            return;
+        }
+
+        CoinRuntimeData activeCoin = GetComponentInParent<CoinRuntimeData>();
+        CoinRuntimeData passiveCoin = result.otherCoin.GetComponentInParent<CoinRuntimeData>();
+
+        if (activeCoin == null || passiveCoin == null)
+        {
+            Debug.LogWarning(
+                $"[卦象技能] 碰撞双方缺少 CoinRuntimeData | " +
+                $"主动:{name} | 被动:{result.otherCoin.name}"
+            );
+            return;
+        }
+
+        TrigramType activeTrigram = activeCoin.CurrentTrigram;
+        TrigramType passiveTrigram = passiveCoin.CurrentTrigram;
+
+        TrigramCollisionSkillSO skill = skillDatabase.GetSkill(activeTrigram, passiveTrigram);
+
+        if (skill == null)
+        {
+            Debug.Log(
+                $"[卦象技能] 未找到技能 | " +
+                $"主动币:{activeCoin.name} | 主动卦:{activeTrigram} | " +
+                $"被动币:{passiveCoin.name} | 被动卦:{passiveTrigram}"
+            );
+            return;
+        }
+
+        Debug.Log(
+            $"[卦象技能] 触发技能:{skill.SkillName} | " +
+            $"主动币:{activeCoin.name} | 主动卦:{activeTrigram} | " +
+            $"被动币:{passiveCoin.name} | 被动卦:{passiveTrigram} | " +
+            $"效果:{skill.EffectText}"
+        );
     }
 
     private void ApplyHitTarget(CollisionResult result)
@@ -260,7 +310,7 @@ public class MovementController : MonoBehaviour
         transform.position = pos;
     }
 
-    private float GetCollisionRadius()
+    public float GetCollisionRadius()
     {
         if (selfSphereCollider == null)
             return config != null ? config.radius : 0.5f;
@@ -271,7 +321,7 @@ public class MovementController : MonoBehaviour
         return selfSphereCollider.radius * maxScale;
     }
 
-    private Vector3 GetCollisionCenter()
+    public Vector3 GetCollisionCenter()
     {
         if (selfSphereCollider == null)
             return transform.position;

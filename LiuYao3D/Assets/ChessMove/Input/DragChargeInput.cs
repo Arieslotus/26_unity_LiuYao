@@ -17,7 +17,6 @@ public class DragChargeInput : MonoBehaviour
     [Header("引用")]
     [SerializeField] private ChessPiece piece;
     [SerializeField] private Camera mainCamera;
-    [SerializeField] private TrajectoryRenderer trajectoryRenderer;
     [SerializeField] private ChargeInputConfig chargeConfig;
     [SerializeField] private ChessTurnController turnController;
 
@@ -49,6 +48,8 @@ public class DragChargeInput : MonoBehaviour
 
     private Vector3 queuedFireDirection = Vector3.zero;
     private float queuedFirePower = 0f;
+
+    private TrajectoryRenderer currentTrajectoryRenderer;
 
     private void Awake()
     {
@@ -299,7 +300,7 @@ public class DragChargeInput : MonoBehaviour
 
     private void UpdateTrajectoryPreview()
     {
-        if (trajectoryRenderer == null || piece == null)
+        if (currentTrajectoryRenderer == null || piece == null)
             return;
 
         Vector3 dir = currentDirection;
@@ -307,16 +308,11 @@ public class DragChargeInput : MonoBehaviour
 
         if (dir.sqrMagnitude <= 0.0001f)
         {
-            trajectoryRenderer.Clear();
+            currentTrajectoryRenderer.Clear();
             return;
         }
 
-        trajectoryRenderer.UpdateTrajectory(
-            piece.transform.position,
-            dir.normalized,
-            currentPower,
-            piece.GetComponent<Collider>()
-        );
+        currentTrajectoryRenderer.UpdateTrajectory(dir.normalized, currentPower);
     }
 
     private void ReleaseCharge()
@@ -443,10 +439,7 @@ public class DragChargeInput : MonoBehaviour
 
     private void ClearTrajectory()
     {
-        if (trajectoryRenderer != null)
-        {
-            trajectoryRenderer.Clear();
-        }
+        currentTrajectoryRenderer?.Clear();
     }
 
     private Vector3 GetMouseWorldPosition()
@@ -466,7 +459,18 @@ public class DragChargeInput : MonoBehaviour
 
     public void SetControlledPiece(ChessPiece newPiece)
     {
+        // 清掉旧轨迹
+        if (currentTrajectoryRenderer != null)
+        {
+            currentTrajectoryRenderer.Clear();
+        }
+
         piece = newPiece;
+
+        //关键：从当前棋子获取 TrajectoryRenderer
+        currentTrajectoryRenderer = piece != null
+            ? piece.GetComponent<TrajectoryRenderer>()
+            : null;
 
         if (debugLog)
         {
@@ -476,7 +480,6 @@ public class DragChargeInput : MonoBehaviour
         }
 
         ResetAllChargeState();
-        ClearTrajectory();
     }
 
     private void DrawDebugInfo()

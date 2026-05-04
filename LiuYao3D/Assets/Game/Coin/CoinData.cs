@@ -3,6 +3,7 @@
 /// </summary>
 public enum TrigramType
 {
+    None,     // 无卦象
     Qian,   // 乾
     Kun,    // 坤
     Zhen,   // 震

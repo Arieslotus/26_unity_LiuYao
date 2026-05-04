@@ -1,5 +1,6 @@
 /// <summary>
-/// 实现功能：封装棋子的主动发射、被碰撞启动、正反面状态切换，并持有硬币固定正反面定义，提供当前卦象与蓄力翻面接口。
+/// 负责：能不能动、怎么发射、怎么被撞动、回合控制
+/// 实现功能：封装棋子的主动发射、被碰撞启动、回合控制与碰撞反馈请求；硬币定义、正反面和卦象状态交由 CoinRuntimeData 管理。
 /// </summary>
 using System;
 using UnityEngine;
@@ -10,38 +11,33 @@ public class ChessPiece : MonoBehaviour
     [Tooltip("该棋子的移动参数")]
     [SerializeField] private MovementConfig movementConfig;
 
-    [Header("硬币定义")]
-    [Tooltip("这枚硬币固定的正反面卦象与显示资源")]
-    [SerializeField] private CoinDefinition coinDefinition;
-
-    [Header("正反面")]
-    [Tooltip("是否默认以正面开始")]
-    [SerializeField] private bool startFrontSide = true;
-
     [Header("回合控制")]
     [Tooltip("当前是否允许该棋子在玩家回合中被操作")]
     [SerializeField] private bool canBeControlledThisTurn = true;
 
     private MovementController movement;
+    private CoinRuntimeData coinData;
     private CoinVisualController visualController;
 
     private float lastCoinCollisionTime = -999f;
-    private bool isFrontSide = true;
 
     public event Action<ChessPiece, CollisionType, bool, float, Vector3> ImpactFeedbackRequested;
 
     private void Awake()
     {
-        if (coinDefinition == null)
-        {
-            Debug.LogWarning($"[ChessPiece] {name} 未配置 CoinDefinition。");
-        }
         movement = GetComponent<MovementController>();
-        visualController = GetComponent<CoinVisualController>();
+        coinData = GetComponent<CoinRuntimeData>();
+        visualController = GetComponentInChildren<CoinVisualController>();
 
-        isFrontSide = startFrontSide;
+        if (movement == null)
+        {
+            Debug.LogError($"[ChessPiece] {name} 缺少 MovementController。");
+        }
 
-        RefreshVisualImmediate();
+        if (coinData == null)
+        {
+            Debug.LogError($"[ChessPiece] {name} 缺少 CoinRuntimeData。请把硬币定义、正反面、属性配置迁移到 CoinRuntimeData。");
+        }
     }
 
     public void Fire(Vector3 direction, float power = 1f)
@@ -52,12 +48,13 @@ public class ChessPiece : MonoBehaviour
             return;
         }
 
-        float fullChargeThreshold = 0.999f;
-
-        if (movement != null && movement.CollisionConfig != null)
+        if (movement == null)
         {
-            fullChargeThreshold = movement.CollisionConfig.fullChargeThreshold;
+            Debug.LogError($"[ChessPiece] {name} 缺少 MovementController，无法发射。");
+            return;
         }
+
+        float fullChargeThreshold = FullChargeThreshold;
 
         ShotContext context = new ShotContext
         {
@@ -78,6 +75,12 @@ public class ChessPiece : MonoBehaviour
             return;
         }
 
+        if (movement == null)
+        {
+            Debug.LogError($"[ChessPiece] {name} 缺少 MovementController，无法被碰撞启动。");
+            return;
+        }
+
         float normalizedPower = movementConfig.totalDistance > 0.0001f
             ? startDistance / movementConfig.totalDistance
             : 0f;
@@ -92,40 +95,55 @@ public class ChessPiece : MonoBehaviour
 
         movement.InitByCollision(direction, movementConfig, context, startDistance, speedScale);
 
-        Debug.Log($"[ChessPiece] {name} 被碰撞启动 | direction:{direction} | startDistance:{startDistance:F2} | speedScale:{speedScale:F2}");
+        Debug.Log(
+            $"[ChessPiece] 被碰撞启动 | 物体:{name} | " +
+            $"direction:{direction} | startDistance:{startDistance:F2} | speedScale:{speedScale:F2}"
+        );
     }
 
     public void PlayChargeFlip(Action onComplete)
     {
-        bool targetFace = !isFrontSide;
-        isFrontSide = targetFace;
-
-        if (visualController != null)
+        if (coinData == null)
         {
-            visualController.PlayFlipToFace(isFrontSide, coinDefinition, onComplete);
-        }
-        else
-        {
+            Debug.LogError($"[ChessPiece] {name} 缺少 CoinRuntimeData，无法执行蓄力翻面。");
             onComplete?.Invoke();
+            return;
         }
 
-        Debug.Log(
-            $"[ChessPiece] 蓄力翻面 | 物体:{name} | 当前面:{(isFrontSide ? "正面" : "反面")} | 当前卦象:{CurrentTrigram}"
-        );
+        coinData.PlayChargeFlip(onComplete);
     }
 
     public void RestoreFaceImmediate(bool targetFrontSide)
     {
-        isFrontSide = targetFrontSide;
-
-        if (visualController != null)
+        if (coinData == null)
         {
-            visualController.CancelFlipAndSetFace(isFrontSide, coinDefinition);
+            Debug.LogError($"[ChessPiece] {name} 缺少 CoinRuntimeData，无法恢复正反面。");
+            return;
         }
 
-        Debug.Log(
-            $"[ChessPiece] 恢复初始面 | 物体:{name} | 当前面:{(isFrontSide ? "正面" : "反面")} | 当前卦象:{CurrentTrigram}"
-        );
+        coinData.RestoreFaceImmediate(targetFrontSide);
+    }
+
+    public void SetFace(bool frontSide, bool playAnimation)
+    {
+        if (coinData == null)
+        {
+            Debug.LogError($"[ChessPiece] {name} 缺少 CoinRuntimeData，无法设置正反面。");
+            return;
+        }
+
+        coinData.SetFace(frontSide, playAnimation);
+    }
+
+    public void SetCoinDefinition(CoinDefinition definition, bool refreshVisual = true)
+    {
+        if (coinData == null)
+        {
+            Debug.LogError($"[ChessPiece] {name} 缺少 CoinRuntimeData，无法设置 CoinDefinition。");
+            return;
+        }
+
+        coinData.SetCoinDefinition(definition, refreshVisual);
     }
 
     public void RequestImpactFeedback(CollisionType targetType, bool isFlip, float strength, Vector3 hitPoint)
@@ -146,39 +164,6 @@ public class ChessPiece : MonoBehaviour
         }
     }
 
-    public void SetFace(bool frontSide, bool playAnimation)
-    {
-        isFrontSide = frontSide;
-
-        if (visualController == null)
-            return;
-
-        if (playAnimation)
-        {
-            visualController.PlayFlipToFace(isFrontSide, coinDefinition);
-        }
-        else
-        {
-            visualController.SetFaceImmediate(isFrontSide, coinDefinition);
-        }
-    }
-
-    public void SetCoinDefinition(CoinDefinition definition, bool refreshVisual = true)
-    {
-        coinDefinition = definition;
-
-        if (refreshVisual)
-        {
-            RefreshVisualImmediate();
-        }
-
-        Debug.Log(
-            definition != null
-                ? $"[ChessPiece] 设置硬币定义 | 物体:{name} | coin:{definition.coinName} | 当前卦象:{CurrentTrigram}"
-                : $"[ChessPiece] 清空硬币定义 | 物体:{name}"
-        );
-    }
-
     public bool CanTriggerCoinCollision(float cooldown)
     {
         return Time.time >= lastCoinCollisionTime + cooldown;
@@ -189,34 +174,33 @@ public class ChessPiece : MonoBehaviour
         lastCoinCollisionTime = Time.time;
     }
 
-    private void RefreshVisualImmediate()
+    public void SetCanBeControlledThisTurn(bool canControl)
     {
-        if (visualController != null)
-        {
-            visualController.SetFaceImmediate(isFrontSide, coinDefinition);
-        }
+        canBeControlledThisTurn = canControl;
     }
 
     public bool IsMoving => movement != null && movement.IsMoving;
-    public bool IsFrontSide => isFrontSide;
     public bool CanBeControlledThisTurn => canBeControlledThisTurn;
+
     public float FullChargeThreshold => movement != null && movement.CollisionConfig != null
         ? movement.CollisionConfig.fullChargeThreshold
         : 0.999f;
 
-    public CoinDefinition CoinDefinition => coinDefinition;
+    public CoinDefinition CoinDefinition => coinData != null ? coinData.CoinDefinition : null;
+
+    public bool IsFrontSide => coinData != null && coinData.IsFrontSide;
 
     public TrigramType CurrentTrigram
     {
         get
         {
-            if (coinDefinition == null)
+            if (coinData == null)
             {
-                Debug.LogWarning($"[ChessPiece] {name} 未配置 CoinDefinition，返回默认卦象 Qian。");
+                Debug.LogWarning($"[ChessPiece] {name} 缺少 CoinRuntimeData，返回默认卦象 Qian。");
                 return TrigramType.Qian;
             }
 
-            return isFrontSide ? coinDefinition.frontTrigram : coinDefinition.backTrigram;
+            return coinData.CurrentTrigram;
         }
     }
 
@@ -224,18 +208,13 @@ public class ChessPiece : MonoBehaviour
     {
         get
         {
-            if (coinDefinition == null)
+            if (coinData == null)
             {
-                Debug.LogWarning($"[ChessPiece] {name} 未配置 CoinDefinition，返回默认卦象 Qian。");
+                Debug.LogWarning($"[ChessPiece] {name} 缺少 CoinRuntimeData，返回默认卦象 Qian。");
                 return TrigramType.Qian;
             }
 
-            return isFrontSide ? coinDefinition.backTrigram : coinDefinition.frontTrigram;
+            return coinData.OppositeTrigram;
         }
-    }
-
-    public void SetCanBeControlledThisTurn(bool canControl)
-    {
-        canBeControlledThisTurn = canControl;
     }
 }

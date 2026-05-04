@@ -1,7 +1,6 @@
 ﻿/// <summary>
-/// 实现功能：负责硬币模型的翻面旋转动画与当前回合高亮显示。
-/// 挂在每个硬币上。
-/// 适配 3D 项目：通过旋转模型节点实现正反面切换，不再依赖 Sprite 切换。
+/// 实现功能：负责 VisualRoot 的硬币翻面旋转动画与当前回合高亮缩放。
+/// 挂载位置：CoinRoot 下的 VisualRoot。
 /// </summary>
 using System;
 using System.Collections;
@@ -15,10 +14,6 @@ public class CoinVisualController : MonoBehaviour
         Y,
         Z
     }
-
-    [Header("显示引用")]
-    [Tooltip("实际执行翻面旋转的模型节点。若不指定，默认使用当前物体自身。")]
-    [SerializeField] private Transform visualRoot;
 
     [Header("翻面动画")]
     [Tooltip("整段翻面动画时长")]
@@ -39,6 +34,7 @@ public class CoinVisualController : MonoBehaviour
 
     private Vector3 baseScale;
     private Quaternion baseRotation;
+
     private Coroutine flipCoroutine;
     private Action pendingFlipComplete;
     private CoinDefinition currentDefinition;
@@ -47,21 +43,15 @@ public class CoinVisualController : MonoBehaviour
 
     private void Awake()
     {
-        if (visualRoot == null)
-        {
-            visualRoot = transform;
-        }
-
-        baseScale = visualRoot.localScale;
-        baseRotation = visualRoot.localRotation;
+        baseScale = transform.localScale;
+        baseRotation = transform.localRotation;
 
         RefreshTransformVisual();
         ApplyFaceRotationImmediate();
+
+        Debug.Log($"[CoinVisual] 初始化 | 物体:{name} | baseScale:{baseScale} | baseRotation:{baseRotation.eulerAngles}");
     }
 
-    /// <summary>
-    /// 立即设置当前正反面，不播放动画
-    /// </summary>
     public void SetFaceImmediate(bool isFront, CoinDefinition definition)
     {
         StopFlipAnimationInternal(false);
@@ -73,9 +63,6 @@ public class CoinVisualController : MonoBehaviour
         RefreshTransformVisual();
     }
 
-    /// <summary>
-    /// 播放翻面到目标面的动画
-    /// </summary>
     public void PlayFlipToFace(bool isFront, CoinDefinition definition, Action onComplete = null)
     {
         StopFlipAnimationInternal(false);
@@ -89,9 +76,6 @@ public class CoinVisualController : MonoBehaviour
         flipCoroutine = StartCoroutine(CoPlayFlip(previousFace, isFrontSide));
     }
 
-    /// <summary>
-    /// 取消当前翻面，并立即设置到指定面
-    /// </summary>
     public void CancelFlipAndSetFace(bool isFront, CoinDefinition definition)
     {
         StopFlipAnimationInternal(false);
@@ -103,9 +87,6 @@ public class CoinVisualController : MonoBehaviour
         RefreshTransformVisual();
     }
 
-    /// <summary>
-    /// 设置当前回合高亮
-    /// </summary>
     public void SetTurnHighlight(bool highlighted)
     {
         isHighlighted = highlighted;
@@ -114,32 +95,25 @@ public class CoinVisualController : MonoBehaviour
 
     private IEnumerator CoPlayFlip(bool fromFront, bool toFront)
     {
-        if (visualRoot == null)
-        {
-            flipCoroutine = null;
-            Action callbackFallback = pendingFlipComplete;
-            pendingFlipComplete = null;
-            callbackFallback?.Invoke();
-            yield break;
-        }
-
         float duration = Mathf.Max(0.001f, flipDuration);
 
         Quaternion startRotation = GetFaceRotation(fromFront);
         Quaternion endRotation = GetFaceRotation(toFront);
 
         float timer = 0f;
+
         while (timer < duration)
         {
             timer += Time.deltaTime;
             float t = Mathf.Clamp01(timer / duration);
 
-            visualRoot.localRotation = Quaternion.Slerp(startRotation, endRotation, t);
+            transform.localRotation = Quaternion.Slerp(startRotation, endRotation, t);
             RefreshTransformVisual();
+
             yield return null;
         }
 
-        visualRoot.localRotation = endRotation;
+        transform.localRotation = endRotation;
         RefreshTransformVisual();
 
         flipCoroutine = null;
@@ -168,19 +142,13 @@ public class CoinVisualController : MonoBehaviour
 
     private void RefreshTransformVisual()
     {
-        if (visualRoot == null)
-            return;
-
         float highlightScale = isHighlighted ? activeScaleMultiplier : 1f;
-        visualRoot.localScale = baseScale * highlightScale;
+        transform.localScale = baseScale * highlightScale;
     }
 
     private void ApplyFaceRotationImmediate()
     {
-        if (visualRoot == null)
-            return;
-
-        visualRoot.localRotation = GetFaceRotation(isFrontSide);
+        transform.localRotation = GetFaceRotation(isFrontSide);
     }
 
     private Quaternion GetFaceRotation(bool frontSide)

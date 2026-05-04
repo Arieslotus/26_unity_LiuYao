@@ -1,4 +1,5 @@
 /// <summary>
+/// 静态工具类，不挂载到物体；由 TrajectoryRenderer / DragChargeInput 等脚本调用。
 /// 实现功能：3D（XZ平面）轨迹预测，完全复用真实 Movement + Bounce 逻辑，保证预测路径与实际一致。
 /// </summary>
 using System.Collections.Generic;
