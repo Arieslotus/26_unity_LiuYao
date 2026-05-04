@@ -13,6 +13,7 @@ public class MovementController : MonoBehaviour
     private bool isMoving = false;
     private ShotContext shotContext;
     private Collider selfCollider;
+    private SphereCollider selfSphereCollider;
 
     private float speedScaleMultiplier = 1f;
 
@@ -27,6 +28,17 @@ public class MovementController : MonoBehaviour
     private void Awake()
     {
         selfCollider = GetComponent<Collider>();
+        selfSphereCollider = GetComponent<SphereCollider>();
+
+        if (selfCollider == null)
+        {
+            Debug.LogError($"[Movement] {name} 缺少 3D Collider。");
+        }
+
+        if (selfSphereCollider == null)
+        {
+            Debug.LogWarning($"[Movement] {name} 未使用 SphereCollider，将回退使用 MovementConfig.radius。");
+        }
     }
 
     public void Init(Vector3 dir, MovementConfig movementConfig, ShotContext context)
@@ -78,7 +90,8 @@ public class MovementController : MonoBehaviour
             return;
         }
 
-        float maxStep = config.radius * 0.5f;
+        float collisionRadius = GetCollisionRadius();
+        float maxStep = collisionRadius * 0.5f;
         float remainingMoveThisFrame = currentSpeed * Time.deltaTime;
         remainingMoveThisFrame = Mathf.Min(remainingMoveThisFrame, remainingDistance);
         remainingMoveThisFrame = Mathf.Min(remainingMoveThisFrame, maxStep);
@@ -97,14 +110,15 @@ public class MovementController : MonoBehaviour
         {
             loopCount++;
 
-            Vector3 currentPos = transform.position;
+            Vector3 currentCenter = GetCollisionCenter();
 
             var result = PhysicsBounceUtility.SimulateStep(
-                currentPos,
+                currentCenter,
                 direction,
                 remainingMoveThisFrame,
                 config,
-                selfCollider
+                selfCollider,
+                collisionRadius
             );
 
             float traveled = result.traveledDistance;
@@ -116,7 +130,7 @@ public class MovementController : MonoBehaviour
                 continue;
             }
 
-            transform.position = result.newPos;
+            MoveTransformByCenterDelta(currentCenter, result.newPos);
 
             remainingDistance -= traveled;
             remainingDistance = Mathf.Max(remainingDistance, 0f);
@@ -246,13 +260,42 @@ public class MovementController : MonoBehaviour
         transform.position = pos;
     }
 
+    private float GetCollisionRadius()
+    {
+        if (selfSphereCollider == null)
+            return config != null ? config.radius : 0.5f;
+
+        Vector3 scale = selfSphereCollider.transform.lossyScale;
+        float maxScale = Mathf.Max(scale.x, scale.y, scale.z);
+
+        return selfSphereCollider.radius * maxScale;
+    }
+
+    private Vector3 GetCollisionCenter()
+    {
+        if (selfSphereCollider == null)
+            return transform.position;
+
+        return selfSphereCollider.transform.TransformPoint(selfSphereCollider.center);
+    }
+
+    private void MoveTransformByCenterDelta(Vector3 oldCenter, Vector3 newCenter)
+    {
+        Vector3 delta = newCenter - oldCenter;
+        delta.y = 0f;
+
+        transform.position += delta;
+    }
+
     private void OnDrawGizmos()
     {
         if (config == null)
             return;
 
         Gizmos.color = Color.green;
-        Gizmos.DrawWireSphere(transform.position, config.radius);
+        float radius = Application.isPlaying ? GetCollisionRadius() : config.radius;
+        Vector3 center = Application.isPlaying ? GetCollisionCenter() : transform.position;
+        Gizmos.DrawWireSphere(center, radius);
     }
 
     private void Stop()

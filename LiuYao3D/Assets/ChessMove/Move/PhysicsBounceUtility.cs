@@ -1,11 +1,12 @@
 ﻿/// <summary>
-/// 实现功能：3D 平面（XZ）下的球形投射反弹计算
+/// 实现功能：3D 平面（XZ）下的球形投射反弹计算。
+/// 碰撞半径由外部传入，通常读取棋子自身 SphereCollider，而不是 MovementConfig。
 /// </summary>
 using UnityEngine;
 
 public struct BounceResult
 {
-    public Vector3 newPos;
+    public Vector3 newPos; // 这里表示“碰撞体中心”的新位置
     public Vector3 newDir;
     public float traveledDistance;
     public bool hit;
@@ -23,24 +24,28 @@ public static class PhysicsBounceUtility
         Vector3 dir,
         float maxDistance,
         MovementConfig config,
-        Collider ignoreCollider = null
+        Collider ignoreCollider,
+        float radius
     )
     {
         BounceResult result = new BounceResult();
 
+        radius = Mathf.Max(0.001f, radius);
+
         RaycastHit[] hits = Physics.SphereCastAll(
             pos,
-            config.radius,
+            radius,
             dir,
             maxDistance
         );
 
         RaycastHit validHit = default;
         bool foundValidHit = false;
+        float nearestDistance = float.MaxValue;
 
         for (int i = 0; i < hits.Length; i++)
         {
-            var hit = hits[i];
+            RaycastHit hit = hits[i];
 
             if (hit.collider == null)
                 continue;
@@ -51,33 +56,29 @@ public static class PhysicsBounceUtility
             if (hit.distance <= 0.0001f)
                 continue;
 
-            validHit = hit;
-            foundValidHit = true;
-            break;
+            if (hit.distance < nearestDistance)
+            {
+                nearestDistance = hit.distance;
+                validHit = hit;
+                foundValidHit = true;
+            }
         }
 
         if (foundValidHit)
         {
-            float dist = validHit.distance;
-
             result.hit = true;
-            result.traveledDistance = dist;
+            result.traveledDistance = validHit.distance;
             result.normal = validHit.normal;
             result.collider = validHit.collider;
             result.hitPoint = validHit.point;
 
-            // ⚠️ 关键：限制反射在XZ平面
             Vector3 reflect = Vector3.Reflect(dir, validHit.normal);
-            reflect.y = 0;
-            result.newDir = reflect.normalized;
+            reflect.y = 0f;
+            result.newDir = reflect.sqrMagnitude > 0.0001f ? reflect.normalized : dir;
 
-            float skinWidth = Mathf.Max(0.001f, config.radius * 0.01f);
+            float skinWidth = Mathf.Max(0.001f, radius * 0.01f);
 
-            // SphereCast 的 hit.point 更接近接触点，不是球心位置
-            // 所以球心安全落点应当沿法线退回“半径 + skin”
-            Vector3 safePos = validHit.point + validHit.normal * (config.radius + skinWidth);
-
-            // 锁定在逻辑平面高度
+            Vector3 safePos = validHit.point + validHit.normal * (radius + skinWidth);
             safePos.y = pos.y;
 
             result.newPos = safePos;

@@ -29,6 +29,7 @@ public class TrajectoryRenderer : MonoBehaviour
             Clear();
             return;
         }
+        float collisionRadius = GetColliderRadius(selfCollider);
 
         List<Vector3> points = TrajectoryPredictor.CalculatePath(
             startPos,
@@ -36,6 +37,7 @@ public class TrajectoryRenderer : MonoBehaviour
             config,
             collisionConfig,
             selfCollider,
+            collisionRadius,
             power
         );
 
@@ -58,5 +60,17 @@ public class TrajectoryRenderer : MonoBehaviour
     public void Clear()
     {
         line.positionCount = 0;
+    }
+
+    private float GetColliderRadius(Collider collider)
+    {
+        if (collider is SphereCollider sphere)
+        {
+            Vector3 scale = sphere.transform.lossyScale;
+            float maxScale = Mathf.Max(scale.x, scale.y, scale.z);
+            return sphere.radius * maxScale;
+        }
+
+        return config != null ? config.radius : 0.5f;
     }
 }

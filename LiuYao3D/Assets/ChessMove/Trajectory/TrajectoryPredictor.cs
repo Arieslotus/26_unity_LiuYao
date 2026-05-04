@@ -12,6 +12,7 @@ public static class TrajectoryPredictor
         MovementConfig movementConfig,
         CollisionConfig collisionConfig,
         Collider selfCollider,
+        float collisionRadius,
         float power,
         int maxBounceCount = 20
     )
@@ -55,7 +56,8 @@ public static class TrajectoryPredictor
                 dir,
                 maxStep,
                 movementConfig,
-                selfCollider
+                selfCollider,
+                collisionRadius
             );
 
             float traveled = bounceResult.traveledDistance;
