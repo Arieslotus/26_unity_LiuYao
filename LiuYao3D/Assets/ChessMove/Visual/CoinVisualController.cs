@@ -29,6 +29,11 @@ public class CoinVisualController : MonoBehaviour
     [Tooltip("当前回合棋子的整体高亮缩放倍率")]
     [SerializeField] private float activeScaleMultiplier = 1.12f;
 
+    [Header("硬币材质")]
+    [Tooltip("硬币模型的 Renderer，用于根据 CoinDefinition 切换材质")]
+    [SerializeField] private Renderer coinRenderer;
+
+
     private bool isFrontSide = true;
     private bool isHighlighted = false;
 
@@ -44,6 +49,13 @@ public class CoinVisualController : MonoBehaviour
     private void Awake()
     {
         baseScale = transform.localScale;
+        if (baseScale.sqrMagnitude <= 0.0001f)
+        {
+            Debug.LogWarning($"[CoinVisual] {name} 的初始缩放为 0，已自动恢复为 Vector3.one。请检查 Prefab 的 Visual 节点缩放。");
+            baseScale = Vector3.one;
+            transform.localScale = baseScale;
+        }
+
         baseRotation = transform.localRotation;
 
         RefreshTransformVisual();
@@ -59,6 +71,7 @@ public class CoinVisualController : MonoBehaviour
         isFrontSide = isFront;
         currentDefinition = definition;
 
+        ApplyDefinitionVisual();
         ApplyFaceRotationImmediate();
         RefreshTransformVisual();
     }
@@ -73,6 +86,8 @@ public class CoinVisualController : MonoBehaviour
         currentDefinition = definition;
         pendingFlipComplete = onComplete;
 
+        ApplyDefinitionVisual();
+
         flipCoroutine = StartCoroutine(CoPlayFlip(previousFace, isFrontSide));
     }
 
@@ -83,6 +98,7 @@ public class CoinVisualController : MonoBehaviour
         isFrontSide = isFront;
         currentDefinition = definition;
 
+        ApplyDefinitionVisual();
         ApplyFaceRotationImmediate();
         RefreshTransformVisual();
     }
@@ -165,4 +181,28 @@ public class CoinVisualController : MonoBehaviour
 
         return baseRotation * offsetRotation;
     }
+
+    private void ApplyDefinitionVisual()
+    {
+        if (coinRenderer == null)
+        {
+            Debug.LogWarning($"[CoinVisual] {name} 未绑定 coinRenderer，无法应用硬币材质。");
+            return;
+        }
+
+        if (currentDefinition == null)
+        {
+            Debug.LogWarning($"[CoinVisual] {name} 当前 CoinDefinition 为空，跳过材质设置。");
+            return;
+        }
+
+        if (currentDefinition.coinMaterial == null)
+        {
+            Debug.LogWarning($"[CoinVisual] {name} 的 CoinDefinition:{currentDefinition.coinName} 未配置 coinMaterial。");
+            return;
+        }
+
+        coinRenderer.sharedMaterial = currentDefinition.coinMaterial;
+    }
+
 }

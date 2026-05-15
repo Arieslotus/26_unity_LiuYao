@@ -185,4 +185,17 @@ public class CoinRuntimeData : MonoBehaviour, IAttackable
             visualController.SetFaceImmediate(isFrontSide, coinDefinition);
         }
     }
+
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        if (!Application.isPlaying)
+        {
+            visualController = GetComponentInChildren<CoinVisualController>();
+            isFrontSide = startFrontSide;
+            RefreshVisualImmediate();
+        }
+    }
+#endif
+
 }

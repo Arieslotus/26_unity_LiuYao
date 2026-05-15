@@ -20,7 +20,11 @@ public class CoinDefinition : ScriptableObject
     [Header("正反面显示")]
     [Tooltip("正面显示的 Sprite")]
     public Sprite frontSprite;
-
     [Tooltip("反面显示的 Sprite")]
     public Sprite backSprite;
+
+
+    [Header("3D 显示")]
+    [Tooltip("该硬币使用的 3D 材质。每种硬币应绑定一个独立 Material")]
+    public Material coinMaterial;
 }

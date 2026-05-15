@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: "\u826E\u5151"
   m_EditorClassIdentifier: 
   coinName: "\u826E\u5151"
-  frontTrigram: 3
-  backTrigram: 6
-  frontSprite: {fileID: -1567795553, guid: ec354aa422b2159468308416735b02a8, type: 3}
-  backSprite: {fileID: -1567795553, guid: ec354aa422b2159468308416735b02a8, type: 3}
+  frontTrigram: 4
+  backTrigram: 7
+  frontSprite: {fileID: 867352197, guid: 87c92e4751a209e4a9d750d2da379c20, type: 3}
+  backSprite: {fileID: -1310611075, guid: 87c92e4751a209e4a9d750d2da379c20, type: 3}
+  coinMaterial: {fileID: 2100000, guid: de1ed30d088fc974eb442b66872cc966, type: 2}
