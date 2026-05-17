@@ -681,44 +681,6 @@ Transform:
   - {fileID: 2126758597}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!21 &513323453
-Material:
-  serializedVersion: 8
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: CustomShaders/HealthBar
-  m_Shader: {fileID: 4800000, guid: 8b409af744179ac48ae9717baa10feb5, type: 3}
-  m_Parent: {fileID: 0}
-  m_ModifiedSerializedProperties: 0
-  m_ValidKeywords:
-  - _SHAPE_CIRCLE
-  m_InvalidKeywords: []
-  m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
-  m_LockedProperties: 
-  m_SavedProperties:
-    serializedVersion: 3
-    m_TexEnvs: []
-    m_Ints: []
-    m_Floats:
-    - _borderWidth: 0
-    - _healthNormalized: 0.65
-    - _lowHealthThreshold: 0.2
-    - _shape: 0
-    - _waveAmp: 0.0063
-    - _waveFreq: 6.3
-    - _waveSpeed: 1
-    m_Colors:
-    - _backgroundColor: {r: 0.047169805, g: 0.045122813, b: 0.045122813, a: 0.5882353}
-    - _borderColor: {r: 0.1509434, g: 0.1509434, b: 0.1509434, a: 1}
-    - _fillColor: {r: 0.34181297, g: 0.59214485, b: 0.14400175, a: 1}
-  m_BuildTextureStacks: []
 --- !u!1001 &526606861
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1916,7 +1878,7 @@ GameObject:
   m_Component:
   - component: {fileID: 878315659}
   - component: {fileID: 878315661}
-  - component: {fileID: 878315660}
+  - component: {fileID: 878315663}
   - component: {fileID: 878315662}
   m_Layer: 0
   m_Name: turn
@@ -1940,23 +1902,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 377351542}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &878315660
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 878315658}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 04afd2124e742f5488cc468684fe91a8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pieces:
-  - {fileID: 1397507127}
-  - {fileID: 1046881587}
-  - {fileID: 1517845066}
-  input: {fileID: 2025581893}
 --- !u!114 &878315661
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1972,7 +1917,7 @@ MonoBehaviour:
   currentState: 0
   enemies:
   - {fileID: 53807759}
-  playerTurnController: {fileID: 878315660}
+  playerTurnController: {fileID: 878315663}
 --- !u!114 &878315662
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1991,6 +1936,23 @@ MonoBehaviour:
   - {fileID: 1046881587}
   - {fileID: 1517845066}
   debugLog: 1
+--- !u!114 &878315663
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 878315658}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04afd2124e742f5488cc468684fe91a8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pieces:
+  - {fileID: 1397507127}
+  - {fileID: 1046881587}
+  - {fileID: 1517845066}
+  input: {fileID: 2025581893}
 --- !u!1001 &910043146
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3317,7 +3279,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d409cadd478b4ad68c1fe3220c180ef7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  turnController: {fileID: 878315660}
+  turnController: {fileID: 878315663}
   skillDatabase: {fileID: 11400000, guid: a3de6a7f3cfbfbd4eaba40bde7b03755, type: 2}
   itemPrefab: {fileID: 5436757417699723643, guid: 7c5d9a3faf195ae41b4ef586bf763ad0, type: 3}
   contentRoot: {fileID: 1208339400}
@@ -4959,7 +4921,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 77c65cfe719241df9ba816f103146647, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  turnController: {fileID: 878315660}
+  turnController: {fileID: 0}
   iconSlots:
   - {fileID: 17648554}
   - {fileID: 1880219573}
@@ -5865,7 +5827,7 @@ MonoBehaviour:
   piece: {fileID: 5753832822232493327, guid: 2ef5223a8d7e56742a83d8289a2d0198, type: 3}
   mainCamera: {fileID: 0}
   chargeConfig: {fileID: 11400000, guid: 16ae13a15870937489e0cbe4fc6ccbe5, type: 2}
-  turnController: {fileID: 878315660}
+  turnController: {fileID: 878315663}
   inputPlaneY: 0
   debugLog: 0
   debugDraw: 1
@@ -6454,6 +6416,44 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+--- !u!21 &2127869636
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: CustomShaders/HealthBar
+  m_Shader: {fileID: 4800000, guid: 8b409af744179ac48ae9717baa10feb5, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords:
+  - _SHAPE_CIRCLE
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - _borderWidth: 0
+    - _healthNormalized: 0.65
+    - _lowHealthThreshold: 0.2
+    - _shape: 0
+    - _waveAmp: 0.0063
+    - _waveFreq: 6.3
+    - _waveSpeed: 1
+    m_Colors:
+    - _backgroundColor: {r: 0.047169805, g: 0.045122813, b: 0.045122813, a: 0.5882353}
+    - _borderColor: {r: 0.1509434, g: 0.1509434, b: 0.1509434, a: 1}
+    - _fillColor: {r: 0.34181297, g: 0.59214485, b: 0.14400175, a: 1}
+  m_BuildTextureStacks: []
 --- !u!1001 &3063419156312294013
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6537,7 +6537,7 @@ PrefabInstance:
     - target: {fileID: 6375988061683606851, guid: 26f46e64e6ce3f44eafcefcb760e5ff2, type: 3}
       propertyPath: m_Materials.Array.data[0]
       value: 
-      objectReference: {fileID: 513323453}
+      objectReference: {fileID: 2127869636}
     - target: {fileID: 8560863164061452245, guid: 26f46e64e6ce3f44eafcefcb760e5ff2, type: 3}
       propertyPath: m_Color.a
       value: 0.043137256

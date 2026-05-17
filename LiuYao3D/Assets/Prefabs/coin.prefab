@@ -119,6 +119,7 @@ GameObject:
   - component: {fileID: 3339208920595102279}
   - component: {fileID: 5681362023072863307}
   - component: {fileID: 3644825788833956870}
+  - component: {fileID: -4864442763577760036}
   m_Layer: 0
   m_Name: COIN
   m_TagString: Untagged
@@ -304,6 +305,23 @@ MonoBehaviour:
   config: {fileID: 11400000, guid: 3d85606a5b0fae34da81362c8b59ec71, type: 2}
   movement: {fileID: 3339208920595102279}
   lineHeight: 0.05
+--- !u!114 &-4864442763577760036
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1848568583470563752}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3287f62a6bcac724eaef1998881cbcc1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  coinDefinition: {fileID: 0}
+  startFrontSide: 1
+  maxHp: 10
+  currentHp: 10
+  attack: 1
 --- !u!1 &7908298380925604936
 GameObject:
   m_ObjectHideFlags: 0
@@ -331,7 +349,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 2737559169397393301}
