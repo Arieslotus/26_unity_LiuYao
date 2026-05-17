@@ -117,7 +117,6 @@ GameObject:
   - component: {fileID: 196649042112711229}
   - component: {fileID: 8360374304375854110}
   - component: {fileID: 3339208920595102279}
-  - component: {fileID: 144609616011621719}
   - component: {fileID: 5681362023072863307}
   - component: {fileID: 3644825788833956870}
   m_Layer: 0
@@ -135,14 +134,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1848568583470563752}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.7071068, z: -0.7071068, w: 0}
+  m_LocalRotation: {x: -0.5, y: -0.5, z: 0.5, w: -0.5}
   m_LocalPosition: {x: 0.99324936, y: 0, z: 0.64026874}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3485424198760054086}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 90, y: -90, z: 180}
 --- !u!114 &196649042112711229
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -186,23 +185,6 @@ MonoBehaviour:
   selfSphereCollider: {fileID: 5754521296093185154}
   collisionConfig: {fileID: 11400000, guid: 78e29d0bfe33abe41b74588b672c8c88, type: 2}
   skillDatabase: {fileID: 0}
---- !u!114 &144609616011621719
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1848568583470563752}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3287f62a6bcac724eaef1998881cbcc1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  coinDefinition: {fileID: 0}
-  startFrontSide: 1
-  maxHp: 10
-  currentHp: 10
-  attack: 1
 --- !u!120 &5681362023072863307
 LineRenderer:
   serializedVersion: 2
@@ -349,8 +331,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0, y: 0, z: 0}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 2737559169397393301}
   m_Father: {fileID: 3700100116146138585}
@@ -370,5 +352,4 @@ MonoBehaviour:
   flipDuration: 0.3
   flipAxis: 0
   flipAngle: 180
-  activeScaleMultiplier: 1.12
   coinRenderer: {fileID: 684239048828943967}

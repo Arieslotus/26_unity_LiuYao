@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 40a2f6655434d8247893e33ff1875c7f, type: 3}
+  m_Name: CoinDrawConfig_
+  m_EditorClassIdentifier: 
+  coinPool:
+  - {fileID: 11400000, guid: 0dc4ae2614fd2e64bb36269f803d4675, type: 2}
+  - {fileID: 11400000, guid: 4ac51607dbeeaa649aadfec057aaaccb, type: 2}
+  - {fileID: 11400000, guid: d102aea4bcaeff14fa25d815029e8a16, type: 2}
+  - {fileID: 11400000, guid: 584ba317a3a35a0469417c47cc6b9d6d, type: 2}
+  fixedCoins:
+  - coinDefinition: {fileID: 11400000, guid: 0dc4ae2614fd2e64bb36269f803d4675, type: 2}
+    initialSide: 2
+  drawCount: 3
+  allowDuplicate: 0
+  autoDrawOnStart: 1
