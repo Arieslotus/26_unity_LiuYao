@@ -108,6 +108,7 @@ public class DragChargeInput : MonoBehaviour
     {
         ResetAllChargeState();
         ClearTrajectory();
+        CameraFeedbackController.Instance?.EndChargeFocus();
     }
 
     private void HandleMouseInput()
@@ -167,6 +168,7 @@ public class DragChargeInput : MonoBehaviour
         }
 
         isCharging = true;
+        CameraFeedbackController.Instance?.BeginChargeFocus(piece.transform.position);
         currentStage = ChargeStage.Distance;
         currentPower = 0f;
         holdTimer = 0f;
@@ -243,6 +245,7 @@ public class DragChargeInput : MonoBehaviour
         currentPower = Mathf.Clamp01(currentPower);
 
         TryTriggerChargeFlip();
+        CameraFeedbackController.Instance?.UpdateChargeFocus(piece.transform.position);
 
         if (debugLog)
         {
@@ -356,6 +359,7 @@ public class DragChargeInput : MonoBehaviour
 
             ResetChargeStateKeepFace();
             ClearTrajectory();
+            CameraFeedbackController.Instance?.EndChargeFocus();
             return;
         }
 
@@ -396,6 +400,7 @@ public class DragChargeInput : MonoBehaviour
         ResetAllChargeState();
         ClearTrajectory();
         isWaitingDelayedFire = false;
+        CameraFeedbackController.Instance?.EndChargeFocus();
     }
 
     private void CancelChargeInternal(string logMessage)
@@ -412,6 +417,7 @@ public class DragChargeInput : MonoBehaviour
 
         ResetAllChargeState();
         ClearTrajectory();
+        CameraFeedbackController.Instance?.EndChargeFocus();
     }
 
     private void ResetChargeStateKeepFace()
@@ -439,7 +445,10 @@ public class DragChargeInput : MonoBehaviour
 
     private void ClearTrajectory()
     {
-        currentTrajectoryRenderer?.Clear();
+        if (currentTrajectoryRenderer == null)
+            return;
+
+        currentTrajectoryRenderer.Clear();
     }
 
     private Vector3 GetMouseWorldPosition()
@@ -480,6 +489,7 @@ public class DragChargeInput : MonoBehaviour
         }
 
         ResetAllChargeState();
+        CameraFeedbackController.Instance?.EndChargeFocus();
     }
 
     private void DrawDebugInfo()

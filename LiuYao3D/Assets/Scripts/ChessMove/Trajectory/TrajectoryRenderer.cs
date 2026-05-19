@@ -34,6 +34,9 @@ public class TrajectoryRenderer : MonoBehaviour
 
     public void UpdateTrajectory(Vector3 direction, float power)
     {
+        if (!EnsureLineRenderer())
+            return;
+
         if (config == null || movement == null || movement.CollisionConfig == null)
         {
             Clear();
@@ -72,6 +75,21 @@ public class TrajectoryRenderer : MonoBehaviour
 
     public void Clear()
     {
+        if (!EnsureLineRenderer())
+            return;
+
         line.positionCount = 0;
+    }
+
+    private bool EnsureLineRenderer()
+    {
+        if (line != null)
+            return true;
+
+        if (!this)
+            return false;
+
+        line = GetComponent<LineRenderer>();
+        return line != null;
     }
 }

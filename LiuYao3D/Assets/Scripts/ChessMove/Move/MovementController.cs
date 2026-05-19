@@ -23,6 +23,10 @@ public class MovementController : MonoBehaviour
 
     [Header("卦象技能配置")]
     [SerializeField] private TrigramSkillDatabase skillDatabase;
+
+    private ChessPiece chessPiece;
+    private Collider lastPreImpactCollider;
+
     public bool IsMoving => isMoving;
     public float RemainingDistance => remainingDistance;
     public Vector3 CurrentDirection => direction;
@@ -30,6 +34,7 @@ public class MovementController : MonoBehaviour
 
     private void Awake()
     {
+        chessPiece = GetComponentInParent<ChessPiece>();
         selfCollider = selfSphereCollider;
 
         if (selfCollider == null)
@@ -54,6 +59,7 @@ public class MovementController : MonoBehaviour
         currentSpeed = config.baseSpeed;
 
         isMoving = true;
+        lastPreImpactCollider = null;
 
         Debug.Log($"[Movement] 开始移动 | 物体:{name} | 来源:{shotContext.sourceType} | 方向:{direction} | 总路径:{remainingDistance:F2}");
     }
@@ -69,6 +75,7 @@ public class MovementController : MonoBehaviour
         currentSpeed = config.baseSpeed * speedScaleMultiplier;
 
         isMoving = true;
+        lastPreImpactCollider = null;
 
         Debug.Log($"[Movement] 碰撞启动移动 | 物体:{name} | 来源:{shotContext.sourceType} | 方向:{direction} | 路径:{remainingDistance:F2} | 初速度:{currentSpeed:F2}");
     }
@@ -97,6 +104,8 @@ public class MovementController : MonoBehaviour
         float remainingMoveThisFrame = currentSpeed * Time.deltaTime;
         remainingMoveThisFrame = Mathf.Min(remainingMoveThisFrame, remainingDistance);
         remainingMoveThisFrame = Mathf.Min(remainingMoveThisFrame, maxStep);
+
+        TryRequestPreImpactFeedback(collisionRadius);
 
         if (remainingMoveThisFrame <= 0.0001f)
         {
@@ -188,6 +197,7 @@ public class MovementController : MonoBehaviour
         remainingDistance = Mathf.Max(remainingDistance, 0f);
 
         TryTriggerTrigramSkill(result);
+        RequestCoinImpactFeedback(result);
 
         if (result.triggerOtherCoinMove && result.otherCoin != null)
         {
@@ -207,6 +217,187 @@ public class MovementController : MonoBehaviour
         }
 
         Debug.Log($"[BounceDebug] 物体:{name} | dir:{direction} | remainingDistance:{remainingDistance:F4}");
+    }
+
+    private void TryRequestPreImpactFeedback(float collisionRadius)
+    {
+        if (chessPiece == null || HitFeedbackController.Instance == null)
+            return;
+
+        if (direction.sqrMagnitude <= 0.0001f || currentSpeed <= 0.0001f)
+            return;
+
+        Vector3 currentCenter = GetCollisionCenter();
+        Collider hitCollider = null;
+        CollisionTarget target = null;
+        Vector3 hitPoint = Vector3.zero;
+        float hitDistance = 0f;
+
+        if (!TryFindNearestPreImpactTarget(
+            currentCenter,
+            collisionRadius,
+            out hitCollider,
+            out target,
+            out hitPoint,
+            out hitDistance))
+        {
+            lastPreImpactCollider = null;
+            return;
+        }
+
+        if (hitCollider == lastPreImpactCollider)
+            return;
+
+        lastPreImpactCollider = hitCollider;
+        float predictedTime = hitDistance / currentSpeed;
+        chessPiece.RequestPreImpactFeedback(target.type, predictedTime, hitPoint);
+        TryRequestSkillTriggerFeedback(target);
+    }
+
+    private bool TryFindNearestPreImpactTarget(
+        Vector3 currentCenter,
+        float collisionRadius,
+        out Collider hitCollider,
+        out CollisionTarget target,
+        out Vector3 hitPoint,
+        out float hitDistance)
+    {
+        hitCollider = null;
+        target = null;
+        hitPoint = Vector3.zero;
+        hitDistance = 0f;
+
+        float maxLookAheadTime = GetMaxPreImpactLookAheadTime();
+        if (maxLookAheadTime <= 0f)
+            return false;
+
+        float castDistance = Mathf.Min(currentSpeed * maxLookAheadTime, remainingDistance);
+        if (castDistance <= 0.0001f)
+            return false;
+
+        RaycastHit[] hits = Physics.SphereCastAll(
+            currentCenter,
+            Mathf.Max(0.001f, collisionRadius),
+            direction,
+            castDistance
+        );
+
+        float nearestDistance = float.MaxValue;
+
+        for (int i = 0; i < hits.Length; i++)
+        {
+            RaycastHit hit = hits[i];
+            if (!IsValidPreImpactHit(hit, out CollisionTarget hitTarget, out float lookAheadTime))
+                continue;
+
+            if (hit.distance / currentSpeed > lookAheadTime)
+                continue;
+
+            if (hit.distance >= nearestDistance)
+                continue;
+
+            nearestDistance = hit.distance;
+            hitCollider = hit.collider;
+            target = hitTarget;
+            hitPoint = hit.point;
+            hitDistance = hit.distance;
+        }
+
+        return hitCollider != null && target != null;
+    }
+
+    private bool IsValidPreImpactHit(RaycastHit hit, out CollisionTarget target, out float lookAheadTime)
+    {
+        target = null;
+        lookAheadTime = 0f;
+
+        if (hit.collider == null)
+            return false;
+
+        if (selfCollider != null && hit.collider == selfCollider)
+            return false;
+
+        if (hit.distance <= 0.0001f)
+            return false;
+
+        target = hit.collider.GetComponentInParent<CollisionTarget>();
+        if (target == null)
+            return false;
+
+        if (target.type != CollisionType.Enemy && target.type != CollisionType.PlayerCoin)
+            return false;
+
+        if (target.type == CollisionType.PlayerCoin)
+        {
+            ChessPiece targetPiece = target.GetComponentInParent<ChessPiece>();
+            if (targetPiece == null || targetPiece == chessPiece)
+                return false;
+        }
+
+        return HitFeedbackController.Instance.TryGetPreImpactLookAheadTime(target.type, out lookAheadTime);
+    }
+
+    private float GetMaxPreImpactLookAheadTime()
+    {
+        float maxTime = 0f;
+
+        if (HitFeedbackController.Instance.TryGetPreImpactLookAheadTime(CollisionType.Enemy, out float enemyTime))
+        {
+            maxTime = Mathf.Max(maxTime, enemyTime);
+        }
+
+        if (HitFeedbackController.Instance.TryGetPreImpactLookAheadTime(CollisionType.PlayerCoin, out float coinTime))
+        {
+            maxTime = Mathf.Max(maxTime, coinTime);
+        }
+
+        return maxTime;
+    }
+
+    private void RequestCoinImpactFeedback(CollisionResult result)
+    {
+        if (result.collider == null || chessPiece == null)
+            return;
+
+        CollisionTarget target = result.collider.GetComponentInParent<CollisionTarget>();
+        if (target == null || target.type != CollisionType.PlayerCoin)
+            return;
+
+        float strength = config != null && config.totalDistance > 0.0001f
+            ? remainingDistance / config.totalDistance
+            : 0f;
+
+        chessPiece.RequestImpactFeedback(CollisionType.PlayerCoin, false, Mathf.Clamp01(strength), result.collider.transform.position);
+    }
+
+    private void TryRequestSkillTriggerFeedback(CollisionTarget target)
+    {
+        if (target == null || target.type != CollisionType.PlayerCoin)
+            return;
+
+        TrigramCollisionSkillSO skill = GetCollisionSkill(target.GetComponentInParent<ChessPiece>());
+        if (skill == null)
+            return;
+
+        float duration = HitFeedbackController.Instance != null
+            ? HitFeedbackController.Instance.GetPreImpactFeedbackDuration(CollisionType.PlayerCoin)
+            : 0f;
+
+        CombatSkillEvents.RequestSkillTriggerFeedback(skill, duration);
+    }
+
+    private TrigramCollisionSkillSO GetCollisionSkill(ChessPiece passivePiece)
+    {
+        if (skillDatabase == null || passivePiece == null)
+            return null;
+
+        CoinRuntimeData activeCoin = GetComponentInParent<CoinRuntimeData>();
+        CoinRuntimeData passiveCoin = passivePiece.GetComponentInParent<CoinRuntimeData>();
+
+        if (activeCoin == null || passiveCoin == null)
+            return null;
+
+        return skillDatabase.GetSkill(activeCoin.CurrentTrigram, passiveCoin.CurrentTrigram);
     }
 
     private void TryTriggerTrigramSkill(CollisionResult result)
@@ -232,25 +423,22 @@ public class MovementController : MonoBehaviour
             return;
         }
 
-        TrigramType activeTrigram = activeCoin.CurrentTrigram;
-        TrigramType passiveTrigram = passiveCoin.CurrentTrigram;
-
-        TrigramCollisionSkillSO skill = skillDatabase.GetSkill(activeTrigram, passiveTrigram);
+        TrigramCollisionSkillSO skill = GetCollisionSkill(result.otherCoin);
 
         if (skill == null)
         {
             Debug.Log(
                 $"[卦象技能] 未找到技能 | " +
-                $"主动币:{activeCoin.name} | 主动卦:{activeTrigram} | " +
-                $"被动币:{passiveCoin.name} | 被动卦:{passiveTrigram}"
+                $"主动币:{activeCoin.name} | 主动卦:{activeCoin.CurrentTrigram} | " +
+                $"被动币:{passiveCoin.name} | 被动卦:{passiveCoin.CurrentTrigram}"
             );
             return;
         }
 
         Debug.Log(
             $"[卦象技能] 触发技能:{skill.SkillName} | " +
-            $"主动币:{activeCoin.name} | 主动卦:{activeTrigram} | " +
-            $"被动币:{passiveCoin.name} | 被动卦:{passiveTrigram} | " +
+            $"主动币:{activeCoin.name} | 主动卦:{activeCoin.CurrentTrigram} | " +
+            $"被动币:{passiveCoin.name} | 被动卦:{passiveCoin.CurrentTrigram} | " +
             $"效果:{skill.EffectText}"
         );
     }
@@ -352,6 +540,7 @@ public class MovementController : MonoBehaviour
     {
         isMoving = false;
         currentSpeed = 0f;
+        lastPreImpactCollider = null;
 
         Debug.Log($"[Movement] 停止移动 | 物体:{name}");
     }

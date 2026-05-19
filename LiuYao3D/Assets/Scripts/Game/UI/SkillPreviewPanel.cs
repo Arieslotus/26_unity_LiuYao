@@ -12,7 +12,7 @@ public class SkillPreviewPanel : MonoBehaviour
     [Tooltip("玩家回合控制器，用于获取当前可操控硬币和场上硬币顺序")]
     [SerializeField] private ChessTurnController turnController;
 
-    [Tooltip("卦象碰撞技能数据库，用 activeTrigram + passiveTrigram 查询技能")]
+    [Tooltip("卦象碰撞技能数据库，用两枚硬币的卦象查询技能，是否区分主从由数据库配置决定")]
     [SerializeField] private TrigramSkillDatabase skillDatabase;
 
     [Header("UI")]

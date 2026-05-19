@@ -7,6 +7,8 @@ using UnityEngine;
 
 public class HitFeedbackController : MonoBehaviour
 {
+    public static HitFeedbackController Instance { get; private set; }
+
     [Header("配置")]
     [Tooltip("命中反馈配置 SO")]
     [SerializeField] private HitFeedbackConfig config;
@@ -28,6 +30,12 @@ public class HitFeedbackController : MonoBehaviour
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Debug.LogWarning($"[HitFeedbackController] 场景中存在多个反馈控制器，当前对象:{name}。");
+        }
+
+        Instance = this;
         defaultFixedDeltaTime = Time.fixedDeltaTime;
     }
 
@@ -44,8 +52,71 @@ public class HitFeedbackController : MonoBehaviour
 
     private void OnDestroy()
     {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
+
         UnregisterAllPieces();
         RestoreTimeScale();
+    }
+
+    public bool TryGetPreImpactLookAheadTime(CollisionType targetType, out float lookAheadTime)
+    {
+        lookAheadTime = 0f;
+
+        if (config == null || !config.enableHitPause)
+            return false;
+
+        switch (targetType)
+        {
+            case CollisionType.Enemy:
+                if (!config.enableEnemyPreImpactSlowMotion)
+                    return false;
+
+                lookAheadTime = config.enemyPreImpactLookAheadTime;
+                return lookAheadTime > 0f;
+
+            case CollisionType.PlayerCoin:
+                if (!config.enableCoinPreImpactSlowMotion)
+                    return false;
+
+                lookAheadTime = config.coinPreImpactLookAheadTime;
+                return lookAheadTime > 0f;
+
+            default:
+                return false;
+        }
+    }
+
+    public float GetPreImpactFeedbackDuration(CollisionType targetType)
+    {
+        if (config == null || !config.enableHitPause)
+            return 0f;
+
+        switch (targetType)
+        {
+            case CollisionType.Enemy:
+                if (!config.enableEnemyPreImpactSlowMotion)
+                    return 0f;
+
+                return CalculatePreImpactDuration(
+                    config.enemyPreImpactLookAheadTime,
+                    config.enemyPreImpactTimeScale
+                );
+
+            case CollisionType.PlayerCoin:
+                if (!config.enableCoinPreImpactSlowMotion)
+                    return 0f;
+
+                return CalculatePreImpactDuration(
+                    config.coinPreImpactLookAheadTime,
+                    config.coinPreImpactTimeScale
+                ) + config.coinHitPauseDuration;
+
+            default:
+                return 0f;
+        }
     }
 
     private void Update()
@@ -104,6 +175,8 @@ public class HitFeedbackController : MonoBehaviour
 
             pieces[i].ImpactFeedbackRequested -= OnImpactFeedbackRequested;
             pieces[i].ImpactFeedbackRequested += OnImpactFeedbackRequested;
+            pieces[i].PreImpactFeedbackRequested -= OnPreImpactFeedbackRequested;
+            pieces[i].PreImpactFeedbackRequested += OnPreImpactFeedbackRequested;
         }
 
         if (debugLog)
@@ -120,7 +193,64 @@ public class HitFeedbackController : MonoBehaviour
                 continue;
 
             pieces[i].ImpactFeedbackRequested -= OnImpactFeedbackRequested;
+            pieces[i].PreImpactFeedbackRequested -= OnPreImpactFeedbackRequested;
         }
+    }
+
+    private void OnPreImpactFeedbackRequested(
+        ChessPiece piece,
+        CollisionType targetType,
+        float predictedTime,
+        Vector3 hitPoint)
+    {
+        if (config == null || !config.enableHitPause)
+            return;
+
+        switch (targetType)
+        {
+            case CollisionType.Enemy:
+                if (!config.enableEnemyPreImpactSlowMotion)
+                    return;
+
+                float enemyDuration = GetPreImpactFeedbackDuration(CollisionType.Enemy);
+                TriggerHitPause(config.enemyPreImpactTimeScale, enemyDuration);
+                CameraFeedbackController.Instance?.PlayImpactFocus(hitPoint, enemyDuration);
+
+                if (debugLog)
+                {
+                    Debug.Log(
+                        $"[HitFeedbackController] 敌人预碰撞慢动作 | piece:{piece.name} | " +
+                        $"predictedTime:{predictedTime:F3} | duration:{enemyDuration:F3} | point:{hitPoint}"
+                    );
+                }
+                break;
+
+            case CollisionType.PlayerCoin:
+                if (!config.enableCoinPreImpactSlowMotion)
+                    return;
+
+                float coinDuration = GetPreImpactFeedbackDuration(CollisionType.PlayerCoin);
+                TriggerHitPause(config.coinPreImpactTimeScale, coinDuration);
+                CameraFeedbackController.Instance?.PlayImpactFocus(hitPoint, coinDuration);
+
+                if (debugLog)
+                {
+                    Debug.Log(
+                        $"[HitFeedbackController] 己方硬币预碰撞慢动作 | piece:{piece.name} | " +
+                        $"predictedTime:{predictedTime:F3} | duration:{coinDuration:F3} | point:{hitPoint}"
+                    );
+                }
+                break;
+        }
+    }
+
+    private float CalculatePreImpactDuration(float lookAheadTime, float timeScale)
+    {
+        if (lookAheadTime <= 0f)
+            return 0f;
+
+        timeScale = Mathf.Clamp(timeScale, 0.01f, 1f);
+        return lookAheadTime / timeScale;
     }
 
     private void OnImpactFeedbackRequested(

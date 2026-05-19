@@ -12,12 +12,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 72b357bae15d60e4aa3dae7f83badb04, type: 3}
   m_Name: HitFeedbackConfig
   m_EditorClassIdentifier: 
-  enableHitPause: 0
-  flipHitPauseTimeScale: 0.05
-  flipHitPauseDuration: 0.6
-  enemyHitPauseMinDuration: 0.3
-  enemyHitPauseMaxDuration: 0.5
-  enemyHitPauseTimeScale: 0.05
+  enableHitPause: 1
+  flipHitPauseTimeScale: 0.08
+  flipHitPauseDuration: 0.06
+  enableEnemyPreImpactSlowMotion: 0
+  enemyPreImpactLookAheadTime: 0.14
+  enemyPreImpactTimeScale: 0.4
+  enemyHitPauseMinDuration: 0.015
+  enemyHitPauseMaxDuration: 0.05
+  enemyHitPauseTimeScale: 0.18
+  enableCoinPreImpactSlowMotion: 1
+  coinPreImpactLookAheadTime: 0.02
+  coinPreImpactTimeScale: 0.1
   enableCoinHitPause: 1
   coinHitPauseTimeScale: 0.05
   coinHitPauseDuration: 0.5

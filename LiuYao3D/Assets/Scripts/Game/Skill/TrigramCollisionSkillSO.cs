@@ -1,5 +1,5 @@
 /// <summary>
-/// 实现功能：定义两个硬币碰撞时，由主动卦象与被动卦象共同触发的组合技能配置。
+/// 实现功能：定义两个硬币碰撞时，由主动卦象与被动卦象共同触发的组合技能配置；字段保留主从含义，匹配时可由数据库决定是否区分主从。
 /// </summary>
 using UnityEngine;
 
@@ -30,5 +30,16 @@ public class TrigramCollisionSkillSO : ScriptableObject
     public bool Match(TrigramType active, TrigramType passive)
     {
         return activeTrigram == active && passiveTrigram == passive;
+    }
+
+    public bool Match(TrigramType active, TrigramType passive, bool distinguishActivePassive)
+    {
+        if (distinguishActivePassive)
+        {
+            return Match(active, passive);
+        }
+
+        return (activeTrigram == active && passiveTrigram == passive) ||
+            (activeTrigram == passive && passiveTrigram == active);
     }
 }
