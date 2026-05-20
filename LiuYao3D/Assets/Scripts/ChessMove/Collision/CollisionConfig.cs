@@ -31,6 +31,9 @@ public class CollisionConfig : ScriptableObject
     [Min(0f)]
     public float coinCollisionCooldown = 0.1f;
 
+    [Tooltip("是否输出己方硬币互撞结算的详细调试日志")]
+    public bool debugCoinCollisionResolve = false;
+
     [Header("蓄力翻面")]
 
     [Tooltip("达到该力度阈值后视为满蓄力，并触发蓄力阶段翻面")]

@@ -141,7 +141,7 @@ MonoBehaviour:
   iconRoot: {fileID: 2763132716006977737}
   textRoot: {fileID: 1485720704630904045}
   skillIcon: {fileID: 1836466945700681323}
-  defaultSkillIcon: {fileID: -1200051515, guid: 9cf5cabcd29e49549bee1511b80d1b7f, type: 3}
+  defaultSkillIcon: {fileID: 1984350799, guid: d4e24e399b278834784813f020801359, type: 3}
   skillNameText: {fileID: 5091525286096555969}
   resetScaleOnShow: 1
 --- !u!1 &1797111666599909348

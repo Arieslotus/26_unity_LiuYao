@@ -24,6 +24,10 @@ public class MovementController : MonoBehaviour
     [Header("卦象技能配置")]
     [SerializeField] private TrigramSkillDatabase skillDatabase;
 
+    [Header("调试")]
+    [Tooltip("是否输出 SphereCast 命中候选日志，用于排查隐形碰撞体")]
+    [SerializeField] private bool debugPhysicsBounceHits = false;
+
     private ChessPiece chessPiece;
     private Collider lastPreImpactCollider;
 
@@ -120,6 +124,7 @@ public class MovementController : MonoBehaviour
         while (remainingMoveThisFrame > 0.0001f && loopCount < maxBouncePerFrame)
         {
             loopCount++;
+            PhysicsBounceUtility.DebugLogHits = debugPhysicsBounceHits;
 
             Vector3 currentCenter = GetCollisionCenter();
 
@@ -129,19 +134,44 @@ public class MovementController : MonoBehaviour
                 remainingMoveThisFrame,
                 config,
                 selfCollider,
-                collisionRadius
+                collisionRadius,
+                name
             );
 
             float traveled = result.traveledDistance;
 
             if (traveled <= 0.0001f)
             {
-                Debug.Log($"[Movement] traveled 过小 | 物体:{name} | hit:{result.hit} | collider:{result.collider?.name} | traveled:{traveled:F6}");
-                Move(direction * 0.02f);
-                continue;
+                Debug.LogWarning(
+                    $"[Movement] traveled 过小 | 物体:{name} | hit:{result.hit} | " +
+                    $"startedOverlapping:{result.startedOverlapping} | penetration:{result.penetrationDistance:F6} | " +
+                    $"collider:{result.collider?.name} | pos:{currentCenter} | dir:{direction} | " +
+                    $"normal:{result.normal} | hitPoint:{result.hitPoint} | traveled:{traveled:F6} | " +
+                    $"remainingMoveThisFrame:{remainingMoveThisFrame:F6} | remainingDistance:{remainingDistance:F4}"
+                );
+
+                if (result.hit)
+                {
+                    MoveTransformByCenterDelta(currentCenter, result.newPos);
+                    ResolveBounceHit(result, direction);
+
+                    if (!isMoving)
+                        return;
+                }
+
+                break;
             }
 
             MoveTransformByCenterDelta(currentCenter, result.newPos);
+
+            if (debugPhysicsBounceHits)
+            {
+                Debug.Log(
+                    $"[Movement] 本步移动 | 物体:{name} | from:{currentCenter} | to:{result.newPos} | " +
+                    $"hit:{result.hit} | collider:{result.collider?.name} | traveled:{traveled:F6} | " +
+                    $"dirBefore:{direction} | newDir:{result.newDir}"
+                );
+            }
 
             remainingDistance -= traveled;
             remainingDistance = Mathf.Max(remainingDistance, 0f);
@@ -150,26 +180,7 @@ public class MovementController : MonoBehaviour
 
             if (result.hit)
             {
-                Debug.Log($"[Movement] 碰撞 | 物体:{name} | 剩余路径:{remainingDistance:F2}");
-
-                CollisionTarget target = null;
-                if (result.collider != null)
-                    target = result.collider.GetComponentInParent<CollisionTarget>();
-
-                CollisionContext ctx = new CollisionContext
-                {
-                    self = this,
-                    target = target,
-                    selfCollider = selfCollider,
-                    hitCollider = result.collider,
-                    hitPoint = result.hitPoint,
-                    normal = result.normal,
-                    incomingDir = direction,
-                    shotContext = shotContext
-                };
-
-                CollisionResult collisionResult = CollisionResolver.Resolve(ctx, config, collisionConfig);
-                ApplyCollisionResult(collisionResult);
+                ResolveBounceHit(result, direction);
 
                 if (!isMoving)
                     return;
@@ -183,6 +194,33 @@ public class MovementController : MonoBehaviour
         UpdateSpeed();
 
         direction.y = 0;
+    }
+
+    private void ResolveBounceHit(BounceResult result, Vector3 incomingDirection)
+    {
+        Debug.Log(
+            $"[Movement] 碰撞 | 物体:{name} | 剩余路径:{remainingDistance:F2} | " +
+            $"startedOverlapping:{result.startedOverlapping} | collider:{result.collider?.name}"
+        );
+
+        CollisionTarget target = null;
+        if (result.collider != null)
+            target = result.collider.GetComponentInParent<CollisionTarget>();
+
+        CollisionContext ctx = new CollisionContext
+        {
+            self = this,
+            target = target,
+            selfCollider = selfCollider,
+            hitCollider = result.collider,
+            hitPoint = result.hitPoint,
+            normal = result.normal,
+            incomingDir = incomingDirection,
+            shotContext = shotContext
+        };
+
+        CollisionResult collisionResult = CollisionResolver.Resolve(ctx, config, collisionConfig);
+        ApplyCollisionResult(collisionResult);
     }
 
     private void ApplyCollisionResult(CollisionResult result)

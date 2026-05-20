@@ -15,22 +15,32 @@ public struct BounceResult
 
     public Collider collider;
     public Vector3 hitPoint;
+    public bool startedOverlapping;
+    public float penetrationDistance;
 }
 
 public static class PhysicsBounceUtility
 {
+    public static bool DebugLogHits { get; set; }
+
     public static BounceResult SimulateStep(
         Vector3 pos,
         Vector3 dir,
         float maxDistance,
         MovementConfig config,
         Collider ignoreCollider,
-        float radius
+        float radius,
+        string debugOwnerName = null
     )
     {
         BounceResult result = new BounceResult();
 
         radius = Mathf.Max(0.001f, radius);
+
+        if (TryResolveInitialOverlap(pos, dir, ignoreCollider, radius, debugOwnerName, out result))
+        {
+            return result;
+        }
 
         RaycastHit[] hits = Physics.SphereCastAll(
             pos,
@@ -46,6 +56,11 @@ public static class PhysicsBounceUtility
         for (int i = 0; i < hits.Length; i++)
         {
             RaycastHit hit = hits[i];
+
+            if (DebugLogHits)
+            {
+                LogHitCandidate(debugOwnerName, hit, ignoreCollider, i);
+            }
 
             if (hit.collider == null)
                 continue;
@@ -66,11 +81,18 @@ public static class PhysicsBounceUtility
 
         if (foundValidHit)
         {
+            if (DebugLogHits)
+            {
+                LogFinalHit(debugOwnerName, validHit, radius, maxDistance);
+            }
+
             result.hit = true;
             result.traveledDistance = validHit.distance;
             result.normal = validHit.normal;
             result.collider = validHit.collider;
             result.hitPoint = validHit.point;
+            result.startedOverlapping = false;
+            result.penetrationDistance = 0f;
 
             Vector3 reflect = Vector3.Reflect(dir, validHit.normal);
             reflect.y = 0f;
@@ -85,6 +107,15 @@ public static class PhysicsBounceUtility
         }
         else
         {
+            if (DebugLogHits)
+            {
+                Debug.Log(
+                    $"[PhysicsBounceUtility] 本步无有效命中 | owner:{debugOwnerName} | " +
+                    $"pos:{pos} | dir:{dir} | maxDistance:{maxDistance:F6} | radius:{radius:F4} | " +
+                    $"candidateCount:{hits.Length}"
+                );
+            }
+
             result.hit = false;
             result.traveledDistance = maxDistance;
             result.newPos = pos + dir * maxDistance;
@@ -92,8 +123,172 @@ public static class PhysicsBounceUtility
             result.collider = null;
             result.hitPoint = Vector3.zero;
             result.normal = Vector3.zero;
+            result.startedOverlapping = false;
+            result.penetrationDistance = 0f;
         }
 
         return result;
+    }
+
+    private static bool TryResolveInitialOverlap(
+        Vector3 pos,
+        Vector3 dir,
+        Collider ignoreCollider,
+        float radius,
+        string debugOwnerName,
+        out BounceResult result)
+    {
+        result = new BounceResult();
+
+        Collider[] overlaps = Physics.OverlapSphere(
+            pos,
+            radius,
+            ~0,
+            QueryTriggerInteraction.Ignore
+        );
+
+        Collider bestCollider = null;
+        Vector3 bestNormal = Vector3.zero;
+        float bestPenetrationDistance = 0f;
+
+        for (int i = 0; i < overlaps.Length; i++)
+        {
+            Collider overlap = overlaps[i];
+            if (overlap == null)
+                continue;
+
+            if (ignoreCollider != null && overlap == ignoreCollider)
+                continue;
+
+            Vector3 separationDirection;
+            float separationDistance;
+            bool hasPenetration = false;
+
+            if (ignoreCollider != null)
+            {
+                hasPenetration = Physics.ComputePenetration(
+                    ignoreCollider,
+                    ignoreCollider.transform.position,
+                    ignoreCollider.transform.rotation,
+                    overlap,
+                    overlap.transform.position,
+                    overlap.transform.rotation,
+                    out separationDirection,
+                    out separationDistance
+                );
+            }
+            else
+            {
+                separationDirection = pos - overlap.bounds.center;
+                separationDirection.y = 0f;
+                separationDistance = radius;
+                hasPenetration = separationDirection.sqrMagnitude > 0.0001f;
+            }
+
+            if (!hasPenetration)
+                continue;
+
+            CollisionTarget target = overlap.GetComponentInParent<CollisionTarget>();
+            Vector3 horizontalSeparationDirection = separationDirection;
+            horizontalSeparationDirection.y = 0f;
+
+            if (horizontalSeparationDirection.sqrMagnitude <= 0.0001f && target == null)
+                continue;
+
+            if (horizontalSeparationDirection.sqrMagnitude <= 0.0001f)
+            {
+                horizontalSeparationDirection = -dir;
+                horizontalSeparationDirection.y = 0f;
+            }
+
+            if (horizontalSeparationDirection.sqrMagnitude <= 0.0001f)
+                continue;
+
+            horizontalSeparationDirection.Normalize();
+
+            if (separationDistance <= bestPenetrationDistance)
+                continue;
+
+            bestCollider = overlap;
+            bestNormal = horizontalSeparationDirection;
+            bestPenetrationDistance = separationDistance;
+        }
+
+        if (bestCollider == null)
+            return false;
+
+        float skinWidth = Mathf.Max(0.001f, radius * 0.01f);
+        Vector3 safePos = pos + bestNormal * (bestPenetrationDistance + skinWidth);
+        safePos.y = pos.y;
+
+        Vector3 reflect = Vector3.Reflect(dir, bestNormal);
+        reflect.y = 0f;
+
+        result.hit = true;
+        result.startedOverlapping = true;
+        result.traveledDistance = 0f;
+        result.normal = bestNormal;
+        result.collider = bestCollider;
+        result.hitPoint = pos - bestNormal * radius;
+        result.newPos = safePos;
+        result.newDir = reflect.sqrMagnitude > 0.0001f ? reflect.normalized : dir;
+        result.penetrationDistance = bestPenetrationDistance;
+
+        if (DebugLogHits)
+        {
+            CollisionTarget target = bestCollider.GetComponentInParent<CollisionTarget>();
+            Debug.LogWarning(
+                $"[PhysicsBounceUtility] 初始重叠命中 | owner:{debugOwnerName} | " +
+                $"collider:{bestCollider.name} | object:{bestCollider.gameObject.name} | " +
+                $"targetType:{(target != null ? target.type.ToString() : "无")} | " +
+                $"pos:{pos} | normal:{bestNormal} | penetration:{bestPenetrationDistance:F6} | safePos:{safePos}"
+            );
+        }
+
+        return true;
+    }
+
+    private static void LogHitCandidate(string ownerName, RaycastHit hit, Collider ignoreCollider, int index)
+    {
+        if (hit.collider == null)
+        {
+            Debug.Log($"[PhysicsBounceUtility] 候选命中为空 | owner:{ownerName} | index:{index}");
+            return;
+        }
+
+        CollisionTarget target = hit.collider.GetComponentInParent<CollisionTarget>();
+        string layerName = LayerMask.LayerToName(hit.collider.gameObject.layer);
+        bool isIgnoredSelf = ignoreCollider != null && hit.collider == ignoreCollider;
+
+        Debug.Log(
+            $"[PhysicsBounceUtility] 候选命中 | owner:{ownerName} | index:{index} | " +
+            $"collider:{hit.collider.name} | object:{hit.collider.gameObject.name} | " +
+            $"layer:{hit.collider.gameObject.layer}({layerName}) | isTrigger:{hit.collider.isTrigger} | " +
+            $"distance:{hit.distance:F6} | point:{hit.point} | normal:{hit.normal} | " +
+            $"hasTarget:{target != null} | targetType:{(target != null ? target.type.ToString() : "无")} | " +
+            $"ignoredSelf:{isIgnoredSelf}"
+        );
+    }
+
+    private static void LogFinalHit(string ownerName, RaycastHit hit, float radius, float maxDistance)
+    {
+        CollisionTarget target = hit.collider != null
+            ? hit.collider.GetComponentInParent<CollisionTarget>()
+            : null;
+
+        string layerName = hit.collider != null
+            ? LayerMask.LayerToName(hit.collider.gameObject.layer)
+            : "无";
+
+        Debug.Log(
+            $"[PhysicsBounceUtility] 最终有效命中 | owner:{ownerName} | " +
+            $"collider:{(hit.collider != null ? hit.collider.name : "空")} | " +
+            $"object:{(hit.collider != null ? hit.collider.gameObject.name : "空")} | " +
+            $"layer:{(hit.collider != null ? hit.collider.gameObject.layer : -1)}({layerName}) | " +
+            $"isTrigger:{(hit.collider != null && hit.collider.isTrigger)} | " +
+            $"distance:{hit.distance:F6} | maxDistance:{maxDistance:F6} | radius:{radius:F4} | " +
+            $"point:{hit.point} | normal:{hit.normal} | " +
+            $"hasTarget:{target != null} | targetType:{(target != null ? target.type.ToString() : "无")}"
+        );
     }
 }

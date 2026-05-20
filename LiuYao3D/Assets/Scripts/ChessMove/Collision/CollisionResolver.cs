@@ -103,22 +103,58 @@ public static class CollisionResolver
 
         if (selfPiece == null || otherPiece == null)
         {
+            LogCoinCollisionBlocked(
+                collisionConfig,
+                "缺少 ChessPiece",
+                selfPiece,
+                otherPiece,
+                ctx,
+                0f,
+                Vector3.zero
+            );
             return;
         }
 
         if (selfPiece == otherPiece)
         {
+            LogCoinCollisionBlocked(
+                collisionConfig,
+                "命中自身",
+                selfPiece,
+                otherPiece,
+                ctx,
+                0f,
+                Vector3.zero
+            );
             return;
         }
 
         if (otherPiece.IsMoving)
         {
+            LogCoinCollisionBlocked(
+                collisionConfig,
+                "被动币正在移动",
+                selfPiece,
+                otherPiece,
+                ctx,
+                0f,
+                Vector3.zero
+            );
             return;
         }
 
         if (!selfPiece.CanTriggerCoinCollision(collisionConfig.coinCollisionCooldown) ||
             !otherPiece.CanTriggerCoinCollision(collisionConfig.coinCollisionCooldown))
         {
+            LogCoinCollisionBlocked(
+                collisionConfig,
+                "冷却中",
+                selfPiece,
+                otherPiece,
+                ctx,
+                0f,
+                Vector3.zero
+            );
             return;
         }
 
@@ -133,6 +169,15 @@ public static class CollisionResolver
 
         if (pushDirection.sqrMagnitude < 0.0001f)
         {
+            LogCoinCollisionBlocked(
+                collisionConfig,
+                "推力方向无效",
+                selfPiece,
+                otherPiece,
+                ctx,
+                0f,
+                pushDirection
+            );
             return;
         }
 
@@ -143,6 +188,15 @@ public static class CollisionResolver
 
         if (transferredDistance <= 0.0001f)
         {
+            LogCoinCollisionBlocked(
+                collisionConfig,
+                "传递距离过小",
+                selfPiece,
+                otherPiece,
+                ctx,
+                transferredDistance,
+                pushDirection
+            );
             return;
         }
 
@@ -158,6 +212,37 @@ public static class CollisionResolver
         Debug.Log(
             $"[CollisionResolver] 己方互撞触发 | 发起:{selfPiece.name} | 被撞:{otherPiece.name} | " +
             $"pushDir:{pushDirection} | transferredDistance:{transferredDistance:F2}"
+        );
+    }
+
+    private static void LogCoinCollisionBlocked(
+        CollisionConfig collisionConfig,
+        string reason,
+        ChessPiece selfPiece,
+        ChessPiece otherPiece,
+        CollisionContext ctx,
+        float transferredDistance,
+        Vector3 pushDirection
+    )
+    {
+        if (collisionConfig == null || !collisionConfig.debugCoinCollisionResolve)
+            return;
+
+        string selfName = selfPiece != null ? selfPiece.name : "空";
+        string otherName = otherPiece != null ? otherPiece.name : "空";
+        bool selfCanTrigger = selfPiece != null && selfPiece.CanTriggerCoinCollision(collisionConfig.coinCollisionCooldown);
+        bool otherCanTrigger = otherPiece != null && otherPiece.CanTriggerCoinCollision(collisionConfig.coinCollisionCooldown);
+
+        Debug.LogWarning(
+            $"[CollisionResolver] 己方互撞未触发 | 原因:{reason} | " +
+            $"发起:{selfName} | 被撞:{otherName} | " +
+            $"selfMoving:{(selfPiece != null && selfPiece.IsMoving)} | otherMoving:{(otherPiece != null && otherPiece.IsMoving)} | " +
+            $"selfCanTrigger:{selfCanTrigger} | otherCanTrigger:{otherCanTrigger} | cooldown:{collisionConfig.coinCollisionCooldown:F3} | " +
+            $"selfPos:{(selfPiece != null ? selfPiece.transform.position.ToString() : "空")} | " +
+            $"otherPos:{(otherPiece != null ? otherPiece.transform.position.ToString() : "空")} | " +
+            $"incomingDir:{ctx.incomingDir} | normal:{ctx.normal} | hitPoint:{ctx.hitPoint} | " +
+            $"remainingDistance:{(ctx.self != null ? ctx.self.RemainingDistance : 0f):F4} | " +
+            $"transferredDistance:{transferredDistance:F4} | pushDirection:{pushDirection}"
         );
     }
 
