@@ -16,7 +16,7 @@ MonoBehaviour:
   flipHitPauseTimeScale: 0.08
   flipHitPauseDuration: 0.06
   enableEnemyPreImpactSlowMotion: 1
-  enemyPreImpactLookAheadTime: 0.02
+  enemyPreImpactLookAheadTime: 0.03
   enemyPreImpactTimeScale: 0.1
   enemyHitPauseMinDuration: 0.1
   enemyHitPauseMaxDuration: 0.5
