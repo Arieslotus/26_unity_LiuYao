@@ -5,6 +5,7 @@
 using System;
 using UnityEngine;
 
+[RequireComponent(typeof(CoinStats))]
 public class ChessPiece : MonoBehaviour
 {
     [Header("配置")]
@@ -17,6 +18,7 @@ public class ChessPiece : MonoBehaviour
 
     private MovementController movement;
     private CoinRuntimeData coinData;
+    private CoinStats coinStats;
     private CoinVisualController visualController;
 
     private float lastCoinCollisionTime = -999f;
@@ -28,6 +30,7 @@ public class ChessPiece : MonoBehaviour
     {
         movement = GetComponent<MovementController>();
         coinData = GetComponent<CoinRuntimeData>();
+        coinStats = GetComponent<CoinStats>();
         visualController = GetComponentInChildren<CoinVisualController>();
 
         if (movement == null)
@@ -38,6 +41,11 @@ public class ChessPiece : MonoBehaviour
         if (coinData == null)
         {
             Debug.LogError($"[ChessPiece] {name} 缺少 CoinRuntimeData。请把硬币定义、正反面、属性配置迁移到 CoinRuntimeData。");
+        }
+
+        if (coinStats == null)
+        {
+            Debug.LogError($"[ChessPiece] {name} 缺少 CoinStats，无法提供硬币攻击力和生命值。");
         }
     }
 

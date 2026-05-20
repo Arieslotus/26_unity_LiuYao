@@ -15,12 +15,12 @@ MonoBehaviour:
   enableHitPause: 1
   flipHitPauseTimeScale: 0.08
   flipHitPauseDuration: 0.06
-  enableEnemyPreImpactSlowMotion: 0
-  enemyPreImpactLookAheadTime: 0.14
-  enemyPreImpactTimeScale: 0.4
-  enemyHitPauseMinDuration: 0.015
-  enemyHitPauseMaxDuration: 0.05
-  enemyHitPauseTimeScale: 0.18
+  enableEnemyPreImpactSlowMotion: 1
+  enemyPreImpactLookAheadTime: 0.02
+  enemyPreImpactTimeScale: 0.1
+  enemyHitPauseMinDuration: 0.1
+  enemyHitPauseMaxDuration: 0.5
+  enemyHitPauseTimeScale: 0.05
   enableCoinPreImpactSlowMotion: 1
   coinPreImpactLookAheadTime: 0.02
   coinPreImpactTimeScale: 0.1

@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System;
 using UnityEngine;
 
 public enum TurnState
@@ -18,6 +19,10 @@ public class TurnManager : MonoBehaviour
     [Header("当前回合状态")]
     public TurnState currentState;
 
+    [Header("大回合设置")]
+    [Tooltip("所有敌人行动结束后，等待多少秒再广播新大回合开始并进入玩家回合。")]
+    [SerializeField] private float roundStartDelay = 0.5f;
+
     [Header("敌人列表")]
     [SerializeField] private List<EnemyController> enemies = new List<EnemyController>();
 
@@ -25,8 +30,13 @@ public class TurnManager : MonoBehaviour
     [SerializeField] private ChessTurnController playerTurnController;
 
     private bool isEnemyTurnRunning = false;
+    private int roundIndex = 0;
 
     public bool IsEnemyTurnRunning => isEnemyTurnRunning;
+    public int RoundIndex => roundIndex;
+
+    public event Action<int> RoundStarted;
+    public event Action<int> RoundEnded;
 
     private void Awake()
     {
@@ -43,7 +53,7 @@ public class TurnManager : MonoBehaviour
     private void Start()
     {
         FindAllEnemies();
-        BeginPlayerTurn();
+        BeginNextRound();
     }
 
     /// <summary>
@@ -145,8 +155,30 @@ public class TurnManager : MonoBehaviour
 
         isEnemyTurnRunning = false;
 
-        Debug.Log("[TurnManager] 敌人回合结束");
+        Debug.Log($"[TurnManager] 敌人回合结束，大回合结束 | round:{roundIndex}");
 
+        RoundEnded?.Invoke(roundIndex);
+
+        StartCoroutine(BeginNextRoundAfterDelay());
+    }
+
+    private IEnumerator BeginNextRoundAfterDelay()
+    {
+        if (roundStartDelay > 0f)
+        {
+            yield return new WaitForSeconds(roundStartDelay);
+        }
+
+        BeginNextRound();
+    }
+
+    private void BeginNextRound()
+    {
+        roundIndex++;
+
+        Debug.Log($"[TurnManager] 大回合开始 | round:{roundIndex}");
+
+        RoundStarted?.Invoke(roundIndex);
         BeginPlayerTurn();
     }
 }

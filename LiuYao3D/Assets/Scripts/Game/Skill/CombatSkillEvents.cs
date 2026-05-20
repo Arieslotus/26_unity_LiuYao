@@ -6,6 +6,7 @@ using System;
 public static class CombatSkillEvents
 {
     public static event Action<TrigramCollisionSkillSO, float> SkillTriggerFeedbackRequested;
+    public static event Action<TrigramType> SkillImpactWaveRequested;
 
     public static void RequestSkillTriggerFeedback(TrigramCollisionSkillSO skill, float duration)
     {
@@ -13,5 +14,13 @@ public static class CombatSkillEvents
             return;
 
         SkillTriggerFeedbackRequested?.Invoke(skill, duration);
+    }
+
+    public static void RequestSkillImpactWave(TrigramType trigram)
+    {
+        if (trigram == TrigramType.None)
+            return;
+
+        SkillImpactWaveRequested?.Invoke(trigram);
     }
 }

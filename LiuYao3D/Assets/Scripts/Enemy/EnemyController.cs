@@ -6,12 +6,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(EnemyStats))]
 public class EnemyController : MonoBehaviour, IAttackable
 {
     [Header("数值设定")]
-    [SerializeField] private int maxHP = 10;
-    [SerializeField] private int currentHP = 0;
-
     [SerializeField] private int attackDamage = 3;
     [SerializeField] private float moveSpeed = 2f;
 
@@ -27,19 +25,39 @@ public class EnemyController : MonoBehaviour, IAttackable
 
     [Header("引用")]
     [SerializeField] private HealthBar healthBar;
+    [SerializeField] private EnemyStats stats;
 
     [Header("调试")]
     [SerializeField] private bool debugLog = true;
 
-    private void Start()
+    private void Awake()
     {
+        if (stats == null)
+        {
+            stats = GetComponent<EnemyStats>();
+        }
+
+        if (stats == null)
+        {
+            stats = gameObject.AddComponent<EnemyStats>();
+            Debug.LogWarning($"[EnemyController] {name} 缺少 EnemyStats，已自动添加默认敌人数值组件。");
+        }
+
         if (healthBar == null)
         {
             healthBar = GetComponentInChildren<HealthBar>();
         }
+    }
 
-        currentHP = maxHP;
+    private void OnEnable()
+    {
+        SubscribeStats();
         UpdateHPUI();
+    }
+
+    private void OnDisable()
+    {
+        UnsubscribeStats();
     }
 
     private void Update()
@@ -210,20 +228,13 @@ public class EnemyController : MonoBehaviour, IAttackable
 
     public void TakeDamage(int damage)
     {
-        currentHP -= damage;
-        currentHP = Mathf.Max(currentHP, 0);
-
-        UpdateHPUI();
-
-        if (debugLog)
+        if (stats == null)
         {
-            Debug.Log($"[EnemyController] {name} 受伤 | Damage:{damage} | HP:{currentHP}/{maxHP}");
+            Debug.LogWarning($"[EnemyController] {name} 缺少 EnemyStats，无法承受伤害。");
+            return;
         }
 
-        if (currentHP <= 0)
-        {
-            Die();
-        }
+        stats.TakeDamage(damage);
     }
 
     private void Die()
@@ -246,8 +257,43 @@ public class EnemyController : MonoBehaviour, IAttackable
     {
         if (healthBar != null)
         {
-            healthBar.HealthNormalized = maxHP <= 0 ? 0f : (float)currentHP / maxHP;
+            healthBar.HealthNormalized = stats != null ? stats.HealthNormalized : 0f;
         }
+    }
+
+    private void SubscribeStats()
+    {
+        if (stats == null)
+            return;
+
+        stats.HealthChanged -= OnHealthChanged;
+        stats.HealthChanged += OnHealthChanged;
+        stats.Died -= OnDied;
+        stats.Died += OnDied;
+    }
+
+    private void UnsubscribeStats()
+    {
+        if (stats == null)
+            return;
+
+        stats.HealthChanged -= OnHealthChanged;
+        stats.Died -= OnDied;
+    }
+
+    private void OnHealthChanged(int currentHP, int maxHP)
+    {
+        UpdateHPUI();
+
+        if (debugLog)
+        {
+            Debug.Log($"[EnemyController] 血量变化 | enemy:{name} | HP:{currentHP}/{maxHP}");
+        }
+    }
+
+    private void OnDied()
+    {
+        Die();
     }
 
     private void UpdateVisualizer()

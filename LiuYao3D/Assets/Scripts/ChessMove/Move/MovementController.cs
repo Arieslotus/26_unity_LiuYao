@@ -479,6 +479,9 @@ public class MovementController : MonoBehaviour
             $"被动币:{passiveCoin.name} | 被动卦:{passiveCoin.CurrentTrigram} | " +
             $"效果:{skill.EffectText}"
         );
+
+        CombatSkillEvents.RequestSkillImpactWave(activeCoin.CurrentTrigram);
+        CombatSkillEvents.RequestSkillImpactWave(passiveCoin.CurrentTrigram);
     }
 
     private void ApplyHitTarget(CollisionResult result)
@@ -487,10 +490,27 @@ public class MovementController : MonoBehaviour
             return;
 
         IHittable hittable = result.collider.GetComponentInParent<IHittable>();
-        if (hittable == null)
-            return;
+        if (hittable != null)
+        {
+            hittable.OnHit(result.hitDirection, result.impactStrength);
+        }
 
-        hittable.OnHit(result.hitDirection, result.impactStrength);
+        CoinStats attackerStats = GetComponentInParent<CoinStats>();
+        IDamageable damageable = result.collider.GetComponentInParent<IDamageable>();
+        int damage = attackerStats != null ? attackerStats.Attack : 0;
+
+        if (damageable != null && damage > 0)
+        {
+            damageable.TakeDamage(damage);
+        }
+        else
+        {
+            Debug.LogWarning(
+                $"[Movement] 命中敌人但未造成伤害 | 发起者:{name} | 目标:{result.collider.name} | " +
+                $"attackerStats:{(attackerStats != null ? attackerStats.name : "空")} | damage:{damage} | " +
+                $"damageable:{(damageable != null ? damageable.ToString() : "空")}"
+            );
+        }
 
         ChessPiece piece = GetComponentInParent<ChessPiece>();
         if (piece != null)
@@ -500,7 +520,7 @@ public class MovementController : MonoBehaviour
 
         Debug.Log(
             $"[Movement] 命中敌人 | 发起者:{name} | 目标:{result.collider.name} | " +
-            $"dir:{result.hitDirection} | strength:{result.impactStrength:F2}"
+            $"dir:{result.hitDirection} | strength:{result.impactStrength:F2} | damage:{damage}"
         );
     }
 
