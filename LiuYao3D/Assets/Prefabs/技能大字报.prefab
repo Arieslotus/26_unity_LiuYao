@@ -11,6 +11,9 @@ GameObject:
   - component: {fileID: 1485720704630904045}
   - component: {fileID: 3867890372993095388}
   - component: {fileID: 5091525286096555969}
+  - component: {fileID: 6928502600428637918}
+  - component: {fileID: 6509125002915235043}
+  - component: {fileID: 3957067449910402672}
   m_Layer: 5
   m_Name: "\u6587\u5B57"
   m_TagString: Untagged
@@ -79,6 +82,174 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: "\u5730\u6CFD\u4E34"
+--- !u!114 &6928502600428637918
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 227597433484306917}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cb5957e2a1d448479e3aaa3027e878e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enterSettings:
+    enableEffect: 1
+    duration: 0.4
+    fromAlpha: 0
+    toAlpha: 1
+    ease: 1
+    useCustomEase: 0
+    customEase:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  playEnterOnEnable: 1
+  exitSettings:
+    enableEffect: 0
+    duration: 0.3
+    fromAlpha: 1
+    toAlpha: 0
+    ease: 1
+    useCustomEase: 0
+    customEase:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  deactivateOnExitComplete: 0
+  useUnscaledTime: 1
+  disableInteractionWhenHidden: 1
+--- !u!114 &6509125002915235043
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 227597433484306917}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2391779cd6b6ec498255f6e960cf099, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enterSettings:
+    enableEffect: 1
+    moveDirection: 0
+    duration: 0.5
+    moveDistance: 200
+    ease: 6
+    useCustomEase: 0
+    customEase:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  playEnterOnEnable: 1
+  exitSettings:
+    enableEffect: 0
+    moveDirection: 1
+    duration: 0.3
+    moveDistance: 100
+    ease: 6
+    useCustomEase: 0
+    customEase:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  deactivateOnExitComplete: 0
+  useUnscaledTime: 1
+  snapping: 0
+--- !u!225 &3957067449910402672
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 227597433484306917}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &819031119354028450
 GameObject:
   m_ObjectHideFlags: 0
@@ -141,7 +312,7 @@ MonoBehaviour:
   iconRoot: {fileID: 2763132716006977737}
   textRoot: {fileID: 1485720704630904045}
   skillIcon: {fileID: 1836466945700681323}
-  defaultSkillIcon: {fileID: 1984350799, guid: d4e24e399b278834784813f020801359, type: 3}
+  defaultSkillIcon: {fileID: -1200051515, guid: 9cf5cabcd29e49549bee1511b80d1b7f, type: 3}
   skillNameText: {fileID: 5091525286096555969}
   resetScaleOnShow: 1
 --- !u!1 &1797111666599909348
@@ -155,6 +326,9 @@ GameObject:
   - component: {fileID: 2763132716006977737}
   - component: {fileID: 6398466183841111325}
   - component: {fileID: 1836466945700681323}
+  - component: {fileID: 7353337154476581258}
+  - component: {fileID: 9159539231304370182}
+  - component: {fileID: 1396733648198440469}
   m_Layer: 5
   m_Name: "\u80CC\u666F\u56FE"
   m_TagString: Untagged
@@ -179,7 +353,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 648, y: 674}
+  m_SizeDelta: {x: 1920, y: 1080}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6398466183841111325
 CanvasRenderer:
@@ -209,7 +383,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 2006638796, guid: 5579ac2244719a84cb5a30598f39adc3, type: 3}
+  m_Sprite: {fileID: 21300000, guid: b0c9944349391f34081cb4c7ff2c8087, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -219,3 +393,171 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &7353337154476581258
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1797111666599909348}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cb5957e2a1d448479e3aaa3027e878e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enterSettings:
+    enableEffect: 1
+    duration: 0.5
+    fromAlpha: 0
+    toAlpha: 1
+    ease: 1
+    useCustomEase: 0
+    customEase:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  playEnterOnEnable: 1
+  exitSettings:
+    enableEffect: 1
+    duration: 0.1
+    fromAlpha: 1
+    toAlpha: 0
+    ease: 1
+    useCustomEase: 0
+    customEase:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  deactivateOnExitComplete: 0
+  useUnscaledTime: 1
+  disableInteractionWhenHidden: 1
+--- !u!114 &9159539231304370182
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1797111666599909348}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2391779cd6b6ec498255f6e960cf099, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enterSettings:
+    enableEffect: 1
+    moveDirection: 0
+    duration: 0.4
+    moveDistance: 100
+    ease: 6
+    useCustomEase: 0
+    customEase:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  playEnterOnEnable: 1
+  exitSettings:
+    enableEffect: 1
+    moveDirection: 1
+    duration: 0.3
+    moveDistance: 100
+    ease: 6
+    useCustomEase: 0
+    customEase:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  deactivateOnExitComplete: 0
+  useUnscaledTime: 1
+  snapping: 0
+--- !u!225 &1396733648198440469
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1797111666599909348}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0

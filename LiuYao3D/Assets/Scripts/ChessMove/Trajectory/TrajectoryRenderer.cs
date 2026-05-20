@@ -20,6 +20,7 @@ public class TrajectoryRenderer : MonoBehaviour
     {
         line = GetComponent<LineRenderer>();
         line.useWorldSpace = true;
+        Clear();
 
         if (movement == null)
         {
@@ -63,6 +64,7 @@ public class TrajectoryRenderer : MonoBehaviour
             return;
         }
 
+        line.enabled = true;
         line.positionCount = points.Count;
 
         for (int i = 0; i < points.Count; i++)
@@ -79,6 +81,7 @@ public class TrajectoryRenderer : MonoBehaviour
             return;
 
         line.positionCount = 0;
+        line.enabled = false;
     }
 
     private bool EnsureLineRenderer()

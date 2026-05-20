@@ -15,6 +15,6 @@ MonoBehaviour:
   activeTrigram: 7
   passiveTrigram: 1
   skillName: "\u6CFD\u5929\u592C"
-  skillIcon: {fileID: 0}
+  skillIcon: {fileID: 21300000, guid: 76b401f9a9c39b045ad89118c1d97256, type: 3}
   description: "\u5168\u573A\u8303\u56F4\u7834\u5151\u3001\u4E7E\u76FE\u3002"
   effectText: 21

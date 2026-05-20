@@ -4,6 +4,7 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -13,6 +14,7 @@ public static class SkillCSVImporter
     private const string OutputFolder = "Assets/Data/Skills";
     private const string DatabaseFolder = "Assets/Data/SkillDatabase";
     private const string DatabasePath = DatabaseFolder + "/TrigramSkillDatabase.asset";
+    private const string SkillIconFolder = "Assets/Resources/UI/SkillPopup";
 
     [MenuItem("Tools/六爻/导入卦象碰撞技能表", priority = 100)]
     public static void Import()
@@ -86,6 +88,7 @@ public static class SkillCSVImporter
             SetEnum(serializedSkill, "activeTrigram", activeTrigram);
             SetEnum(serializedSkill, "passiveTrigram", passiveTrigram);
             SetString(serializedSkill, "skillName", skillName);
+            TrySetSkillIcon(serializedSkill, skillName, assetPath);
             SetString(serializedSkill, "description", CsvUtility.GetString(row, "description"));
             SetString(serializedSkill, "effectText", CsvUtility.GetString(row, "skillEffect"));
             serializedSkill.ApplyModifiedPropertiesWithoutUndo();
@@ -105,6 +108,63 @@ public static class SkillCSVImporter
         AssetDatabase.Refresh();
 
         Debug.Log($"[SkillCSVImporter] 导入完成 | Created:{created} | Updated:{updated} | Skipped:{skipped} | Output:{OutputFolder}");
+    }
+
+    [MenuItem("Tools/六爻/补齐卦象碰撞技能图标", priority = 101)]
+    public static void FillSkillIcons()
+    {
+        string[] guids = AssetDatabase.FindAssets("t:TrigramCollisionSkillSO", new[] { OutputFolder });
+
+        int updated = 0;
+        int missing = 0;
+        int skipped = 0;
+
+        foreach (string guid in guids)
+        {
+            string assetPath = AssetDatabase.GUIDToAssetPath(guid);
+            TrigramCollisionSkillSO skill = AssetDatabase.LoadAssetAtPath<TrigramCollisionSkillSO>(assetPath);
+            if (skill == null)
+            {
+                skipped++;
+                continue;
+            }
+
+            SerializedObject serializedSkill = new SerializedObject(skill);
+            SerializedProperty skillNameProperty = serializedSkill.FindProperty("skillName");
+            SerializedProperty skillIconProperty = serializedSkill.FindProperty("skillIcon");
+
+            if (skillNameProperty == null || skillIconProperty == null)
+            {
+                skipped++;
+                Debug.LogWarning($"[SkillCSVImporter] 技能资源字段缺失，已跳过: {assetPath}");
+                continue;
+            }
+
+            string skillName = skillNameProperty.stringValue;
+            Sprite skillIcon = LoadSkillIcon(skillName);
+            if (skillIcon == null)
+            {
+                missing++;
+                Debug.LogWarning($"[SkillCSVImporter] 未找到技能图标 | skillName:{skillName} | path:{assetPath}");
+                continue;
+            }
+
+            if (skillIconProperty.objectReferenceValue == skillIcon)
+            {
+                skipped++;
+                continue;
+            }
+
+            skillIconProperty.objectReferenceValue = skillIcon;
+            serializedSkill.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(skill);
+            updated++;
+        }
+
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+
+        Debug.Log($"[SkillCSVImporter] 技能图标补齐完成 | Updated:{updated} | Missing:{missing} | Skipped:{skipped} | Folder:{SkillIconFolder}");
     }
 
     private static string BuildAssetPath(TrigramType activeTrigram, TrigramType passiveTrigram, string skillName)
@@ -153,6 +213,26 @@ public static class SkillCSVImporter
         }
 
         property.stringValue = value ?? string.Empty;
+    }
+
+    private static bool TrySetSkillIcon(SerializedObject serializedObject, string skillName, string assetPath)
+    {
+        SerializedProperty property = serializedObject.FindProperty("skillIcon");
+        if (property == null)
+        {
+            Debug.LogWarning("[SkillCSVImporter] 找不到字段: skillIcon");
+            return false;
+        }
+
+        Sprite skillIcon = LoadSkillIcon(skillName);
+        if (skillIcon == null)
+        {
+            Debug.LogWarning($"[SkillCSVImporter] 未找到技能图标，保留原值 | skillName:{skillName} | path:{assetPath}");
+            return false;
+        }
+
+        property.objectReferenceValue = skillIcon;
+        return true;
     }
 
     private static void SetEnum(SerializedObject serializedObject, string propertyName, TrigramType value)
@@ -213,5 +293,19 @@ public static class SkillCSVImporter
         }
     }
 
+    private static Sprite LoadSkillIcon(string skillName)
+    {
+        if (string.IsNullOrWhiteSpace(skillName))
+            return null;
+
+        string iconPath = $"{SkillIconFolder}/{skillName.Trim()}.png";
+        Sprite icon = AssetDatabase.LoadAssetAtPath<Sprite>(iconPath);
+        if (icon != null)
+            return icon;
+
+        return AssetDatabase.LoadAllAssetsAtPath(iconPath)
+            .OfType<Sprite>()
+            .FirstOrDefault();
+    }
 }
 #endif
