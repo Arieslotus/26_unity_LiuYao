@@ -23,8 +23,8 @@ public class EnemyShieldController : MonoBehaviour
     [SerializeField] private List<TrigramType> shieldCycle = new List<TrigramType>();
 
     [Header("可视化")]
-    [Tooltip("不同属性护盾对应的 Sprite 配置。")]
-    [SerializeField] private EnemyShieldSpriteDatabase shieldSpriteDatabase;
+    [Tooltip("不同卦象对应的通用视觉资源配置。护盾会使用其中的 Sprite。")]
+    [SerializeField] private TrigramVisualDatabase trigramVisualDatabase;
 
     [Tooltip("敌人身上用于显示护盾的 Image 组件。")]
     [SerializeField] private Image shieldImage;
@@ -220,8 +220,8 @@ public class EnemyShieldController : MonoBehaviour
             return;
         }
 
-        Sprite shieldSprite = shieldSpriteDatabase != null
-            ? shieldSpriteDatabase.GetSprite(shieldType)
+        Sprite shieldSprite = trigramVisualDatabase != null
+            ? trigramVisualDatabase.GetSprite(shieldType)
             : null;
 
         if (shieldSprite == null)

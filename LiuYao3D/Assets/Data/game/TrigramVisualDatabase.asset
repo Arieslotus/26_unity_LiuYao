@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb4ece5f84cf995478511b776d0c6c95, type: 3}
+  m_Name: TrigramVisualDatabase
+  m_EditorClassIdentifier: 
+  entries:
+  - trigramType: 1
+    sprite: {fileID: -1414911130, guid: fd73047680802ce4391ee5de60652207, type: 3}
+    uiPrefab: {fileID: 149261007776183480, guid: bbff944b7e9291c449176cc5fb64e8bb, type: 3}
+  - trigramType: 2
+    sprite: {fileID: 250298794, guid: fd73047680802ce4391ee5de60652207, type: 3}
+    uiPrefab: {fileID: 1067350822997779263, guid: 035bb088459ef644284f31ad0ed3429b, type: 3}
+  - trigramType: 3
+    sprite: {fileID: 15371249, guid: fd73047680802ce4391ee5de60652207, type: 3}
+    uiPrefab: {fileID: 3695446001618028429, guid: 90c7d4be82e65654bb35b57eff603f03, type: 3}
+  - trigramType: 8
+    sprite: {fileID: 1220795771, guid: fd73047680802ce4391ee5de60652207, type: 3}
+    uiPrefab: {fileID: 5315675857710289322, guid: 1f7054a1e6b056a4e9e6a91dc52b7da8, type: 3}
+  - trigramType: 6
+    sprite: {fileID: -603384310, guid: fd73047680802ce4391ee5de60652207, type: 3}
+    uiPrefab: {fileID: 5873423548463964733, guid: c2f19b11af918424d849cfd9a3194583, type: 3}
+  - trigramType: 5
+    sprite: {fileID: -804127146, guid: fd73047680802ce4391ee5de60652207, type: 3}
+    uiPrefab: {fileID: 3218904375701765661, guid: 037acef659b62b14eb6b3f943f2eaadf, type: 3}
+  - trigramType: 4
+    sprite: {fileID: 2043648329, guid: fd73047680802ce4391ee5de60652207, type: 3}
+    uiPrefab: {fileID: 6653659570522252808, guid: 77837d803a1d4354997906ffe920facc, type: 3}
+  - trigramType: 7
+    sprite: {fileID: 1370290188, guid: fd73047680802ce4391ee5de60652207, type: 3}
+    uiPrefab: {fileID: 7201904043864836403, guid: fe7779f123b894d4cbaf0d5b8dd71db7, type: 3}
