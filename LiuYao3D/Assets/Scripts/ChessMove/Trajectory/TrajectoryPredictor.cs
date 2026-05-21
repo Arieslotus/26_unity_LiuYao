@@ -5,6 +5,18 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public struct TrajectoryPathPoint
+{
+    public Vector3 Position { get; }
+    public bool IsCollisionPoint { get; }
+
+    public TrajectoryPathPoint(Vector3 position, bool isCollisionPoint)
+    {
+        Position = position;
+        IsCollisionPoint = isCollisionPoint;
+    }
+}
+
 public static class TrajectoryPredictor
 {
     public static List<Vector3> CalculatePath(
@@ -18,7 +30,38 @@ public static class TrajectoryPredictor
         int maxBounceCount = 20
     )
     {
-        List<Vector3> points = new List<Vector3>();
+        List<TrajectoryPathPoint> pathPoints = CalculatePathWithCollisionInfo(
+            startPos,
+            direction,
+            movementConfig,
+            collisionConfig,
+            selfCollider,
+            collisionRadius,
+            power,
+            maxBounceCount
+        );
+
+        List<Vector3> points = new List<Vector3>(pathPoints.Count);
+        for (int i = 0; i < pathPoints.Count; i++)
+        {
+            points.Add(pathPoints[i].Position);
+        }
+
+        return points;
+    }
+
+    public static List<TrajectoryPathPoint> CalculatePathWithCollisionInfo(
+        Vector3 startPos,
+        Vector3 direction,
+        MovementConfig movementConfig,
+        CollisionConfig collisionConfig,
+        Collider selfCollider,
+        float collisionRadius,
+        float power,
+        int maxBounceCount = 20
+    )
+    {
+        List<TrajectoryPathPoint> points = new List<TrajectoryPathPoint>();
 
         if (movementConfig == null || collisionConfig == null)
             return points;
@@ -39,7 +82,7 @@ public static class TrajectoryPredictor
         float remainingDistance = movementConfig.totalDistance * power;
         float maxDisplayDistance = movementConfig.maxDisplayDistance;
 
-        points.Add(pos);
+        points.Add(new TrajectoryPathPoint(pos, false));
 
         for (int i = 0; i < maxBounceCount; i++)
         {
@@ -68,7 +111,7 @@ public static class TrajectoryPredictor
 
             // ✅ 用真实安全位置（核心修复点）
             Vector3 pathPoint = bounceResult.newPos;
-            points.Add(pathPoint);
+            points.Add(new TrajectoryPathPoint(pathPoint, bounceResult.hit));
 
             accumulatedDistance += traveled;
             remainingDistance -= traveled;
