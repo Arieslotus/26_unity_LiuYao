@@ -44,7 +44,7 @@ Material:
     - _Contrast: 1
     - _DarkAlbedoIntensity: 0.221
     - _DarkGradientIntensity: 0
-    - _DarkIntensity: 0.205
+    - _DarkIntensity: 0.08
     - _GradientAngle: 0
     - _GradientAxis: 0
     - _GradientIntensity: 1
@@ -52,10 +52,10 @@ Material:
     - _GradientOffsetY: 0
     - _GradientPower: 1
     - _GradientType: 0
-    - _IsCustomizeDarkColor: 0
+    - _IsCustomizeDarkColor: 0.184
     - _LightAlbedoIntensity: 0.436
     - _LightGradientIntensity: 1
-    - _LightIntensity: 1.4
+    - _LightIntensity: 1.81
     - _LightLightGradientIntensity: 1
     - _OutlineWidth: 0.02
     - _RadialStretchX: 1
@@ -66,11 +66,11 @@ Material:
     - _Smooth: 0.05
     - _Threshold: 0.429
     m_Colors:
-    - _DarkColor: {r: 0.3411765, g: 0.59252167, b: 0.7294118, a: 1}
+    - _DarkColor: {r: 0, g: 0.5254903, b: 1, a: 1}
     - _DarkColorMul: {r: 1, g: 1, b: 1, a: 1}
     - _LightColor: {r: 0, g: 0.62745094, b: 1, a: 1}
     - _LightDarkColorMul: {r: 1, g: 1, b: 1, a: 1}
-    - _OutlineColor: {r: 0, g: 0.38364768, b: 0.0029767584, a: 1}
-    - _ShadowEdgeColor: {r: 0, g: 0.24528301, b: 0.030940788, a: 1}
+    - _OutlineColor: {r: 0.42988983, g: 0, b: 0.91194963, a: 1}
+    - _ShadowEdgeColor: {r: 0.104035355, g: 0, b: 0.8113208, a: 1}
     - _ShadowEdgeMulColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []

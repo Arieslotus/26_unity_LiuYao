@@ -44,7 +44,7 @@ Material:
     - _Contrast: 3.5
     - _DarkAlbedoIntensity: 0.107
     - _DarkGradientIntensity: 0.144
-    - _DarkIntensity: 0.689
+    - _DarkIntensity: 0.351
     - _GradientAngle: 0
     - _GradientAxis: 1.97
     - _GradientIntensity: 0.519
@@ -68,7 +68,7 @@ Material:
     m_Colors:
     - _DarkColor: {r: 1, g: 1, b: 1, a: 1}
     - _DarkColorMul: {r: 1, g: 1, b: 1, a: 1}
-    - _LightColor: {r: 0.5708295, g: 0.5137255, b: 1, a: 1}
+    - _LightColor: {r: 0.23685049, g: 0.16298786, b: 0.7735849, a: 1}
     - _LightDarkColorMul: {r: 1, g: 1, b: 1, a: 1}
     - _OutlineColor: {r: 0.42526212, g: 0.7610062, b: 0.2464893, a: 1}
     - _ShadowEdgeColor: {r: 0.83921576, g: 0, b: 1, a: 1}

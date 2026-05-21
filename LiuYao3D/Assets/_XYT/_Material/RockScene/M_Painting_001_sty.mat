@@ -32,17 +32,17 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _RampTex:
-        m_Texture: {fileID: 2800000, guid: 92994471f4e554e46a3ec1a02aa4f75d, type: 3}
+        m_Texture: {fileID: 2800000, guid: 5310e032c9b03e643bdd5ed414db3edc, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _AlbedoGradientInetsity: 0.307
-    - _Brightness: 0.31
+    - _AlbedoGradientInetsity: 0.08
+    - _Brightness: 0.34
     - _BrushStrength: 0.599
     - _ChannelMask: 4
-    - _Contrast: 1.86
-    - _DarkAlbedoIntensity: 0.199
+    - _Contrast: 2.74
+    - _DarkAlbedoIntensity: 0
     - _DarkGradientIntensity: 0.144
     - _DarkIntensity: 0.689
     - _GradientAngle: 0
@@ -53,24 +53,24 @@ Material:
     - _GradientPower: 2.9
     - _GradientType: 0
     - _IsCustomizeDarkColor: 0
-    - _LightAlbedoIntensity: 0.681
-    - _LightGradientIntensity: 0.87
+    - _LightAlbedoIntensity: 0.394
+    - _LightGradientIntensity: 0.076
     - _LightIntensity: 1
     - _LightLightGradientIntensity: 0.967
-    - _OutlineWidth: 0.0508
+    - _OutlineWidth: 0.0281
     - _RadialStretchX: 0.1
     - _RadialStretchY: 0.1
     - _ScanlineOnOff: 0
-    - _ShadowEdgeGradientIntensity: 0.635
+    - _ShadowEdgeGradientIntensity: 0.238
     - _ShadowEdgeWidth: 0.269
     - _Smooth: 0.001
-    - _Threshold: 0.56
+    - _Threshold: 0.459
     m_Colors:
     - _DarkColor: {r: 1, g: 1, b: 1, a: 1}
     - _DarkColorMul: {r: 1, g: 1, b: 1, a: 1}
-    - _LightColor: {r: 0.28113958, g: 0.19346526, b: 0.91823894, a: 1}
+    - _LightColor: {r: 0.21322039, g: 0.1707012, b: 0.8616352, a: 1}
     - _LightDarkColorMul: {r: 1, g: 1, b: 1, a: 1}
-    - _OutlineColor: {r: 0.23368482, g: 0.35220122, b: 0.17167039, a: 1}
-    - _ShadowEdgeColor: {r: 0.83921576, g: 0, b: 1, a: 1}
-    - _ShadowEdgeMulColor: {r: 1, g: 0.6509433, b: 0.85849047, a: 1}
+    - _OutlineColor: {r: 0.52061796, g: 0.26666665, b: 1, a: 1}
+    - _ShadowEdgeColor: {r: 0.61103356, g: 0.25750554, b: 0.7798742, a: 1}
+    - _ShadowEdgeMulColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []

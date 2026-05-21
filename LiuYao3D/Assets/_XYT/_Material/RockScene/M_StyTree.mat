@@ -70,7 +70,7 @@ Material:
     - _DarkColorMul: {r: 1, g: 1, b: 1, a: 1}
     - _LightColor: {r: 1, g: 1, b: 1, a: 1}
     - _LightDarkColorMul: {r: 1, g: 1, b: 1, a: 1}
-    - _OutlineColor: {r: 0, g: 0.36477977, b: 0.12758861, a: 1}
-    - _ShadowEdgeColor: {r: 0, g: 0.3962264, b: 0.05031446, a: 1}
-    - _ShadowEdgeMulColor: {r: 1, g: 1, b: 1, a: 1}
+    - _OutlineColor: {r: 0.20784314, g: 0.3647059, b: 0.33105922, a: 1}
+    - _ShadowEdgeColor: {r: 0.27672952, g: 0.27672952, b: 0.27672952, a: 1}
+    - _ShadowEdgeMulColor: {r: 1, g: 0.41194963, b: 0.94269574, a: 1}
   m_BuildTextureStacks: []
