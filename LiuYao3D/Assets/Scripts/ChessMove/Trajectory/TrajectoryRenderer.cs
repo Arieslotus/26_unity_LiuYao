@@ -14,6 +14,18 @@ public class TrajectoryRenderer : MonoBehaviour
     [Header("显示")]
     [SerializeField] private float lineHeight = 0.05f;
 
+    [Tooltip("完整显示的最大碰撞点数量。当前需求为最多显示两个碰撞点。")]
+    [Min(1)]
+    [SerializeField] private int maxVisibleCollisionPointCount = 2;
+
+    [Tooltip("当轨迹包含下一个碰撞点时，保留最后一个可见碰撞点到下一个碰撞点之间的百分比。")]
+    [Range(0f, 1f)]
+    [SerializeField] private float overflowSegmentPercent = 0.35f;
+
+    [SerializeField] private int cornerVertices = 6;
+    [SerializeField] private int capVertices = 4;
+    [SerializeField] private LineAlignment lineAlignment = LineAlignment.View;
+
     private LineRenderer line;
 
     private void Awake()
@@ -31,6 +43,10 @@ public class TrajectoryRenderer : MonoBehaviour
         {
             Debug.LogError($"[TrajectoryRenderer] {name} 缺少 MovementController，轨迹预测无法统一碰撞体。");
         }
+
+        line.numCornerVertices = 6;
+        line.numCapVertices = 4;
+        line.alignment = LineAlignment.View;
     }
 
     public void UpdateTrajectory(Vector3 direction, float power)
@@ -48,7 +64,7 @@ public class TrajectoryRenderer : MonoBehaviour
         float collisionRadius = movement.GetCollisionRadius();
         Collider selfCollider = movement.selfCollider;
 
-        List<Vector3> points = TrajectoryPredictor.CalculatePath(
+        List<TrajectoryPathPoint> rawPoints = TrajectoryPredictor.CalculatePathWithCollisionInfo(
             startCenter,
             direction,
             config,
@@ -57,6 +73,8 @@ public class TrajectoryRenderer : MonoBehaviour
             collisionRadius,
             power
         );
+
+        List<Vector3> points = BuildVisiblePoints(rawPoints);
 
         if (points == null || points.Count == 0)
         {
@@ -73,6 +91,49 @@ public class TrajectoryRenderer : MonoBehaviour
             p.y += lineHeight;
             line.SetPosition(i, p);
         }
+    }
+
+    private List<Vector3> BuildVisiblePoints(List<TrajectoryPathPoint> rawPoints)
+    {
+        List<Vector3> visiblePoints = new List<Vector3>();
+
+        if (rawPoints == null || rawPoints.Count == 0)
+            return visiblePoints;
+
+        int collisionCount = 0;
+        int lastVisibleCollisionIndex = -1;
+
+        for (int i = 0; i < rawPoints.Count; i++)
+        {
+            TrajectoryPathPoint point = rawPoints[i];
+
+            if (!point.IsCollisionPoint)
+            {
+                visiblePoints.Add(point.Position);
+                continue;
+            }
+
+            collisionCount++;
+
+            if (collisionCount <= Mathf.Max(1, maxVisibleCollisionPointCount))
+            {
+                visiblePoints.Add(point.Position);
+                lastVisibleCollisionIndex = i;
+                continue;
+            }
+
+            if (lastVisibleCollisionIndex >= 0)
+            {
+                Vector3 from = rawPoints[lastVisibleCollisionIndex].Position;
+                Vector3 to = point.Position;
+                Vector3 partialPoint = Vector3.Lerp(from, to, overflowSegmentPercent);
+                visiblePoints.Add(partialPoint);
+            }
+
+            break;
+        }
+
+        return visiblePoints;
     }
 
     public void Clear()

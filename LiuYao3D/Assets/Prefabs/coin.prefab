@@ -120,6 +120,7 @@ GameObject:
   - component: {fileID: 5681362023072863307}
   - component: {fileID: 3644825788833956870}
   - component: {fileID: -4864442763577760036}
+  - component: {fileID: 5708067136103999988}
   m_Layer: 0
   m_Name: COIN
   m_TagString: Untagged
@@ -185,7 +186,8 @@ MonoBehaviour:
   selfCollider: {fileID: 0}
   selfSphereCollider: {fileID: 5754521296093185154}
   collisionConfig: {fileID: 11400000, guid: 78e29d0bfe33abe41b74588b672c8c88, type: 2}
-  skillDatabase: {fileID: 0}
+  skillDatabase: {fileID: 11400000, guid: a3de6a7f3cfbfbd4eaba40bde7b03755, type: 2}
+  debugPhysicsBounceHits: 0
 --- !u!120 &5681362023072863307
 LineRenderer:
   serializedVersion: 2
@@ -207,7 +209,7 @@ LineRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 2f2e3dfcf74a02840895456ebef58644, type: 2}
+  - {fileID: 2100000, guid: 81d4cc5a7f280b74c9bb98e3da8acf82, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -238,8 +240,8 @@ LineRenderer:
       serializedVersion: 2
       m_Curve:
       - serializedVersion: 3
-        time: 0.10380173
-        value: 0.06609154
+        time: 0.029018402
+        value: 0.019788742
         inSlope: 0
         outSlope: 0
         tangentMode: 0
@@ -305,6 +307,8 @@ MonoBehaviour:
   config: {fileID: 11400000, guid: 3d85606a5b0fae34da81362c8b59ec71, type: 2}
   movement: {fileID: 3339208920595102279}
   lineHeight: 0.05
+  maxVisibleCollisionPointCount: 3
+  overflowSegmentPercent: 0.5
 --- !u!114 &-4864442763577760036
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -319,9 +323,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   coinDefinition: {fileID: 0}
   startFrontSide: 1
-  maxHp: 10
-  currentHp: 10
+--- !u!114 &5708067136103999988
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1848568583470563752}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a59011fb96757fa4e864c907c8102385, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHP: 10
+  currentHP: 10
+  startWithFullHP: 1
   attack: 1
+  debugLog: 1
 --- !u!1 &7908298380925604936
 GameObject:
   m_ObjectHideFlags: 0
