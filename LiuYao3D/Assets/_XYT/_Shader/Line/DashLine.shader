@@ -16,6 +16,7 @@ _GradientSmooth ("Gradient Smooth", Range(0.001,1)) = 0.2
         _ScrollSpeed ("Scroll Speed", Float) = 1
 
         _FadePower ("Tail Fade", Float) = 1.5
+        _FlowLong ("Fade Long", Float) = 0.5
 
         [HDR]_FlowColor ("Flow Color", Color) = (1,1,1,1)
 
@@ -60,6 +61,7 @@ float _GradientSmooth;
             float _ScrollSpeed;
 
             float _FadePower;
+            float _FlowLong;
 
             fixed4 _FlowColor;
 
@@ -144,7 +146,7 @@ float dashMask =
 
                 float tailFade =
                     pow(
-                        saturate(1 - i.uv.x),
+                        saturate(1 - i.uv.x + _FlowLong),
                         _FadePower
                     );
 

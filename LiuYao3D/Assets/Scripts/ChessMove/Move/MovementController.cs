@@ -496,8 +496,15 @@ public class MovementController : MonoBehaviour
         }
 
         CoinStats attackerStats = GetComponentInParent<CoinStats>();
+        ChessPiece attackerPiece = GetComponentInParent<ChessPiece>();
         IDamageable damageable = result.collider.GetComponentInParent<IDamageable>();
         int damage = attackerStats != null ? attackerStats.Attack : 0;
+
+        EnemyShieldController shieldController = result.collider.GetComponentInParent<EnemyShieldController>();
+        if (shieldController != null && attackerPiece != null)
+        {
+            shieldController.TryBreakShield(attackerPiece.CurrentTrigram, attackerPiece.name);
+        }
 
         if (damageable != null && damage > 0)
         {
@@ -512,10 +519,9 @@ public class MovementController : MonoBehaviour
             );
         }
 
-        ChessPiece piece = GetComponentInParent<ChessPiece>();
-        if (piece != null)
+        if (attackerPiece != null)
         {
-            piece.RequestImpactFeedback(CollisionType.Enemy, false, result.impactStrength, transform.position);
+            attackerPiece.RequestImpactFeedback(CollisionType.Enemy, false, result.impactStrength, transform.position);
         }
 
         Debug.Log(

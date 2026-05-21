@@ -20,6 +20,7 @@ public class ChessPiece : MonoBehaviour
     private CoinRuntimeData coinData;
     private CoinStats coinStats;
     private CoinVisualController visualController;
+    private CoinControlHint controlHint;
 
     private float lastCoinCollisionTime = -999f;
 
@@ -32,6 +33,7 @@ public class ChessPiece : MonoBehaviour
         coinData = GetComponent<CoinRuntimeData>();
         coinStats = GetComponent<CoinStats>();
         visualController = GetComponentInChildren<CoinVisualController>();
+        controlHint = GetComponentInChildren<CoinControlHint>(true);
 
         if (movement == null)
         {
@@ -180,6 +182,14 @@ public class ChessPiece : MonoBehaviour
         if (visualController != null)
         {
             visualController.SetTurnHighlight(highlighted);
+        }
+    }
+
+    public void SetControlHintVisible(bool visible)
+    {
+        if (controlHint != null)
+        {
+            controlHint.SetVisible(visible);
         }
     }
 

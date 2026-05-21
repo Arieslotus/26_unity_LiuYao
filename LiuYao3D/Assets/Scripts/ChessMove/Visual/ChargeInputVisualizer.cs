@@ -72,8 +72,10 @@ public class ChargeInputVisualizer : MonoBehaviour
         Vector3 center = currentPiece.transform.position;
         center.y += visualHeight;
 
-        DrawCircle(center, config.stage1MaxDistance);
-        DrawDragLine(center, input.CurrentDirection, input.CurrentScaledDragDistance, config.stage1MaxDistance);
+        float visualLength = Mathf.Clamp(input.CurrentScaledDragDistance, 0f, config.stage1MaxDistance);
+
+        DrawCircle(center, visualLength);
+        DrawDragLine(center, input.CurrentDirection, visualLength);
     }
 
     private void SetupRenderer(LineRenderer lineRenderer)
@@ -124,7 +126,7 @@ public class ChargeInputVisualizer : MonoBehaviour
         }
     }
 
-    private void DrawDragLine(Vector3 center, Vector3 direction, float scaledDistance, float maxDistance)
+    private void DrawDragLine(Vector3 center, Vector3 direction, float lineLength)
     {
         if (dragLineRenderer == null)
             return;
@@ -137,8 +139,6 @@ public class ChargeInputVisualizer : MonoBehaviour
             dragLineRenderer.positionCount = 0;
             return;
         }
-
-        float lineLength = Mathf.Clamp(scaledDistance, 0f, maxDistance);
 
         // 显示“拖拽方向”，因此取发射方向的反向
         Vector3 dragDir = -flatDirection.normalized;

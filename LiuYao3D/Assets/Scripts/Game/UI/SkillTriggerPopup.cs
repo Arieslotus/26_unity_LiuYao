@@ -3,6 +3,7 @@
 /// </summary>
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections;
 
 public class SkillTriggerPopup : MonoBehaviour
 {
@@ -26,6 +27,15 @@ public class SkillTriggerPopup : MonoBehaviour
     [Header("动画")]
     [Tooltip("显示时是否重置图标和文字节点缩放")]
     [SerializeField] private bool resetScaleOnShow = true;
+
+    [Tooltip("显示后需要延迟隐藏的动效物体，可为空。")]
+    [SerializeField] private GameObject delayedHideEffectObject;
+
+    [Tooltip("弹窗显示后经过多少秒隐藏指定动效物体。")]
+    [Min(0f)]
+    [SerializeField] private float delayedHideEffectSeconds = 0.5f;
+
+    private Coroutine delayedHideEffectCoroutine;
 
     public void Show(TrigramCollisionSkillSO skill)
     {
@@ -56,10 +66,47 @@ public class SkillTriggerPopup : MonoBehaviour
         }
 
         gameObject.SetActive(true);
+        RestartDelayedHideEffect();
     }
 
     public void Hide()
     {
+        StopDelayedHideEffect();
         gameObject.SetActive(false);
+    }
+
+    private void RestartDelayedHideEffect()
+    {
+        StopDelayedHideEffect();
+
+        if (delayedHideEffectObject == null)
+            return;
+
+        delayedHideEffectObject.SetActive(true);
+        delayedHideEffectCoroutine = StartCoroutine(DelayedHideEffectRoutine());
+    }
+
+    private IEnumerator DelayedHideEffectRoutine()
+    {
+        if (delayedHideEffectSeconds > 0f)
+        {
+            yield return new WaitForSecondsRealtime(delayedHideEffectSeconds);
+        }
+
+        if (delayedHideEffectObject != null)
+        {
+            delayedHideEffectObject.SetActive(false);
+        }
+
+        delayedHideEffectCoroutine = null;
+    }
+
+    private void StopDelayedHideEffect()
+    {
+        if (delayedHideEffectCoroutine == null)
+            return;
+
+        StopCoroutine(delayedHideEffectCoroutine);
+        delayedHideEffectCoroutine = null;
     }
 }

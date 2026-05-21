@@ -14,6 +14,12 @@ public class TrajectoryRenderer : MonoBehaviour
     [Header("显示")]
     [SerializeField] private float lineHeight = 0.05f;
 
+    [Tooltip("是否使用固定世界 Y 高度显示轨迹线，避免硬币翻面或碰撞体高度变化影响轨迹高度。")]
+    [SerializeField] private bool useFixedWorldY = true;
+
+    [Tooltip("轨迹线固定显示的世界 Y 坐标。")]
+    [SerializeField] private float fixedWorldY = 0.08f;
+
     [Tooltip("完整显示的最大碰撞点数量。当前需求为最多显示两个碰撞点。")]
     [Min(1)]
     [SerializeField] private int maxVisibleCollisionPointCount = 2;
@@ -61,6 +67,11 @@ public class TrajectoryRenderer : MonoBehaviour
         }
 
         Vector3 startCenter = movement.GetCollisionCenter();
+        if (useFixedWorldY)
+        {
+            startCenter.y = fixedWorldY;
+        }
+
         float collisionRadius = movement.GetCollisionRadius();
         Collider selfCollider = movement.selfCollider;
 
@@ -88,7 +99,7 @@ public class TrajectoryRenderer : MonoBehaviour
         for (int i = 0; i < points.Count; i++)
         {
             Vector3 p = points[i];
-            p.y += lineHeight;
+            p.y = useFixedWorldY ? fixedWorldY : p.y + lineHeight;
             line.SetPosition(i, p);
         }
     }

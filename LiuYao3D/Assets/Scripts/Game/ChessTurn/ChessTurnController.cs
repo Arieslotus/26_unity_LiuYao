@@ -65,6 +65,7 @@ public class ChessTurnController : MonoBehaviour
             return;
 
         hasFiredCurrent = true;
+        CurrentPiece.SetControlHintVisible(false);
 
         Debug.Log($"[ChessTurnController] 当前棋子已发射 | index:{currentIndex} | piece:{CurrentPiece.name}");
     }
@@ -152,6 +153,7 @@ public class ChessTurnController : MonoBehaviour
         }
 
         piece.SetTurnHighlight(true);
+        piece.SetControlHintVisible(true);
         RefreshAllHighlights();
         NotifyCurrentPieceChanged();
 
@@ -165,6 +167,7 @@ public class ChessTurnController : MonoBehaviour
         if (oldPiece != null)
         {
             oldPiece.SetTurnHighlight(false);
+            oldPiece.SetControlHintVisible(false);
         }
 
         if (input != null)

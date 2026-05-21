@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: M_DashLine
+  m_Name: M_DashLine 1
   m_Shader: {fileID: 4800000, guid: d96ee4d7d656655489a10ddcdeee900c, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -30,18 +30,17 @@ Material:
     m_Ints: []
     m_Floats:
     - _DashSize: 7.33
-    - _FadePower: 3.67
-    - _FlowLong: 1
+    - _FadePower: 1
     - _FlowSpeed: 1
     - _FlowStrength: 0.33
     - _FlowWidth: 0.15
-    - _Gap: 0.401
+    - _Gap: 0.01
     - _GradientPos: 0.5
     - _GradientSmooth: 0.2
-    - _ScrollSpeed: -1
+    - _ScrollSpeed: -1.61
     m_Colors:
     - _FlowColor: {r: 1, g: 1, b: 1, a: 1}
     - _MainColor: {r: 0, g: 1, b: 1, a: 1}
-    - _MainColor1: {r: 0.12477186, g: 0.046665095, b: 0.49693304, a: 1}
-    - _MainColor2: {r: 0.5583406, g: 0.10461649, b: 0.35640025, a: 1}
+    - _MainColor1: {r: 0.8620949, g: 0, b: 1, a: 1}
+    - _MainColor2: {r: 0.5790957, g: 1, b: 0, a: 1}
   m_BuildTextureStacks: []

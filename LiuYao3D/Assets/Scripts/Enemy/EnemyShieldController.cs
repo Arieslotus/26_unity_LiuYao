@@ -68,6 +68,18 @@ public class EnemyShieldController : MonoBehaviour
         return finalDamage;
     }
 
+    public bool TryBreakShield(TrigramType trigram, string sourceName)
+    {
+        if (!hasShield)
+            return false;
+
+        if (trigram == TrigramType.None || trigram != currentShieldType)
+            return false;
+
+        BreakShield(trigram, sourceName);
+        return true;
+    }
+
     private void Start()
     {
         CacheShieldImage();
@@ -183,10 +195,10 @@ public class EnemyShieldController : MonoBehaviour
         if (waveType != currentShieldType)
             return;
 
-        BreakShield(waveType);
+        BreakShield(waveType, "技能冲击波");
     }
 
-    private void BreakShield(TrigramType waveType)
+    private void BreakShield(TrigramType triggerType, string sourceName)
     {
         hasShield = false;
         currentShieldType = TrigramType.None;
@@ -194,7 +206,7 @@ public class EnemyShieldController : MonoBehaviour
 
         if (debugLog)
         {
-            Debug.Log($"[EnemyShieldController] 护盾破除 | enemy:{name} | wave:{waveType}");
+            Debug.Log($"[EnemyShieldController] 护盾破除 | enemy:{name} | trigger:{triggerType} | source:{sourceName}");
         }
     }
 
