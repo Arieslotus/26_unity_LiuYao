@@ -216,6 +216,7 @@ public class ChessPiece : MonoBehaviour
         : 0.999f;
 
     public CoinDefinition CoinDefinition => coinData != null ? coinData.CoinDefinition : null;
+    public CoinRuntimeData CoinRuntimeData => coinData;
 
     public bool IsFrontSide => coinData != null && coinData.IsFrontSide;
 

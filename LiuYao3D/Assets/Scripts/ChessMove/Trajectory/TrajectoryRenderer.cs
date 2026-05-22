@@ -67,11 +67,6 @@ public class TrajectoryRenderer : MonoBehaviour
         }
 
         Vector3 startCenter = movement.GetCollisionCenter();
-        if (useFixedWorldY)
-        {
-            startCenter.y = fixedWorldY;
-        }
-
         float collisionRadius = movement.GetCollisionRadius();
         Collider selfCollider = movement.selfCollider;
 
@@ -82,7 +77,9 @@ public class TrajectoryRenderer : MonoBehaviour
             movement.CollisionConfig,
             selfCollider,
             collisionRadius,
-            power
+            power,
+            20,
+            movement
         );
 
         List<Vector3> points = BuildVisiblePoints(rawPoints);

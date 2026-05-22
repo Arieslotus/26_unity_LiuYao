@@ -34,7 +34,11 @@ public static class CollisionResolver
                 break;
         }
 
-        Debug.Log($"[CollisionResolver] 普通碰撞类型: {ctx.target.type}");
+        if (!ctx.suppressSideEffects)
+        {
+            Debug.Log($"[CollisionResolver] 普通碰撞类型: {ctx.target.type}");
+        }
+
         return result;
     }
 
@@ -183,7 +187,7 @@ public static class CollisionResolver
 
         pushDirection = pushDirection.normalized;
 
-        float transferredDistance = ctx.self.RemainingDistance * collisionConfig.coinTransferDistanceRatio;
+        float transferredDistance = GetRemainingDistance(ctx) * collisionConfig.coinTransferDistanceRatio;
         transferredDistance = Mathf.Max(0f, transferredDistance);
 
         if (transferredDistance <= 0.0001f)
@@ -206,13 +210,19 @@ public static class CollisionResolver
         result.otherCoinStartDistance = transferredDistance;
         result.otherCoinSpeedScale = collisionConfig.coinTransferSpeedRatio;
 
-        selfPiece.MarkCoinCollisionTriggered();
-        otherPiece.MarkCoinCollisionTriggered();
+        if (!ctx.suppressSideEffects)
+        {
+            selfPiece.MarkCoinCollisionTriggered();
+            otherPiece.MarkCoinCollisionTriggered();
+        }
 
-        Debug.Log(
-            $"[CollisionResolver] 己方互撞触发 | 发起:{selfPiece.name} | 被撞:{otherPiece.name} | " +
-            $"pushDir:{pushDirection} | transferredDistance:{transferredDistance:F2}"
-        );
+        if (!ctx.suppressSideEffects)
+        {
+            Debug.Log(
+                $"[CollisionResolver] 己方互撞触发 | 发起:{selfPiece.name} | 被撞:{otherPiece.name} | " +
+                $"pushDir:{pushDirection} | transferredDistance:{transferredDistance:F2}"
+            );
+        }
     }
 
     private static void LogCoinCollisionBlocked(
@@ -225,7 +235,7 @@ public static class CollisionResolver
         Vector3 pushDirection
     )
     {
-        if (collisionConfig == null || !collisionConfig.debugCoinCollisionResolve)
+        if (ctx.suppressSideEffects || collisionConfig == null || !collisionConfig.debugCoinCollisionResolve)
             return;
 
         string selfName = selfPiece != null ? selfPiece.name : "空";
@@ -241,7 +251,7 @@ public static class CollisionResolver
             $"selfPos:{(selfPiece != null ? selfPiece.transform.position.ToString() : "空")} | " +
             $"otherPos:{(otherPiece != null ? otherPiece.transform.position.ToString() : "空")} | " +
             $"incomingDir:{ctx.incomingDir} | normal:{ctx.normal} | hitPoint:{ctx.hitPoint} | " +
-            $"remainingDistance:{(ctx.self != null ? ctx.self.RemainingDistance : 0f):F4} | " +
+            $"remainingDistance:{GetRemainingDistance(ctx):F4} | " +
             $"transferredDistance:{transferredDistance:F4} | pushDirection:{pushDirection}"
         );
     }
@@ -276,6 +286,14 @@ public static class CollisionResolver
         if (movementConfig == null || movementConfig.totalDistance <= 0.0001f)
             return 0f;
 
-        return ctx.self.RemainingDistance / movementConfig.totalDistance;
+        return GetRemainingDistance(ctx) / movementConfig.totalDistance;
+    }
+
+    private static float GetRemainingDistance(CollisionContext ctx)
+    {
+        if (ctx.useRemainingDistanceOverride)
+            return Mathf.Max(0f, ctx.remainingDistanceOverride);
+
+        return ctx.self != null ? Mathf.Max(0f, ctx.self.RemainingDistance) : 0f;
     }
 }

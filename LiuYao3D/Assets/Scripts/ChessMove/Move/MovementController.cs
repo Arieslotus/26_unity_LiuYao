@@ -352,7 +352,7 @@ public class MovementController : MonoBehaviour
         if (hit.collider == null)
             return false;
 
-        if (selfCollider != null && hit.collider == selfCollider)
+        if (PhysicsBounceUtility.ShouldIgnoreCollider(hit.collider, selfCollider))
             return false;
 
         if (hit.distance <= 0.0001f)

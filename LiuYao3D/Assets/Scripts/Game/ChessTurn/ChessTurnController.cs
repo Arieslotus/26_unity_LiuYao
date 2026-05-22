@@ -72,6 +72,12 @@ public class ChessTurnController : MonoBehaviour
 
     public void BeginNewPlayerRound()
     {
+        if (!CanOperateByGameFlow())
+        {
+            Debug.LogWarning("[ChessTurnController] 游戏流程未进入 Playing，忽略玩家新回合。");
+            return;
+        }
+
         if (pieces.Count == 0)
         {
             Debug.LogError("[ChessTurnController] 没有配置棋子列表，无法开始玩家新回合！");
@@ -214,9 +220,28 @@ public class ChessTurnController : MonoBehaviour
         }
     }
 
+    public void ForceStopPlayerRound()
+    {
+        isPlayerRoundActive = false;
+        hasEndedPlayerRound = true;
+        hasFiredCurrent = false;
+
+        ExitCurrentPieceControl();
+        currentIndex = -1;
+        RefreshAllHighlights();
+        NotifyCurrentPieceChanged();
+
+        Debug.Log("[ChessTurnController] 强制停止玩家回合，已清空当前控制棋子。");
+    }
+
     private bool IsInPlayerTurn()
     {
-        return TurnManager.Instance == null || TurnManager.Instance.currentState == TurnState.PlayerTurn;
+        return CanOperateByGameFlow() && (TurnManager.Instance == null || TurnManager.Instance.currentState == TurnState.PlayerTurn);
+    }
+
+    private bool CanOperateByGameFlow()
+    {
+        return GameFlowController.Instance == null || GameFlowController.Instance.CanAcceptGameplayInput;
     }
 
     private void NotifyCurrentPieceChanged()

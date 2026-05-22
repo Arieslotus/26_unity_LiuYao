@@ -105,23 +105,40 @@ public class UIPositionEffect : MonoBehaviour
     /// </summary>
     public void PlayEnter()
     {
+        PlayEnter(null);
+    }
+
+    /// <summary>
+    /// 播放进场平移动画，并在动画完成后回调。
+    /// </summary>
+    public void PlayEnter(Action onComplete)
+    {
         gameObject.SetActive(true);
 
         if (!enterSettings.enableEffect)
         {
             StopMove();
             rectTransform.anchoredPosition = initialAnchoredPosition;
+            onComplete?.Invoke();
             return;
         }
 
         Vector2 offset = GetDirectionOffset(enterSettings);
-        PlayMove(initialAnchoredPosition - offset, initialAnchoredPosition, enterSettings, false);
+        PlayMove(initialAnchoredPosition - offset, initialAnchoredPosition, enterSettings, false, onComplete);
     }
 
     /// <summary>
     /// 播放退场平移动画。
     /// </summary>
     public void PlayExit()
+    {
+        PlayExit(null);
+    }
+
+    /// <summary>
+    /// 播放退场平移动画，并在动画完成后回调。
+    /// </summary>
+    public void PlayExit(Action onComplete)
     {
         if (!exitSettings.enableEffect)
         {
@@ -133,11 +150,12 @@ public class UIPositionEffect : MonoBehaviour
                 gameObject.SetActive(false);
             }
 
+            onComplete?.Invoke();
             return;
         }
 
         Vector2 offset = GetDirectionOffset(exitSettings);
-        PlayMove(initialAnchoredPosition, initialAnchoredPosition + offset, exitSettings, deactivateOnExitComplete);
+        PlayMove(initialAnchoredPosition, initialAnchoredPosition + offset, exitSettings, deactivateOnExitComplete, onComplete);
     }
 
     /// <summary>
@@ -149,7 +167,7 @@ public class UIPositionEffect : MonoBehaviour
         rectTransform.anchoredPosition = initialAnchoredPosition;
     }
 
-    private void PlayMove(Vector2 startPosition, Vector2 endPosition, MoveEffectSettings settings, bool deactivateWhenComplete)
+    private void PlayMove(Vector2 startPosition, Vector2 endPosition, MoveEffectSettings settings, bool deactivateWhenComplete, Action onComplete)
     {
         StopMove();
         rectTransform.anchoredPosition = startPosition;
@@ -163,6 +181,7 @@ public class UIPositionEffect : MonoBehaviour
                 gameObject.SetActive(false);
             }
 
+            onComplete?.Invoke();
             return;
         }
 
@@ -173,10 +192,16 @@ public class UIPositionEffect : MonoBehaviour
 
         ApplyEase(moveTween, settings);
 
-        if (deactivateWhenComplete)
+        moveTween.OnComplete(() =>
         {
-            moveTween.OnComplete(() => gameObject.SetActive(false));
-        }
+            if (deactivateWhenComplete)
+            {
+                gameObject.SetActive(false);
+            }
+
+            onComplete?.Invoke();
+        });
+
     }
 
     private void ApplyEase(Tween tween, MoveEffectSettings settings)

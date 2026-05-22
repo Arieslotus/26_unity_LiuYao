@@ -65,7 +65,7 @@ public static class PhysicsBounceUtility
             if (hit.collider == null)
                 continue;
 
-            if (ignoreCollider != null && hit.collider == ignoreCollider)
+            if (ShouldIgnoreCollider(hit.collider, ignoreCollider))
                 continue;
 
             if (hit.distance <= 0.0001f)
@@ -157,7 +157,7 @@ public static class PhysicsBounceUtility
             if (overlap == null)
                 continue;
 
-            if (ignoreCollider != null && overlap == ignoreCollider)
+            if (ShouldIgnoreCollider(overlap, ignoreCollider))
                 continue;
 
             Vector3 separationDirection;
@@ -166,9 +166,11 @@ public static class PhysicsBounceUtility
 
             if (ignoreCollider != null)
             {
+                Vector3 simulatedColliderPosition = GetSimulatedColliderPosition(ignoreCollider, pos);
+
                 hasPenetration = Physics.ComputePenetration(
                     ignoreCollider,
-                    ignoreCollider.transform.position,
+                    simulatedColliderPosition,
                     ignoreCollider.transform.rotation,
                     overlap,
                     overlap.transform.position,
@@ -248,6 +250,26 @@ public static class PhysicsBounceUtility
         return true;
     }
 
+    private static Vector3 GetSimulatedColliderPosition(Collider collider, Vector3 simulatedCenter)
+    {
+        Vector3 currentCenter = GetColliderWorldCenter(collider);
+        return collider.transform.position + (simulatedCenter - currentCenter);
+    }
+
+    private static Vector3 GetColliderWorldCenter(Collider collider)
+    {
+        if (collider is SphereCollider sphereCollider)
+            return sphereCollider.transform.TransformPoint(sphereCollider.center);
+
+        if (collider is BoxCollider boxCollider)
+            return boxCollider.transform.TransformPoint(boxCollider.center);
+
+        if (collider is CapsuleCollider capsuleCollider)
+            return capsuleCollider.transform.TransformPoint(capsuleCollider.center);
+
+        return collider.bounds.center;
+    }
+
     private static void LogHitCandidate(string ownerName, RaycastHit hit, Collider ignoreCollider, int index)
     {
         if (hit.collider == null)
@@ -258,7 +280,7 @@ public static class PhysicsBounceUtility
 
         CollisionTarget target = hit.collider.GetComponentInParent<CollisionTarget>();
         string layerName = LayerMask.LayerToName(hit.collider.gameObject.layer);
-        bool isIgnoredSelf = ignoreCollider != null && hit.collider == ignoreCollider;
+        bool isIgnoredSelf = ShouldIgnoreCollider(hit.collider, ignoreCollider);
 
         Debug.Log(
             $"[PhysicsBounceUtility] 候选命中 | owner:{ownerName} | index:{index} | " +
@@ -290,5 +312,28 @@ public static class PhysicsBounceUtility
             $"point:{hit.point} | normal:{hit.normal} | " +
             $"hasTarget:{target != null} | targetType:{(target != null ? target.type.ToString() : "无")}"
         );
+    }
+
+    public static bool ShouldIgnoreCollider(Collider candidate, Collider ignoreCollider)
+    {
+        if (candidate == null || ignoreCollider == null)
+            return false;
+
+        if (candidate == ignoreCollider)
+            return true;
+
+        Rigidbody candidateRigidbody = candidate.attachedRigidbody;
+        Rigidbody ignoreRigidbody = ignoreCollider.attachedRigidbody;
+        if (candidateRigidbody != null && candidateRigidbody == ignoreRigidbody)
+            return true;
+
+        MovementController candidateMovement = candidate.GetComponentInParent<MovementController>();
+        MovementController ignoreMovement = ignoreCollider.GetComponentInParent<MovementController>();
+        if (candidateMovement != null && candidateMovement == ignoreMovement)
+            return true;
+
+        ChessPiece candidatePiece = candidate.GetComponentInParent<ChessPiece>();
+        ChessPiece ignorePiece = ignoreCollider.GetComponentInParent<ChessPiece>();
+        return candidatePiece != null && candidatePiece == ignorePiece;
     }
 }

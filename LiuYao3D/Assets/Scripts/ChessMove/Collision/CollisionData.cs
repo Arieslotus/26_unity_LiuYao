@@ -30,6 +30,13 @@ public struct CollisionContext
     public Vector3 incomingDir;
 
     public ShotContext shotContext;
+
+    // 预测轨迹会复用碰撞规则，但不能修改真实游戏状态。
+    public bool suppressSideEffects;
+
+    // 预测阶段的剩余距离不一定等于 MovementController 当前运行时剩余距离。
+    public bool useRemainingDistanceOverride;
+    public float remainingDistanceOverride;
 }
 
 public struct CollisionResult

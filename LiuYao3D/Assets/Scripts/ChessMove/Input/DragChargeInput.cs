@@ -79,6 +79,17 @@ public class DragChargeInput : MonoBehaviour
         if (piece == null || mainCamera == null || chargeConfig == null)
             return;
 
+        if (!CanAcceptGameplayInput())
+        {
+            if (isCharging || isWaitingDelayedFire)
+            {
+                CancelChargeInternal($"[DragChargeInput] 全局游戏流程禁止输入，取消蓄力 | input:{name}");
+            }
+
+            ClearTrajectory();
+            return;
+        }
+
         if (isWaitingDelayedFire)
             return;
 
@@ -106,9 +117,15 @@ public class DragChargeInput : MonoBehaviour
 
     private void OnDisable()
     {
+        UnsubscribeGameFlow();
         ResetAllChargeState();
         ClearTrajectory();
         CameraFeedbackController.Instance?.EndChargeFocus();
+    }
+
+    private void OnEnable()
+    {
+        SubscribeGameFlow();
     }
 
     private void HandleMouseInput()
@@ -525,6 +542,43 @@ public class DragChargeInput : MonoBehaviour
             Debug.DrawLine(prevPoint, nextPoint, color);
             prevPoint = nextPoint;
         }
+    }
+
+    private void SubscribeGameFlow()
+    {
+        if (GameFlowController.Instance == null)
+            return;
+
+        GameFlowController.Instance.StateChanged -= OnGameFlowStateChanged;
+        GameFlowController.Instance.StateChanged += OnGameFlowStateChanged;
+    }
+
+    private void UnsubscribeGameFlow()
+    {
+        if (GameFlowController.Instance == null)
+            return;
+
+        GameFlowController.Instance.StateChanged -= OnGameFlowStateChanged;
+    }
+
+    private void OnGameFlowStateChanged(GameFlowState state)
+    {
+        if (state == GameFlowState.Playing)
+            return;
+
+        if (isCharging || isWaitingDelayedFire)
+        {
+            CancelChargeInternal($"[DragChargeInput] 游戏状态切换为 {state}，取消当前蓄力 | input:{name}");
+            return;
+        }
+
+        ClearTrajectory();
+        CameraFeedbackController.Instance?.EndChargeFocus();
+    }
+
+    private bool CanAcceptGameplayInput()
+    {
+        return GameFlowController.Instance == null || GameFlowController.Instance.CanAcceptGameplayInput;
     }
 
     public bool IsCharging => isCharging;

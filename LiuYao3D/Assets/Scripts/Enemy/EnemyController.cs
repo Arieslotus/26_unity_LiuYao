@@ -30,6 +30,8 @@ public class EnemyController : MonoBehaviour, IAttackable
     [Header("调试")]
     [SerializeField] private bool debugLog = true;
 
+    public EnemyStats Stats => stats;
+
     private void Awake()
     {
         if (stats == null)

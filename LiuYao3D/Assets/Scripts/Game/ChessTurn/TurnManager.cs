@@ -30,6 +30,7 @@ public class TurnManager : MonoBehaviour
     [SerializeField] private ChessTurnController playerTurnController;
 
     private bool isEnemyTurnRunning = false;
+    private bool hasStartedGameFlow = false;
     private int roundIndex = 0;
 
     public bool IsEnemyTurnRunning => isEnemyTurnRunning;
@@ -53,7 +54,40 @@ public class TurnManager : MonoBehaviour
     private void Start()
     {
         FindAllEnemies();
+
+        if (GameFlowController.Instance != null && !GameFlowController.Instance.IsGameplayActive)
+        {
+            Debug.Log("[TurnManager] 检测到 GameFlowController，等待全局游戏开始信号。");
+            return;
+        }
+
+        StartGameFlow();
+    }
+
+    public void StartGameFlow()
+    {
+        if (hasStartedGameFlow)
+            return;
+
+        hasStartedGameFlow = true;
         BeginNextRound();
+    }
+
+    public void StopGameFlow()
+    {
+        if (!hasStartedGameFlow && !isEnemyTurnRunning)
+            return;
+
+        hasStartedGameFlow = false;
+        isEnemyTurnRunning = false;
+        StopAllCoroutines();
+
+        if (playerTurnController != null)
+        {
+            playerTurnController.ForceStopPlayerRound();
+        }
+
+        Debug.Log($"[TurnManager] 游戏流程停止，回合系统已锁定 | round:{roundIndex}");
     }
 
     /// <summary>
@@ -70,6 +104,12 @@ public class TurnManager : MonoBehaviour
     /// </summary>
     public void BeginPlayerTurn()
     {
+        if (!hasStartedGameFlow)
+        {
+            Debug.LogWarning("[TurnManager] 游戏流程尚未开始，不能开始玩家回合。");
+            return;
+        }
+
         if (isEnemyTurnRunning)
         {
             Debug.LogWarning("[TurnManager] 敌人回合尚未结束，不能开始玩家回合。");
@@ -96,6 +136,9 @@ public class TurnManager : MonoBehaviour
     [ContextMenu("玩家操作结束")]
     public void EndPlayerTurn()
     {
+        if (!hasStartedGameFlow)
+            return;
+
         if (currentState != TurnState.PlayerTurn)
         {
             Debug.LogWarning("[TurnManager] 当前不是玩家回合，忽略 EndPlayerTurn。");
@@ -117,6 +160,9 @@ public class TurnManager : MonoBehaviour
     /// </summary>
     private void BeginEnemyTurn()
     {
+        if (!hasStartedGameFlow)
+            return;
+
         currentState = TurnState.EnemyTurn;
         isEnemyTurnRunning = true;
 
@@ -132,6 +178,9 @@ public class TurnManager : MonoBehaviour
     {
         for (int i = 0; i < enemies.Count; i++)
         {
+            if (!hasStartedGameFlow)
+                yield break;
+
             EnemyController enemy = enemies[i];
             if (enemy == null)
                 continue;
@@ -169,11 +218,17 @@ public class TurnManager : MonoBehaviour
             yield return new WaitForSeconds(roundStartDelay);
         }
 
+        if (!hasStartedGameFlow)
+            yield break;
+
         BeginNextRound();
     }
 
     private void BeginNextRound()
     {
+        if (!hasStartedGameFlow)
+            return;
+
         roundIndex++;
 
         Debug.Log($"[TurnManager] 大回合开始 | round:{roundIndex}");

@@ -1,16 +1,15 @@
 /// <summary>
-/// 实现功能：监听场上敌人和硬币死亡状态，在敌人全灭或硬币全灭时打开游戏结束弹窗。
+/// 实现功能：监听场上敌人与硬币死亡状态，只负责判断胜负条件并把结果交给游戏流程控制器。
 /// </summary>
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class GameEndController : MonoBehaviour
 {
-    [Header("弹窗")]
-    [SerializeField] private GameEndPopup gameEndPopupPrefab;
-
-    [Tooltip("指定弹窗管理器。为空时使用 UIPopupManager.Instance。")]
-    [SerializeField] private UIPopupManager popupManager;
+    [Header("结果接收者")]
+    [Tooltip("游戏流程控制器。为空时优先使用 GameFlowController.Instance。")]
+    [SerializeField] private GameFlowController flowController;
 
     [Header("检测对象")]
     [Tooltip("启动时自动收集场景中的敌人和硬币数值组件。")]
@@ -19,14 +18,17 @@ public class GameEndController : MonoBehaviour
     [SerializeField] private List<EnemyStats> enemies = new List<EnemyStats>();
     [SerializeField] private List<CoinStats> coins = new List<CoinStats>();
 
-    [Header("行为")]
-    [Tooltip("游戏结束后是否暂停 Time.timeScale。")]
-    [SerializeField] private bool pauseTimeOnGameEnd = false;
-
     [Header("调试")]
     [SerializeField] private bool debugLog = true;
 
     private bool hasGameEnded;
+
+    public event Action<bool> GameEndDetected;
+
+    private void Awake()
+    {
+        ResolveFlowController();
+    }
 
     private void Start()
     {
@@ -50,13 +52,56 @@ public class GameEndController : MonoBehaviour
         enemies.Clear();
         coins.Clear();
 
-        enemies.AddRange(FindObjectsOfType<EnemyStats>());
+        EnemyController[] enemyControllers = FindObjectsOfType<EnemyController>();
+        for (int i = 0; i < enemyControllers.Length; i++)
+        {
+            EnemyController enemyController = enemyControllers[i];
+            if (enemyController == null)
+                continue;
+
+            AddEnemyIfValid(enemyController.Stats);
+        }
+
+        EnemyStats[] enemyStats = FindObjectsOfType<EnemyStats>();
+        for (int i = 0; i < enemyStats.Length; i++)
+        {
+            AddEnemyIfValid(enemyStats[i]);
+        }
+
         coins.AddRange(FindObjectsOfType<CoinStats>());
 
         if (debugLog)
         {
-            Debug.Log($"[GameEndController] 收集检测对象 | enemies:{enemies.Count} | coins:{coins.Count}");
+            Debug.Log($"[GameEndController] 收集检测对象 | object:{name} | enemies:{enemies.Count} | coins:{coins.Count}");
         }
+    }
+
+    private void AddEnemyIfValid(EnemyStats enemy)
+    {
+        if (enemy == null)
+            return;
+
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            EnemyStats existingEnemy = enemies[i];
+            if (existingEnemy == null)
+                continue;
+
+            if (existingEnemy == enemy)
+                return;
+
+            if (existingEnemy.gameObject == enemy.gameObject)
+            {
+                if (debugLog)
+                {
+                    Debug.LogWarning($"[GameEndController] 敌人对象上存在多个 EnemyStats，已只保留实际检测用组件 | enemy:{enemy.name} | kept:{existingEnemy.GetInstanceID()} | ignored:{enemy.GetInstanceID()}");
+                }
+
+                return;
+            }
+        }
+
+        enemies.Add(enemy);
     }
 
     private void SubscribeTargets()
@@ -118,18 +163,18 @@ public class GameEndController : MonoBehaviour
 
         if (debugLog)
         {
-            Debug.Log($"[GameEndController] 检查游戏结束 | aliveEnemies:{aliveEnemyCount} | aliveCoins:{aliveCoinCount}");
+            Debug.Log($"[GameEndController] 检查游戏结束 | object:{name} | aliveEnemies:{aliveEnemyCount} | aliveCoins:{aliveCoinCount}");
         }
 
         if (enemies.Count > 0 && aliveEnemyCount <= 0)
         {
-            EndGame(true);
+            NotifyGameEnd(true);
             return;
         }
 
         if (coins.Count > 0 && aliveCoinCount <= 0)
         {
-            EndGame(false);
+            NotifyGameEnd(false);
         }
     }
 
@@ -177,37 +222,37 @@ public class GameEndController : MonoBehaviour
         return count;
     }
 
-    private void EndGame(bool isVictory)
+    private void NotifyGameEnd(bool isVictory)
     {
         hasGameEnded = true;
+        GameEndDetected?.Invoke(isVictory);
 
-        if (pauseTimeOnGameEnd)
+        ResolveFlowController();
+        if (flowController != null)
         {
-            Time.timeScale = 0f;
+            flowController.EndGame(isVictory);
         }
-
-        UIPopupManager manager = popupManager != null ? popupManager : UIPopupManager.Instance;
-        if (manager == null)
+        else
         {
-            Debug.LogWarning("[GameEndController] 游戏结束但场景中没有 UIPopupManager，无法打开结算弹窗。");
-            return;
-        }
-
-        if (gameEndPopupPrefab == null)
-        {
-            Debug.LogWarning("[GameEndController] 游戏结束但未配置 GameEndPopup 预制体。");
-            return;
-        }
-
-        GameEndPopup popup = manager.Open(gameEndPopupPrefab);
-        if (popup != null)
-        {
-            popup.SetResult(isVictory);
+            Debug.LogWarning($"[GameEndController] 已检测到游戏结束，但未找到 GameFlowController | object:{name} | result:{(isVictory ? "胜利" : "失败")}");
         }
 
         if (debugLog)
         {
-            Debug.Log($"[GameEndController] 游戏结束 | result:{(isVictory ? "胜利" : "失败")}");
+            Debug.Log($"[GameEndController] 检测到游戏结束 | object:{name} | result:{(isVictory ? "胜利" : "失败")}");
+        }
+    }
+
+    private void ResolveFlowController()
+    {
+        if (flowController == null)
+        {
+            flowController = GameFlowController.Instance;
+        }
+
+        if (flowController == null)
+        {
+            flowController = FindObjectOfType<GameFlowController>();
         }
     }
 }
