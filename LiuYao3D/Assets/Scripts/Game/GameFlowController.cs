@@ -1,5 +1,5 @@
 /// <summary>
-/// 实现功能：统一管理游戏开始与结束流程，支持多段 UIPositionEffect 组成的开场退场和结束进场动画组。
+/// 实现功能：统一管理游戏核心流程、胜负规则与状态事件，不直接负责开始/结束 UI 表现。
 /// </summary>
 using System;
 using System.Collections.Generic;
@@ -18,52 +18,36 @@ public class GameFlowController : MonoBehaviour
     public static GameFlowController Instance { get; private set; }
 
     [Header("开始流程")]
-    [Tooltip("进入场景后是否等待玩家点击鼠标左键再开始游戏。")]
-    [SerializeField] private bool waitForClickToStart = true;
-
-    [Tooltip("游戏开始时播放退场动画的 UI 组。把每个需要独立参数的子物体 UIPositionEffect 都拖进来。")]
-    [SerializeField] private List<UIPositionEffect> startUiEffects = new List<UIPositionEffect>();
+    [Tooltip("是否等待外部开始表现流程调用 RequestStartSequence。关闭后会在 Start 时直接进入游戏。")]
+    [SerializeField] private bool waitForStartSignal = true;
 
     [Header("核心引用")]
     [Tooltip("回合管理器。为空时自动从场景查找。")]
     [SerializeField] private TurnManager turnManager;
 
-    [Header("结束流程")]
-    [Tooltip("游戏结束后是否暂停 Time.timeScale。")]
+    [Header("胜负规则")]
+    [Tooltip("启动时自动收集场景中的敌人和硬币数值组件。")]
+    [SerializeField] private bool autoFindTargetsOnStart = true;
+
+    [SerializeField] private List<EnemyStats> enemies = new List<EnemyStats>();
+    [SerializeField] private List<CoinStats> coins = new List<CoinStats>();
+
+    [Header("结束行为")]
+    [Tooltip("游戏结束后是否暂停 Time.timeScale。UI 动画如果使用 unscaled time，暂停后仍可播放。")]
     [SerializeField] private bool pauseTimeOnGameEnd = false;
-
-    [Tooltip("进入场景时是否先隐藏结算 UI。")]
-    [SerializeField] private bool hideEndUiOnStart = true;
-
-    [Tooltip("需要整体隐藏/显示的结算 UI 根节点。适合 EndUIGroup 这类父物体。可为空。")]
-    [SerializeField] private List<GameObject> endUiRoots = new List<GameObject>();
-
-    [Tooltip("游戏结束时播放进场动画的 UI 组。把每个需要独立参数的子物体 UIPositionEffect 都拖进来。")]
-    [SerializeField] private List<UIPositionEffect> endUiEffects = new List<UIPositionEffect>();
-
-    [Tooltip("场景内结束 UI 的结果面板。为空时会尝试从 endUiEffects 中自动获取。")]
-    [SerializeField] private GameEndPopup endPopup;
-
-    [Tooltip("可选：没有场景结束 UI 时，由流程控制器打开这个结算弹窗。")]
-    [SerializeField] private GameEndPopup gameEndPopupPrefab;
-
-    [Tooltip("可选：指定弹窗管理器。为空时使用 UIPopupManager.Instance。")]
-    [SerializeField] private UIPopupManager popupManager;
 
     [Header("调试")]
     [SerializeField] private bool debugLog = true;
 
-    [SerializeField, HideInInspector] private UIPositionEffect startUiEffect;
-    [SerializeField, HideInInspector] private UIPositionEffect endUiEffect;
-
-    private readonly List<UIPositionEffect> cachedEffects = new List<UIPositionEffect>();
     private GameFlowState state = GameFlowState.WaitingToStart;
     private bool? lastGameResult;
+    private bool hasSubscribedTargets;
 
     public GameFlowState State => state;
     public bool IsGameplayActive => state == GameFlowState.Playing;
     public bool CanAcceptGameplayInput => state == GameFlowState.Playing;
     public bool HasGameEnded => state == GameFlowState.Ended;
+    public bool? LastGameResult => lastGameResult;
 
     public event Action<GameFlowState> StateChanged;
     public event Action<bool> GameEnded;
@@ -83,44 +67,95 @@ public class GameFlowController : MonoBehaviour
 
     private void Start()
     {
-        if (hideEndUiOnStart)
+        if (autoFindTargetsOnStart)
         {
-            HideEndUIImmediate();
+            FindTargets();
         }
 
-        if (waitForClickToStart)
+        SubscribeTargets();
+
+        if (waitForStartSignal)
         {
             SetState(GameFlowState.WaitingToStart);
             return;
         }
 
-        StartGame();
-    }
-
-    private void Update()
-    {
-        if (state != GameFlowState.WaitingToStart)
-            return;
-
-        if (Input.GetMouseButtonDown(0))
+        if (RequestStartSequence())
         {
-            StartGame();
+            CompleteStartSequence();
         }
     }
 
-    public void StartGame()
+    private void OnDestroy()
     {
-        if (state == GameFlowState.Playing || state == GameFlowState.Starting)
-            return;
+        UnsubscribeTargets();
+    }
+
+    [ContextMenu("重新收集胜负检测对象")]
+    public void FindTargets()
+    {
+        enemies.Clear();
+        coins.Clear();
+
+        EnemyController[] enemyControllers = FindObjectsOfType<EnemyController>();
+        for (int i = 0; i < enemyControllers.Length; i++)
+        {
+            EnemyController enemyController = enemyControllers[i];
+            if (enemyController == null)
+                continue;
+
+            AddEnemyIfValid(enemyController.Stats);
+        }
+
+        EnemyStats[] enemyStats = FindObjectsOfType<EnemyStats>();
+        for (int i = 0; i < enemyStats.Length; i++)
+        {
+            AddEnemyIfValid(enemyStats[i]);
+        }
+
+        coins.AddRange(FindObjectsOfType<CoinStats>());
+
+        if (debugLog)
+        {
+            Debug.Log($"[GameFlowController] 收集胜负检测对象 | object:{name} | enemies:{enemies.Count} | coins:{coins.Count}");
+        }
+    }
+
+    public bool RequestStartSequence()
+    {
+        if (state == GameFlowState.Starting || state == GameFlowState.Playing)
+            return false;
 
         if (state == GameFlowState.Ended)
         {
             Debug.LogWarning($"[GameFlowController] 游戏已结束，忽略开始请求 | object:{name}");
-            return;
+            return false;
         }
 
         SetState(GameFlowState.Starting);
-        PlayExitEffectsAndWait(CompleteStartGame);
+        return true;
+    }
+
+    public void CompleteStartSequence()
+    {
+        if (state != GameFlowState.Starting)
+        {
+            Debug.LogWarning($"[GameFlowController] 当前状态不是 Starting，忽略完成开始流程请求 | object:{name} | state:{state}");
+            return;
+        }
+
+        SetState(GameFlowState.Playing);
+
+        if (turnManager != null)
+        {
+            turnManager.StartGameFlow();
+        }
+        else
+        {
+            Debug.LogWarning($"[GameFlowController] 未找到 TurnManager，游戏状态已开始但无法启动回合 | object:{name}");
+        }
+
+        CheckGameEnd();
     }
 
     public void EndGame(bool isVictory)
@@ -141,148 +176,11 @@ public class GameFlowController : MonoBehaviour
             Time.timeScale = 0f;
         }
 
-        ShowEndUI(isVictory);
         GameEnded?.Invoke(isVictory);
 
         if (debugLog)
         {
             Debug.Log($"[GameFlowController] 游戏结束 | object:{name} | result:{(isVictory ? "胜利" : "失败")}");
-        }
-    }
-
-    private void CompleteStartGame()
-    {
-        if (state != GameFlowState.Starting)
-            return;
-
-        SetState(GameFlowState.Playing);
-
-        if (turnManager != null)
-        {
-            turnManager.StartGameFlow();
-            return;
-        }
-
-        Debug.LogWarning($"[GameFlowController] 未找到 TurnManager，游戏状态已开始但无法启动回合 | object:{name}");
-    }
-
-    private void PlayExitEffectsAndWait(Action onAllComplete)
-    {
-        CollectStartEffects();
-
-        if (cachedEffects.Count == 0)
-        {
-            onAllComplete?.Invoke();
-            return;
-        }
-
-        int remainingCount = cachedEffects.Count;
-
-        for (int i = 0; i < cachedEffects.Count; i++)
-        {
-            UIPositionEffect effect = cachedEffects[i];
-            effect.PlayExit(() =>
-            {
-                remainingCount--;
-                if (remainingCount <= 0)
-                {
-                    onAllComplete?.Invoke();
-                }
-            });
-        }
-    }
-
-    private void ShowEndUI(bool isVictory)
-    {
-        ShowEndUIRoots();
-        ResolveEndPopupFromSceneUI();
-
-        if (endPopup != null)
-        {
-            endPopup.SetResult(isVictory);
-        }
-
-        bool hasSceneEndUI = PlayEnterEffects();
-        if (!hasSceneEndUI)
-        {
-            OpenEndPopup(isVictory);
-        }
-    }
-
-    private void HideEndUIImmediate()
-    {
-        bool hasRoot = false;
-
-        if (endUiRoots != null)
-        {
-            for (int i = 0; i < endUiRoots.Count; i++)
-            {
-                GameObject root = endUiRoots[i];
-                if (root == null)
-                    continue;
-
-                hasRoot = true;
-                root.SetActive(false);
-            }
-        }
-
-        if (hasRoot)
-            return;
-
-        CollectEndEffects();
-
-        for (int i = 0; i < cachedEffects.Count; i++)
-        {
-            cachedEffects[i].gameObject.SetActive(false);
-        }
-    }
-
-    private void ShowEndUIRoots()
-    {
-        if (endUiRoots == null)
-            return;
-
-        for (int i = 0; i < endUiRoots.Count; i++)
-        {
-            GameObject root = endUiRoots[i];
-            if (root != null)
-            {
-                root.SetActive(true);
-            }
-        }
-    }
-
-    private bool PlayEnterEffects()
-    {
-        CollectEndEffects();
-
-        if (cachedEffects.Count == 0)
-            return false;
-
-        for (int i = 0; i < cachedEffects.Count; i++)
-        {
-            cachedEffects[i].PlayEnter();
-        }
-
-        return true;
-    }
-
-    private void OpenEndPopup(bool isVictory)
-    {
-        if (gameEndPopupPrefab == null)
-            return;
-
-        UIPopupManager manager = popupManager != null ? popupManager : UIPopupManager.Instance;
-        if (manager == null)
-        {
-            Debug.LogWarning($"[GameFlowController] 游戏结束但场景中没有 UIPopupManager，无法打开结算弹窗 | object:{name}");
-            return;
-        }
-
-        GameEndPopup popup = manager.Open(gameEndPopupPrefab);
-        if (popup != null)
-        {
-            popup.SetResult(isVictory);
         }
     }
 
@@ -292,59 +190,162 @@ public class GameFlowController : MonoBehaviour
         {
             turnManager = FindObjectOfType<TurnManager>();
         }
-
-        ResolveEndPopupFromSceneUI();
     }
 
-    private void ResolveEndPopupFromSceneUI()
+    private void AddEnemyIfValid(EnemyStats enemy)
     {
-        if (endPopup != null)
+        if (enemy == null)
             return;
 
-        CollectEndEffects();
-
-        for (int i = 0; i < cachedEffects.Count; i++)
+        for (int i = 0; i < enemies.Count; i++)
         {
-            endPopup = cachedEffects[i].GetComponent<GameEndPopup>();
-            if (endPopup != null)
+            EnemyStats existingEnemy = enemies[i];
+            if (existingEnemy == null)
+                continue;
+
+            if (existingEnemy == enemy)
                 return;
-        }
-    }
 
-    private void CollectStartEffects()
-    {
-        CollectEffects(startUiEffects, startUiEffect);
-    }
-
-    private void CollectEndEffects()
-    {
-        CollectEffects(endUiEffects, endUiEffect);
-    }
-
-    private void CollectEffects(List<UIPositionEffect> effects, UIPositionEffect legacyEffect)
-    {
-        cachedEffects.Clear();
-
-        if (effects != null)
-        {
-            for (int i = 0; i < effects.Count; i++)
+            if (existingEnemy.gameObject == enemy.gameObject)
             {
-                AddEffectIfValid(effects[i]);
+                if (debugLog)
+                {
+                    Debug.LogWarning($"[GameFlowController] 敌人对象上存在多个 EnemyStats，已只保留实际检测用组件 | enemy:{enemy.name} | kept:{existingEnemy.GetInstanceID()} | ignored:{enemy.GetInstanceID()}");
+                }
+
+                return;
             }
         }
 
-        AddEffectIfValid(legacyEffect);
+        enemies.Add(enemy);
     }
 
-    private void AddEffectIfValid(UIPositionEffect effect)
+    private void SubscribeTargets()
     {
-        if (effect == null)
+        if (hasSubscribedTargets)
             return;
 
-        if (cachedEffects.Contains(effect))
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            EnemyStats enemy = enemies[i];
+            if (enemy == null)
+                continue;
+
+            enemy.Died -= OnAnyTargetDied;
+            enemy.Died += OnAnyTargetDied;
+        }
+
+        for (int i = 0; i < coins.Count; i++)
+        {
+            CoinStats coin = coins[i];
+            if (coin == null)
+                continue;
+
+            coin.Died -= OnAnyTargetDied;
+            coin.Died += OnAnyTargetDied;
+        }
+
+        hasSubscribedTargets = true;
+    }
+
+    private void UnsubscribeTargets()
+    {
+        if (!hasSubscribedTargets)
             return;
 
-        cachedEffects.Add(effect);
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            EnemyStats enemy = enemies[i];
+            if (enemy != null)
+            {
+                enemy.Died -= OnAnyTargetDied;
+            }
+        }
+
+        for (int i = 0; i < coins.Count; i++)
+        {
+            CoinStats coin = coins[i];
+            if (coin != null)
+            {
+                coin.Died -= OnAnyTargetDied;
+            }
+        }
+
+        hasSubscribedTargets = false;
+    }
+
+    private void OnAnyTargetDied()
+    {
+        CheckGameEnd();
+    }
+
+    private void CheckGameEnd()
+    {
+        if (state != GameFlowState.Playing)
+            return;
+
+        int aliveEnemyCount = CountAliveEnemies();
+        int aliveCoinCount = CountAliveCoins();
+
+        if (debugLog)
+        {
+            Debug.Log($"[GameFlowController] 检查游戏结束 | object:{name} | aliveEnemies:{aliveEnemyCount} | aliveCoins:{aliveCoinCount}");
+        }
+
+        if (enemies.Count > 0 && aliveEnemyCount <= 0)
+        {
+            EndGame(true);
+            return;
+        }
+
+        if (coins.Count > 0 && aliveCoinCount <= 0)
+        {
+            EndGame(false);
+        }
+    }
+
+    private int CountAliveEnemies()
+    {
+        int count = 0;
+
+        for (int i = enemies.Count - 1; i >= 0; i--)
+        {
+            EnemyStats enemy = enemies[i];
+            if (enemy == null)
+            {
+                enemies.RemoveAt(i);
+                continue;
+            }
+
+            if (!enemy.IsDead)
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private int CountAliveCoins()
+    {
+        int count = 0;
+
+        for (int i = coins.Count - 1; i >= 0; i--)
+        {
+            CoinStats coin = coins[i];
+            if (coin == null)
+            {
+                coins.RemoveAt(i);
+                continue;
+            }
+
+            if (!coin.IsDead)
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
 
     private void SetState(GameFlowState newState)
