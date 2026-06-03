@@ -48,6 +48,7 @@ public class DragChargeInput : MonoBehaviour
 
     private Vector3 queuedFireDirection = Vector3.zero;
     private float queuedFirePower = 0f;
+    private ChessPiece queuedFirePiece;
 
     private TrajectoryRenderer currentTrajectoryRenderer;
 
@@ -197,6 +198,7 @@ public class DragChargeInput : MonoBehaviour
         pendingFireAfterFlip = false;
         queuedFireDirection = Vector3.zero;
         queuedFirePower = 0f;
+        queuedFirePiece = null;
 
         chargeStartFaceState = piece.IsFrontSide;
 
@@ -311,10 +313,12 @@ public class DragChargeInput : MonoBehaviour
 
         if (pendingFireAfterFlip)
         {
-            ExecuteFire(queuedFireDirection, queuedFirePower);
-            pendingFireAfterFlip = false;
-            queuedFireDirection = Vector3.zero;
-            queuedFirePower = 0f;
+            ChessPiece firePiece = queuedFirePiece;
+            Vector3 fireDirection = queuedFireDirection;
+            float firePower = queuedFirePower;
+
+            ClearQueuedDelayedFire();
+            ExecuteFire(firePiece, fireDirection, firePower);
         }
     }
 
@@ -366,12 +370,13 @@ public class DragChargeInput : MonoBehaviour
         {
             pendingFireAfterFlip = true;
             isWaitingDelayedFire = true;
+            queuedFirePiece = piece;
             queuedFireDirection = flatDir.normalized;
             queuedFirePower = currentPower;
 
             if (debugLog)
             {
-                Debug.Log($"[DragChargeInput] 翻面动画中松手，等待动画完成后发射 | 方向:{queuedFireDirection} | Power:{queuedFirePower:F2}");
+                Debug.Log($"[DragChargeInput] 翻面动画中松手，等待动画完成后发射 | piece:{queuedFirePiece.name} | 方向:{queuedFireDirection} | Power:{queuedFirePower:F2}");
             }
 
             ResetChargeStateKeepFace();
@@ -380,12 +385,12 @@ public class DragChargeInput : MonoBehaviour
             return;
         }
 
-        ExecuteFire(flatDir.normalized, currentPower);
+        ExecuteFire(piece, flatDir.normalized, currentPower);
     }
 
-    private void ExecuteFire(Vector3 fireDirection, float firePower)
+    private void ExecuteFire(ChessPiece firePiece, Vector3 fireDirection, float firePower)
     {
-        if (piece == null)
+        if (firePiece == null)
             return;
 
         Vector3 flatDir = fireDirection;
@@ -407,7 +412,7 @@ public class DragChargeInput : MonoBehaviour
             Debug.Log($"[DragChargeInput] 发射 | 方向:{flatDir} | Power:{firePower:F2} | 已翻面:{hasTriggeredChargeFlip}");
         }
 
-        piece.Fire(flatDir, firePower);
+        firePiece.Fire(flatDir, firePower);
 
         if (turnController != null)
         {
@@ -456,8 +461,18 @@ public class DragChargeInput : MonoBehaviour
         pendingFireAfterFlip = false;
         queuedFireDirection = Vector3.zero;
         queuedFirePower = 0f;
+        queuedFirePiece = null;
         isWaitingDelayedFire = false;
         chargeStartFaceState = piece != null ? piece.IsFrontSide : true;
+    }
+
+    private void ClearQueuedDelayedFire()
+    {
+        pendingFireAfterFlip = false;
+        queuedFireDirection = Vector3.zero;
+        queuedFirePower = 0f;
+        queuedFirePiece = null;
+        isWaitingDelayedFire = false;
     }
 
     private void ClearTrajectory()

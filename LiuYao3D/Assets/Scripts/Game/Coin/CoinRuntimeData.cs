@@ -58,11 +58,11 @@ public class CoinRuntimeData : MonoBehaviour
 
         RefreshVisualImmediate();
 
-        Debug.Log(
-            $"[CoinRuntimeData] 初始化 | 物体:{name} | " +
-            $"coin:{(coinDefinition != null ? coinDefinition.coinName : "未配置")} | " +
-            $"当前面:{(isFrontSide ? "正面" : "反面")} | 当前卦象:{CurrentTrigram}"
-        );
+        //Debug.Log(
+        //    $"[CoinRuntimeData] 初始化 | 物体:{name} | " +
+        //    $"coin:{(coinDefinition != null ? coinDefinition.coinName : "未配置")} | " +
+        //    $"当前面:{(isFrontSide ? "正面" : "反面")} | 当前卦象:{CurrentTrigram}"
+        //);
     }
 
     public void PlayChargeFlip(Action onComplete = null)

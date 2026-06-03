@@ -73,7 +73,8 @@ public static class CollisionResolver
             triggerHitTarget = false,
             hitDirection = Vector3.zero,
             impactStrength = 0f,
-            collider = ctx.hitCollider
+            collider = ctx.hitCollider,
+            hitPoint = ctx.hitPoint
         };
     }
 

@@ -28,6 +28,8 @@ public class HealthBar : MonoBehaviour
     [SerializeField] Color _borderColor;
 
     Material _matInstance;
+    bool _hasLoggedMissingGradient;
+    bool _hasLoggedSetupFailure;
 
     /// <summary>
     /// Health value between 0 and 1
@@ -44,7 +46,8 @@ public class HealthBar : MonoBehaviour
             if (value == _healthNormalized) return;
 
             _healthNormalized = value;
-            _matInstance.SetColor("_fillColor", _lowToHighHealthTransition.Evaluate(_healthNormalized));
+            SetupUniqueMaterial();
+            SetMaterialData();
         }
     }
 
@@ -58,20 +61,44 @@ public class HealthBar : MonoBehaviour
     {
         if (_matInstance != null) return;
 
+        Shader shader = Shader.Find("CustomShaders/HealthBar");
+        if (shader == null)
+        {
+            LogSetupFailure($"[HealthBar] 未找到 Shader | object:{name} | shader:CustomShaders/HealthBar");
+            return;
+        }
+
+        Renderer targetRenderer = GetComponent<Renderer>();
+        if (targetRenderer == null)
+        {
+            LogSetupFailure($"[HealthBar] 缺少 Renderer，无法创建血条材质 | object:{name}");
+            return;
+        }
+
         Debug.Log("Setup Material", this.gameObject);
-        _matInstance = new Material(Shader.Find("CustomShaders/HealthBar"));
+        _matInstance = new Material(shader);
         if (Application.isPlaying)
         {
-            GetComponent<Renderer>().material = _matInstance;
+            targetRenderer.material = _matInstance;
         }
         else
         {
-            GetComponent<Renderer>().sharedMaterial = _matInstance;
+            targetRenderer.sharedMaterial = _matInstance;
         }
+    }
+
+    void LogSetupFailure(string message)
+    {
+        if (_hasLoggedSetupFailure)
+            return;
+
+        _hasLoggedSetupFailure = true;
+        Debug.LogError(message, this);
     }
 
     void SetMaterialData()
     {
+        SetupUniqueMaterial();
         if (_matInstance == null) return;
 
         _matInstance.SetFloat("_healthNormalized", _healthNormalized);
@@ -84,11 +111,27 @@ public class HealthBar : MonoBehaviour
         _matInstance.SetFloat("_waveFreq", _fillWaveFrequency);
         _matInstance.SetFloat("_waveSpeed", _fillWaveSpeed);
 
-        _matInstance.SetColor("_fillColor", _lowToHighHealthTransition.Evaluate(_healthNormalized));
+        _matInstance.SetColor("_fillColor", EvaluateFillColor());
 
         _matInstance.SetColor("_backgroundColor", _backgroundColor);
         _matInstance.SetFloat("_borderWidth", _borderWidth);
         _matInstance.SetColor("_borderColor", _borderColor);
+    }
+
+    Color EvaluateFillColor()
+    {
+        if (_lowToHighHealthTransition != null)
+        {
+            return _lowToHighHealthTransition.Evaluate(_healthNormalized);
+        }
+
+        if (!_hasLoggedMissingGradient)
+        {
+            _hasLoggedMissingGradient = true;
+            Debug.LogWarning($"[HealthBar] 未配置血量颜色 Gradient，使用白色作为备用颜色 | object:{name}", this);
+        }
+
+        return Color.white;
     }
 
     void SetKeyword()

@@ -40,6 +40,7 @@ public class EnemyShieldController : MonoBehaviour
     private bool hasShield;
     private TrigramType currentShieldType = TrigramType.None;
     private TurnManager subscribedTurnManager;
+    private bool hasLoggedMissingTurnManager;
 
     public bool HasShield => hasShield;
     public TrigramType CurrentShieldType => currentShieldType;
@@ -80,22 +81,39 @@ public class EnemyShieldController : MonoBehaviour
         return true;
     }
 
+    public void GenerateInitialShield()
+    {
+        if (!isActiveAndEnabled || hasShield)
+            return;
+
+        GenerateNextShield(TurnManager.Instance != null ? TurnManager.Instance.RoundIndex : 0);
+    }
+
     private void Start()
     {
         CacheShieldImage();
         SubscribeEvents();
-        HideShieldVisual();
+        RefreshShieldVisual();
     }
 
     private void OnEnable()
     {
         CacheShieldImage();
         SubscribeEvents();
+        RefreshShieldVisual();
     }
 
     private void OnDisable()
     {
         UnsubscribeEvents();
+    }
+
+    private void Update()
+    {
+        if (subscribedTurnManager == null && TurnManager.Instance != null)
+        {
+            SubscribeEvents();
+        }
     }
 
     private void SubscribeEvents()
@@ -115,6 +133,16 @@ public class EnemyShieldController : MonoBehaviour
         if (subscribedTurnManager != null)
         {
             subscribedTurnManager.RoundStarted += OnRoundStarted;
+
+            if (debugLog)
+            {
+                Debug.Log($"[EnemyShieldController] 已订阅回合事件 | enemy:{name} | round:{subscribedTurnManager.RoundIndex}");
+            }
+        }
+        else if (!hasLoggedMissingTurnManager)
+        {
+            hasLoggedMissingTurnManager = true;
+            Debug.LogWarning($"[EnemyShieldController] 暂未找到 TurnManager，将在后续帧重试订阅 | enemy:{name}");
         }
     }
 
@@ -131,6 +159,14 @@ public class EnemyShieldController : MonoBehaviour
 
     private void OnRoundStarted(int roundIndex)
     {
+        if (debugLog)
+        {
+            Debug.Log(
+                $"[EnemyShieldController] 收到新回合事件 | enemy:{name} | round:{roundIndex} | " +
+                $"hasShield:{hasShield} | passedRounds:{passedRounds}/{shieldIntervalRounds}"
+            );
+        }
+
         if (ignoreFirstRoundStart && roundIndex <= 1)
             return;
 
@@ -254,6 +290,17 @@ public class EnemyShieldController : MonoBehaviour
         {
             shieldImage.gameObject.SetActive(false);
         }
+    }
+
+    private void RefreshShieldVisual()
+    {
+        if (hasShield && currentShieldType != TrigramType.None)
+        {
+            ShowShieldVisual(currentShieldType);
+            return;
+        }
+
+        HideShieldVisual();
     }
 
     private void CacheShieldImage()

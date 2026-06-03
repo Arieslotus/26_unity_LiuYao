@@ -14,26 +14,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   entries:
   - trigramType: 1
-    sprite: {fileID: -1414911130, guid: fd73047680802ce4391ee5de60652207, type: 3}
+    sprite: {fileID: -1300852243, guid: 4ba3364136e1bc245a7102837fcbd4aa, type: 3}
     uiPrefab: {fileID: 149261007776183480, guid: bbff944b7e9291c449176cc5fb64e8bb, type: 3}
   - trigramType: 2
-    sprite: {fileID: 250298794, guid: fd73047680802ce4391ee5de60652207, type: 3}
+    sprite: {fileID: -2147012017, guid: 3740407fae5939148b561b3e9a5c247d, type: 3}
     uiPrefab: {fileID: 1067350822997779263, guid: 035bb088459ef644284f31ad0ed3429b, type: 3}
   - trigramType: 3
-    sprite: {fileID: 15371249, guid: fd73047680802ce4391ee5de60652207, type: 3}
+    sprite: {fileID: -276585823, guid: b7685e033e932cb4a87edb5ce8e29add, type: 3}
     uiPrefab: {fileID: 3695446001618028429, guid: 90c7d4be82e65654bb35b57eff603f03, type: 3}
   - trigramType: 8
-    sprite: {fileID: 1220795771, guid: fd73047680802ce4391ee5de60652207, type: 3}
+    sprite: {fileID: 520815131, guid: b2158bd1b58b34f4ca15e0ef593098be, type: 3}
     uiPrefab: {fileID: 5315675857710289322, guid: 1f7054a1e6b056a4e9e6a91dc52b7da8, type: 3}
   - trigramType: 6
-    sprite: {fileID: -603384310, guid: fd73047680802ce4391ee5de60652207, type: 3}
+    sprite: {fileID: 238856171, guid: c036840678328e347a56681dbeb7e762, type: 3}
     uiPrefab: {fileID: 5873423548463964733, guid: c2f19b11af918424d849cfd9a3194583, type: 3}
   - trigramType: 5
-    sprite: {fileID: -804127146, guid: fd73047680802ce4391ee5de60652207, type: 3}
+    sprite: {fileID: -1316449032, guid: f5afdb54c0e7a2842a387ccc3cdec2cb, type: 3}
     uiPrefab: {fileID: 3218904375701765661, guid: 037acef659b62b14eb6b3f943f2eaadf, type: 3}
   - trigramType: 4
-    sprite: {fileID: 2043648329, guid: fd73047680802ce4391ee5de60652207, type: 3}
+    sprite: {fileID: 670522206, guid: f745f8c9edf49074e819a3db57f7c0bc, type: 3}
     uiPrefab: {fileID: 6653659570522252808, guid: 77837d803a1d4354997906ffe920facc, type: 3}
   - trigramType: 7
-    sprite: {fileID: 1370290188, guid: fd73047680802ce4391ee5de60652207, type: 3}
+    sprite: {fileID: 591933766, guid: 047e02a14e632834aa23239818ec165a, type: 3}
     uiPrefab: {fileID: 7201904043864836403, guid: fe7779f123b894d4cbaf0d5b8dd71db7, type: 3}

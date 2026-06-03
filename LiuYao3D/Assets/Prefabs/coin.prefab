@@ -313,7 +313,7 @@ MonoBehaviour:
   useFixedWorldY: 1
   fixedWorldY: 0.3
   maxVisibleCollisionPointCount: 3
-  overflowSegmentPercent: 0.5
+  overflowSegmentPercent: 0.827
   cornerVertices: 6
   capVertices: 4
   lineAlignment: 0
@@ -566,7 +566,7 @@ Transform:
   m_GameObject: {fileID: 4436758928861260262}
   serializedVersion: 2
   m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 0, y: 0, z: 0.08}
+  m_LocalPosition: {x: 0, y: 0, z: 0.05}
   m_LocalScale: {x: 0.12, y: 0.12, z: 0.12}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -639,7 +639,7 @@ MeshCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 5
   m_Convex: 0
   m_CookingOptions: 30

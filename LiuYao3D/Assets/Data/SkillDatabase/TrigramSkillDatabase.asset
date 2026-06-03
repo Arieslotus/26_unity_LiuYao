@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f992e3d51894b684e9720862bcaf8ca9, type: 3}
   m_Name: TrigramSkillDatabase
   m_EditorClassIdentifier: 
+  distinguishActivePassive: 0
   skills:
   - {fileID: 11400000, guid: 74319889ce56783418eb2907d581bfa2, type: 2}
   - {fileID: 11400000, guid: 04a6414831d4b844a98f314193eef1ea, type: 2}

@@ -43,10 +43,7 @@ public class ChessTurnController : MonoBehaviour
         if (!isPlayerRoundActive)
             return;
 
-        if (CurrentPiece == null)
-            return;
-
-        if (hasFiredCurrent && !CurrentPiece.IsMoving)
+        if (hasFiredCurrent && (CurrentPiece == null || !CurrentPiece.IsMoving))
         {
             Debug.Log($"[ChessTurnController] 棋子 {currentIndex} 已完成行动，准备切换。");
             AdvanceToNextControllablePiece();

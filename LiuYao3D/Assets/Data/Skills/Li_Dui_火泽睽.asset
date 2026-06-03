@@ -17,4 +17,5 @@ MonoBehaviour:
   skillName: "\u706B\u6CFD\u777D"
   skillIcon: {fileID: 21300000, guid: 0c12d56b0280a9c4b957ac7aeef130c1, type: 3}
   description: "\u5168\u573A\u8303\u56F4\u7834\u79BB\u3001\u5151\u76FE\u3002"
-  effectText: 20
+  effectText: 
+  effects: []

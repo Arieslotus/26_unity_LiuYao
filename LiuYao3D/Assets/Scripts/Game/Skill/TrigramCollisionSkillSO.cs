@@ -4,6 +4,7 @@
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
+using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "Skill_", menuName = "Config/Trigram Collision Skill")]
@@ -23,12 +24,16 @@ public class TrigramCollisionSkillSO : ScriptableObject
     [TextArea]
     [SerializeField] private string effectText;
 
+    [Header("具体效果")]
+    [SerializeField] private List<CollisionSkillEffectData> effects = new List<CollisionSkillEffectData>();
+
     public TrigramType ActiveTrigram => activeTrigram;
     public TrigramType PassiveTrigram => passiveTrigram;
     public string SkillName => skillName;
     public Sprite SkillIcon => skillIcon;
     public string Description => description;
     public string EffectText => effectText;
+    public IReadOnlyList<CollisionSkillEffectData> Effects => effects;
 
     public bool Match(TrigramType active, TrigramType passive)
     {

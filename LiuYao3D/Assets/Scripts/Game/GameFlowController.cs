@@ -25,6 +25,9 @@ public class GameFlowController : MonoBehaviour
     [Tooltip("回合管理器。为空时自动从场景查找。")]
     [SerializeField] private TurnManager turnManager;
 
+    [Tooltip("敌人波次管理器。存在有效波次配置时，胜利条件由波次系统判定。")]
+    [SerializeField] private EnemyWaveManager enemyWaveManager;
+
     [Header("胜负规则")]
     [Tooltip("启动时自动收集场景中的敌人和硬币数值组件。")]
     [SerializeField] private bool autoFindTargetsOnStart = true;
@@ -56,7 +59,7 @@ public class GameFlowController : MonoBehaviour
     {
         if (Instance != null && Instance != this)
         {
-            Debug.LogError($"[GameFlowController] 场景中存在多个 GameFlowController，销毁重复对象:{name}");
+            Debug.LogError($"[GameFlowController] 场景中存在多个 GameFlowController，销毁重复对象 | object:{name}");
             Destroy(gameObject);
             return;
         }
@@ -128,7 +131,7 @@ public class GameFlowController : MonoBehaviour
 
         if (state == GameFlowState.Ended)
         {
-            Debug.LogWarning($"[GameFlowController] 游戏已结束，忽略开始请求 | object:{name}");
+            Debug.LogWarning($"[GameFlowController] 游戏已经结束，忽略开始请求 | object:{name}");
             return false;
         }
 
@@ -156,6 +159,25 @@ public class GameFlowController : MonoBehaviour
         }
 
         CheckGameEnd();
+    }
+
+    public void RegisterEnemy(EnemyStats enemy)
+    {
+        if (enemy == null)
+            return;
+
+        AddEnemyIfValid(enemy);
+
+        if (hasSubscribedTargets)
+        {
+            enemy.Died -= OnAnyTargetDied;
+            enemy.Died += OnAnyTargetDied;
+        }
+
+        if (debugLog)
+        {
+            Debug.Log($"[GameFlowController] 注册动态敌人 | object:{name} | enemy:{enemy.name} | enemies:{enemies.Count}");
+        }
     }
 
     public void EndGame(bool isVictory)
@@ -189,6 +211,11 @@ public class GameFlowController : MonoBehaviour
         if (turnManager == null)
         {
             turnManager = FindObjectOfType<TurnManager>();
+        }
+
+        if (enemyWaveManager == null)
+        {
+            enemyWaveManager = FindObjectOfType<EnemyWaveManager>();
         }
     }
 
@@ -294,6 +321,16 @@ public class GameFlowController : MonoBehaviour
 
         if (enemies.Count > 0 && aliveEnemyCount <= 0)
         {
+            if (enemyWaveManager != null && enemyWaveManager.IsWaveModeActive && !enemyWaveManager.HasCompletedAllWaves)
+            {
+                if (debugLog)
+                {
+                    Debug.Log($"[GameFlowController] 当前敌人已清空，但波次尚未完成，暂不判定胜利 | object:{name}");
+                }
+
+                return;
+            }
+
             EndGame(true);
             return;
         }

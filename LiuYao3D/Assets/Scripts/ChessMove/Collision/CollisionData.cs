@@ -58,4 +58,5 @@ public struct CollisionResult
     public Vector3 hitDirection;
     public float impactStrength;
     public Collider collider;
+    public Vector3 hitPoint;
 }

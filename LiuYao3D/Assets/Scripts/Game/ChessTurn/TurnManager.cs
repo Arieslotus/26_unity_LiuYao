@@ -99,6 +99,29 @@ public class TurnManager : MonoBehaviour
         enemies.AddRange(FindObjectsOfType<EnemyController>());
     }
 
+    public void RegisterEnemy(EnemyController enemy)
+    {
+        if (enemy == null)
+            return;
+
+        if (enemies.Contains(enemy))
+            return;
+
+        enemies.Add(enemy);
+        Debug.Log($"[TurnManager] 注册敌人 | enemy:{enemy.name} | total:{enemies.Count}");
+    }
+
+    public void UnregisterEnemy(EnemyController enemy)
+    {
+        if (enemy == null)
+            return;
+
+        if (enemies.Remove(enemy))
+        {
+            Debug.Log($"[TurnManager] 注销敌人 | enemy:{enemy.name} | total:{enemies.Count}");
+        }
+    }
+
     /// <summary>
     /// 开始玩家回合
     /// </summary>
@@ -176,19 +199,33 @@ public class TurnManager : MonoBehaviour
     /// </summary>
     private IEnumerator EnemyTurnCoroutine()
     {
+        CleanupEnemies();
+
         for (int i = 0; i < enemies.Count; i++)
         {
             if (!hasStartedGameFlow)
                 yield break;
 
             EnemyController enemy = enemies[i];
-            if (enemy == null)
+            if (enemy == null || enemy.Stats == null || enemy.Stats.IsDead)
                 continue;
 
             yield return enemy.TakeTurn();
         }
 
         EndEnemyTurn();
+    }
+
+    private void CleanupEnemies()
+    {
+        for (int i = enemies.Count - 1; i >= 0; i--)
+        {
+            EnemyController enemy = enemies[i];
+            if (enemy == null || enemy.Stats == null || enemy.Stats.IsDead)
+            {
+                enemies.RemoveAt(i);
+            }
+        }
     }
 
     /// <summary>

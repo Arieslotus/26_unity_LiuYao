@@ -30,6 +30,7 @@ public class MovementController : MonoBehaviour
 
     private ChessPiece chessPiece;
     private Collider lastPreImpactCollider;
+    private bool hasSettledOperationLoss;
 
     public bool IsMoving => isMoving;
     public float RemainingDistance => remainingDistance;
@@ -64,8 +65,9 @@ public class MovementController : MonoBehaviour
 
         isMoving = true;
         lastPreImpactCollider = null;
+        hasSettledOperationLoss = false;
 
-        Debug.Log($"[Movement] 开始移动 | 物体:{name} | 来源:{shotContext.sourceType} | 方向:{direction} | 总路径:{remainingDistance:F2}");
+        //Debug.Log($"[Movement] 开始移动 | 物体:{name} | 来源:{shotContext.sourceType} | 方向:{direction} | 总路径:{remainingDistance:F2}");
     }
 
     public void InitByCollision(Vector3 dir, MovementConfig movementConfig, ShotContext context, float startDistance, float speedScale)
@@ -80,8 +82,9 @@ public class MovementController : MonoBehaviour
 
         isMoving = true;
         lastPreImpactCollider = null;
+        hasSettledOperationLoss = true;
 
-        Debug.Log($"[Movement] 碰撞启动移动 | 物体:{name} | 来源:{shotContext.sourceType} | 方向:{direction} | 路径:{remainingDistance:F2} | 初速度:{currentSpeed:F2}");
+        //Debug.Log($"[Movement] 碰撞启动移动 | 物体:{name} | 来源:{shotContext.sourceType} | 方向:{direction} | 路径:{remainingDistance:F2} | 初速度:{currentSpeed:F2}");
     }
 
     private void Update()
@@ -142,13 +145,13 @@ public class MovementController : MonoBehaviour
 
             if (traveled <= 0.0001f)
             {
-                Debug.LogWarning(
-                    $"[Movement] traveled 过小 | 物体:{name} | hit:{result.hit} | " +
-                    $"startedOverlapping:{result.startedOverlapping} | penetration:{result.penetrationDistance:F6} | " +
-                    $"collider:{result.collider?.name} | pos:{currentCenter} | dir:{direction} | " +
-                    $"normal:{result.normal} | hitPoint:{result.hitPoint} | traveled:{traveled:F6} | " +
-                    $"remainingMoveThisFrame:{remainingMoveThisFrame:F6} | remainingDistance:{remainingDistance:F4}"
-                );
+                //Debug.LogWarning(
+                //    $"[Movement] traveled 过小 | 物体:{name} | hit:{result.hit} | " +
+                //    $"startedOverlapping:{result.startedOverlapping} | penetration:{result.penetrationDistance:F6} | " +
+                //    $"collider:{result.collider?.name} | pos:{currentCenter} | dir:{direction} | " +
+                //    $"normal:{result.normal} | hitPoint:{result.hitPoint} | traveled:{traveled:F6} | " +
+                //    $"remainingMoveThisFrame:{remainingMoveThisFrame:F6} | remainingDistance:{remainingDistance:F4}"
+                //);
 
                 if (result.hit)
                 {
@@ -166,11 +169,11 @@ public class MovementController : MonoBehaviour
 
             if (debugPhysicsBounceHits)
             {
-                Debug.Log(
-                    $"[Movement] 本步移动 | 物体:{name} | from:{currentCenter} | to:{result.newPos} | " +
-                    $"hit:{result.hit} | collider:{result.collider?.name} | traveled:{traveled:F6} | " +
-                    $"dirBefore:{direction} | newDir:{result.newDir}"
-                );
+                //Debug.Log(
+                //    $"[Movement] 本步移动 | 物体:{name} | from:{currentCenter} | to:{result.newPos} | " +
+                //    $"hit:{result.hit} | collider:{result.collider?.name} | traveled:{traveled:F6} | " +
+                //    $"dirBefore:{direction} | newDir:{result.newDir}"
+                //);
             }
 
             remainingDistance -= traveled;
@@ -198,10 +201,10 @@ public class MovementController : MonoBehaviour
 
     private void ResolveBounceHit(BounceResult result, Vector3 incomingDirection)
     {
-        Debug.Log(
-            $"[Movement] 碰撞 | 物体:{name} | 剩余路径:{remainingDistance:F2} | " +
-            $"startedOverlapping:{result.startedOverlapping} | collider:{result.collider?.name}"
-        );
+        //Debug.Log(
+        //    $"[Movement] 碰撞 | 物体:{name} | 剩余路径:{remainingDistance:F2} | " +
+        //    $"startedOverlapping:{result.startedOverlapping} | collider:{result.collider?.name}"
+        //);
 
         CollisionTarget target = null;
         if (result.collider != null)
@@ -245,7 +248,7 @@ public class MovementController : MonoBehaviour
                 result.otherCoinSpeedScale
             );
 
-            Debug.Log($"[Movement] 触发其他硬币移动 | 发起者:{name} | 目标:{result.otherCoin.name} | startDistance:{result.otherCoinStartDistance:F2}");
+            //Debug.Log($"[Movement] 触发其他硬币移动 | 发起者:{name} | 目标:{result.otherCoin.name} | startDistance:{result.otherCoinStartDistance:F2}");
         }
 
         if (result.stopImmediately)
@@ -254,7 +257,7 @@ public class MovementController : MonoBehaviour
             return;
         }
 
-        Debug.Log($"[BounceDebug] 物体:{name} | dir:{direction} | remainingDistance:{remainingDistance:F4}");
+        //Debug.Log($"[BounceDebug] 物体:{name} | dir:{direction} | remainingDistance:{remainingDistance:F4}");
     }
 
     private void TryRequestPreImpactFeedback(float collisionRadius)
@@ -480,8 +483,26 @@ public class MovementController : MonoBehaviour
             $"效果:{skill.EffectText}"
         );
 
-        CombatSkillEvents.RequestSkillImpactWave(activeCoin.CurrentTrigram);
-        CombatSkillEvents.RequestSkillImpactWave(passiveCoin.CurrentTrigram);
+        CoinStats activeStats = GetComponentInParent<CoinStats>();
+        CoinStats passiveStats = result.otherCoin.GetComponentInParent<CoinStats>();
+        CollisionSkillExecutor.Execute(
+            skill,
+            new CollisionSkillContext
+            {
+                skill = skill,
+                activePiece = chessPiece,
+                passivePiece = result.otherCoin,
+                activeStats = activeStats,
+                passiveStats = passiveStats,
+                activeTrigram = activeCoin.CurrentTrigram,
+                passiveTrigram = passiveCoin.CurrentTrigram,
+                activeAttackSnapshot = activeStats != null ? activeStats.Attack : 0,
+                passiveAttackSnapshot = passiveStats != null ? passiveStats.Attack : 0,
+                collisionPosition = result.hitPoint,
+                triggeredRound = TurnManager.Instance != null ? TurnManager.Instance.RoundIndex : 0
+            }
+        );
+
     }
 
     private void ApplyHitTarget(CollisionResult result)
@@ -498,7 +519,7 @@ public class MovementController : MonoBehaviour
         CoinStats attackerStats = GetComponentInParent<CoinStats>();
         ChessPiece attackerPiece = GetComponentInParent<ChessPiece>();
         IDamageable damageable = result.collider.GetComponentInParent<IDamageable>();
-        int damage = attackerStats != null ? attackerStats.Attack : 0;
+        int damage = CoinDamageCalculator.Calculate(attackerStats);
 
         EnemyShieldController shieldController = result.collider.GetComponentInParent<EnemyShieldController>();
         if (shieldController != null && attackerPiece != null)
@@ -575,10 +596,8 @@ public class MovementController : MonoBehaviour
 
     public Vector3 GetCollisionCenter()
     {
-        if (selfSphereCollider == null)
-            return transform.position;
-
-        return selfSphereCollider.transform.TransformPoint(selfSphereCollider.center);
+        // 视觉节点会执行翻面动画。逻辑圆心固定使用棋子根节点，避免子级 Collider 跟随旋转后产生漂移。
+        return transform.position;
     }
 
     private void MoveTransformByCenterDelta(Vector3 oldCenter, Vector3 newCenter)
@@ -605,6 +624,21 @@ public class MovementController : MonoBehaviour
         isMoving = false;
         currentSpeed = 0f;
         lastPreImpactCollider = null;
+
+        if (!hasSettledOperationLoss && shotContext.isPlayerShot)
+        {
+            hasSettledOperationLoss = true;
+
+            CoinStats stats = GetComponentInParent<CoinStats>();
+            if (stats != null)
+            {
+                stats.AddOperationLoss();
+            }
+            else
+            {
+                Debug.LogWarning($"[Movement] 主动操作结束但未找到 CoinStats | 物体:{name}");
+            }
+        }
 
         Debug.Log($"[Movement] 停止移动 | 物体:{name}");
     }

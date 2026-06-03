@@ -10,6 +10,7 @@ using UnityEngine;
 public class EnemyController : MonoBehaviour, IAttackable
 {
     [Header("数值设定")]
+    [Tooltip("兼容旧预制体的备用攻击力。配置 EnemyStats/EnemyDefinitionSO 后会优先使用 Stats.Attack。")]
     [SerializeField] private int attackDamage = 3;
     [SerializeField] private float moveSpeed = 2f;
 
@@ -106,11 +107,12 @@ public class EnemyController : MonoBehaviour, IAttackable
 
             yield return DoAttackFeedback();
 
-            target.TakeDamage(attackDamage);
+            int damage = GetAttackDamage();
+            target.TakeDamage(damage);
 
             if (debugLog)
             {
-                Debug.Log($"[EnemyController] {name} 攻击了 {target.GetTransform().name} | Damage:{attackDamage}");
+                Debug.Log($"[EnemyController] {name} 攻击了 {target.GetTransform().name} | Damage:{damage}");
             }
 
             yield return new WaitForSeconds(0.3f);
@@ -133,6 +135,9 @@ public class EnemyController : MonoBehaviour, IAttackable
                 continue;
 
             if (behaviour == this)
+                continue;
+
+            if (behaviour is EnemyController)
                 continue;
 
             if (behaviour is not IAttackable attackable)
@@ -253,6 +258,11 @@ public class EnemyController : MonoBehaviour, IAttackable
     public Transform GetTransform()
     {
         return transform;
+    }
+
+    private int GetAttackDamage()
+    {
+        return stats != null ? stats.Attack : attackDamage;
     }
 
     private void UpdateHPUI()
