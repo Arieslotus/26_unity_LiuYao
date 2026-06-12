@@ -14,6 +14,9 @@ public class ReduceLossEffectData : CollisionSkillEffectData
     [Min(0)]
     [SerializeField] private int reduceLoss = 1;
 
+    [Header("可选特效")]
+    [SerializeField] private SkillEffectVfxData vfx;
+
     public override ICollisionSkillEffectController CreateController()
     {
         return new Controller(this);
@@ -36,6 +39,8 @@ public class ReduceLossEffectData : CollisionSkillEffectData
             {
                 targets[i].ReduceLoss(data.reduceLoss);
             }
+
+            SkillEffectVfxPlayer.PlayForCoins(data.vfx, targets);
         }
     }
 }

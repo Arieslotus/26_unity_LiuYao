@@ -407,8 +407,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.11, y: 0.2}
-  m_SizeDelta: {x: 188, y: 141}
+  m_AnchoredPosition: {x: -0.11, y: 0.7}
+  m_SizeDelta: {x: 251, y: 250}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3936941991281086400
 CanvasRenderer:
@@ -438,7 +438,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -1414911130, guid: fd73047680802ce4391ee5de60652207, type: 3}
+  m_Sprite: {fileID: 670522206, guid: f745f8c9edf49074e819a3db57f7c0bc, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -500,10 +500,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   definition: {fileID: 11400000, guid: 4602ca3f93dc90e4bb122f27d16ced84, type: 2}
-  maxHP: 10
-  currentHP: 10
-  startWithFullHP: 1
-  attack: 1
   debugLog: 1
 --- !u!114 &4469890191220512059
 MonoBehaviour:
@@ -571,10 +567,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   definition: {fileID: 11400000, guid: 4602ca3f93dc90e4bb122f27d16ced84, type: 2}
-  maxHP: 10
-  currentHP: 10
-  startWithFullHP: 1
-  attack: 1
   debugLog: 1
 --- !u!1001 &7625170680241013057
 PrefabInstance:

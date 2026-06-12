@@ -32,6 +32,9 @@ public class DealDamageEffectData : CollisionSkillEffectData
     [Min(0)]
     [SerializeField] private int fixedDamage;
 
+    [Header("可选特效")]
+    [SerializeField] private SkillEffectVfxData vfx;
+
     public override ICollisionSkillEffectController CreateController()
     {
         return new Controller(this);
@@ -61,6 +64,8 @@ public class DealDamageEffectData : CollisionSkillEffectData
             {
                 targets[i].TakeDamage(damage);
             }
+
+            SkillEffectVfxPlayer.PlayForEnemies(data.vfx, targets);
         }
     }
 

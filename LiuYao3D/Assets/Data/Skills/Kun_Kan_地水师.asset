@@ -18,6 +18,33 @@ MonoBehaviour:
   skillIcon: {fileID: 21300000, guid: c9e4af6eda291fd41a4672121fc38135, type: 3}
   description: "\u4E00\u5B9A\u8303\u56F4\u7834\u5764\u3001\u574E\u76FE\u3002\n\u5BF9\u6700\u8FD1\u654C\u65B9\u5355\u4F53\u9020\u6210\u653B\u51FB+++\u3002"
   effectText: "\u5BF9\u8303\u56F4\u6C34\u3001\u706B\u5C5E\u6027\u654C\u4EBA\u7834\u76FE\u3002\u5BF9\u654C\u65B9\u6700\u8FD1\u5355\u4F53\u9020\u6210250%\u653B\u51FB\u529B\u7684\u4F24\u5BB3\u3002"
-  effects:
-  - {fileID: 11400000, guid: 11d91caec1aeb9b48a8d557b11b6e2fa, type: 2}
-  - {fileID: 11400000, guid: f60d5c57c2a71ac4f8e1e4b002b5e565, type: 2}
+  inlineEffects:
+  - rid: 7184781992140472331
+  - rid: 7184781992140472332
+  effects: []
+  references:
+    version: 2
+    RefIds:
+    - rid: 7184781992140472331
+      type: {class: BreakEnemyShieldEffectConfig, ns: , asm: Assembly-CSharp}
+      data:
+        targetType: 1
+        radius: 2
+    - rid: 7184781992140472332
+      type: {class: DealDamageEffectConfig, ns: , asm: Assembly-CSharp}
+      data:
+        targetType: 2
+        radius: 3
+        damageSource: 0
+        damagePercent: 250
+        fixedDamage: 0
+        vfx:
+          prefab: {fileID: 0}
+          targetType: 5
+          radius: 3
+          parentToTarget: 1
+          worldOffset: {x: 0, y: 0, z: 0}
+          lifetimeMode: 0
+          lifetime: 2
+          delay: 0
+          useUnscaledTimeForParticles: 1

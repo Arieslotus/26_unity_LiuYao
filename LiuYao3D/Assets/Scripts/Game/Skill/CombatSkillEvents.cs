@@ -2,6 +2,7 @@
 /// 实现功能：提供战斗技能表现事件，解耦碰撞逻辑、UI、音效与特效等表现系统。
 /// </summary>
 using System;
+using UnityEngine;
 
 public static class CombatSkillEvents
 {
@@ -22,5 +23,45 @@ public static class CombatSkillEvents
             return;
 
         SkillImpactWaveRequested?.Invoke(trigram);
+    }
+}
+
+public static class CombatVfxEvents
+{
+    public static event Action<ChessPiece, ChessPiece, Vector3> CoinCollisionRequested;
+    public static event Action<ChessPiece, EnemyStats, Vector3> CoinEnemyCollisionRequested;
+    public static event Action<EnemyStats, int, Vector3> EnemyDamagedRequested;
+    public static event Action<CoinStats, int, CoinLossCause, Vector3> CoinDamagedRequested;
+
+    public static void RequestCoinCollision(ChessPiece activePiece, ChessPiece passivePiece, Vector3 hitPoint)
+    {
+        if (activePiece == null || passivePiece == null)
+            return;
+
+        CoinCollisionRequested?.Invoke(activePiece, passivePiece, hitPoint);
+    }
+
+    public static void RequestCoinEnemyCollision(ChessPiece activePiece, EnemyStats enemy, Vector3 hitPoint)
+    {
+        if (activePiece == null || enemy == null)
+            return;
+
+        CoinEnemyCollisionRequested?.Invoke(activePiece, enemy, hitPoint);
+    }
+
+    public static void RequestEnemyDamaged(EnemyStats enemy, int damage, Vector3 hitPoint)
+    {
+        if (enemy == null || damage <= 0)
+            return;
+
+        EnemyDamagedRequested?.Invoke(enemy, damage, hitPoint);
+    }
+
+    public static void RequestCoinDamaged(CoinStats coin, int loss, CoinLossCause cause, Vector3 hitPoint)
+    {
+        if (coin == null || loss <= 0)
+            return;
+
+        CoinDamagedRequested?.Invoke(coin, loss, cause, hitPoint);
     }
 }

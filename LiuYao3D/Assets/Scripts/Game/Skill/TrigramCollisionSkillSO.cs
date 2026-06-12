@@ -25,6 +25,7 @@ public class TrigramCollisionSkillSO : ScriptableObject
     [SerializeField] private string effectText;
 
     [Header("具体效果")]
+    [SerializeReference] private List<CollisionSkillEffectConfig> inlineEffects = new List<CollisionSkillEffectConfig>();
     [SerializeField] private List<CollisionSkillEffectData> effects = new List<CollisionSkillEffectData>();
 
     public TrigramType ActiveTrigram => activeTrigram;
@@ -33,6 +34,7 @@ public class TrigramCollisionSkillSO : ScriptableObject
     public Sprite SkillIcon => skillIcon;
     public string Description => description;
     public string EffectText => effectText;
+    public IReadOnlyList<CollisionSkillEffectConfig> InlineEffects => inlineEffects;
     public IReadOnlyList<CollisionSkillEffectData> Effects => effects;
 
     public bool Match(TrigramType active, TrigramType passive)

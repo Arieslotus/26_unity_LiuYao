@@ -9,10 +9,21 @@ public class CoinRoundEffectManager : MonoBehaviour
 {
     private sealed class DamageModifier
     {
+        public int id;
         public string sourceId;
         public float addPercent;
         public int activateRound;
         public int remainingRounds;
+        public bool started;
+        public List<CoinStats> targets;
+
+        public bool ContainsTarget(CoinStats attacker)
+        {
+            if (targets == null)
+                return true;
+
+            return attacker != null && targets.Contains(attacker);
+        }
     }
 
     private sealed class PendingCoinLoss
@@ -25,6 +36,7 @@ public class CoinRoundEffectManager : MonoBehaviour
 
     private sealed class CoinProtection
     {
+        public int id;
         public CoinStats target;
         public int remainingRounds;
         public int remainingBlockCount;
@@ -50,8 +62,14 @@ public class CoinRoundEffectManager : MonoBehaviour
 
     private TurnManager subscribedTurnManager;
     private int currentRound;
+    private int nextDamageModifierId = 1;
+    private int nextProtectionId = 1;
 
     public int CurrentRound => currentRound;
+    public event Action<int, string> DamageModifierStarted;
+    public event Action<int, string> DamageModifierEnded;
+    public event Action<int, CoinStats> CoinProtectionStarted;
+    public event Action<int, CoinStats> CoinProtectionEnded;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void EnsureInstance()
@@ -118,7 +136,7 @@ public class CoinRoundEffectManager : MonoBehaviour
         for (int i = 0; i < damageModifiers.Count; i++)
         {
             DamageModifier modifier = damageModifiers[i];
-            if (modifier == null || modifier.activateRound > currentRound)
+            if (modifier == null || modifier.activateRound > currentRound || !modifier.ContainsTarget(attacker))
                 continue;
 
             total += modifier.addPercent;
@@ -127,36 +145,46 @@ public class CoinRoundEffectManager : MonoBehaviour
         return total;
     }
 
-    public void AddDamageModifier(
+    public int AddDamageModifier(
         string sourceId,
         float addPercent,
         int durationRounds = -1,
         int activateAfterRounds = 0,
-        bool stackable = true)
+        bool stackable = true,
+        IReadOnlyList<CoinStats> targets = null)
     {
         if (string.IsNullOrWhiteSpace(sourceId) || Mathf.Approximately(addPercent, 0f))
-            return;
+            return 0;
 
         if (!stackable)
         {
             RemoveDamageModifiers(sourceId);
         }
 
-        damageModifiers.Add(new DamageModifier
+        int activateRound = currentRound + Mathf.Max(0, activateAfterRounds);
+        DamageModifier modifier = new DamageModifier
         {
+            id = nextDamageModifierId++,
             sourceId = sourceId,
             addPercent = addPercent,
-            activateRound = currentRound + Mathf.Max(0, activateAfterRounds),
-            remainingRounds = durationRounds
-        });
+            activateRound = activateRound,
+            remainingRounds = durationRounds,
+            started = false,
+            targets = CopyTargets(targets)
+        };
+
+        damageModifiers.Add(modifier);
+        TryStartDamageModifier(modifier);
 
         if (debugLog)
         {
             Debug.Log(
                 $"[CoinRoundEffectManager] 添加伤害修正 | source:{sourceId} | add:{addPercent:P0} | " +
-                $"duration:{durationRounds} | activateRound:{currentRound + Mathf.Max(0, activateAfterRounds)}"
+                $"duration:{durationRounds} | activateRound:{activateRound}"
             );
         }
+
+        return modifier.id;
     }
 
     public void RemoveDamageModifiers(string sourceId)
@@ -164,7 +192,33 @@ public class CoinRoundEffectManager : MonoBehaviour
         if (string.IsNullOrWhiteSpace(sourceId))
             return;
 
-        damageModifiers.RemoveAll(modifier => modifier != null && modifier.sourceId == sourceId);
+        for (int i = damageModifiers.Count - 1; i >= 0; i--)
+        {
+            DamageModifier modifier = damageModifiers[i];
+            if (modifier == null || modifier.sourceId != sourceId)
+                continue;
+
+            damageModifiers.RemoveAt(i);
+            NotifyDamageModifierEnded(modifier);
+        }
+    }
+
+    private static List<CoinStats> CopyTargets(IReadOnlyList<CoinStats> targets)
+    {
+        if (targets == null)
+            return null;
+
+        List<CoinStats> result = new List<CoinStats>();
+        for (int i = 0; i < targets.Count; i++)
+        {
+            CoinStats target = targets[i];
+            if (target == null || result.Contains(target))
+                continue;
+
+            result.Add(target);
+        }
+
+        return result;
     }
 
     public void ScheduleCoinLoss(
@@ -185,17 +239,22 @@ public class CoinRoundEffectManager : MonoBehaviour
         });
     }
 
-    public void GrantCoinProtection(CoinStats target, int durationRounds, int blockCount = 1)
+    public int GrantCoinProtection(CoinStats target, int durationRounds, int blockCount = 1)
     {
         if (target == null || durationRounds <= 0 || blockCount <= 0)
-            return;
+            return 0;
 
+        int protectionId = nextProtectionId++;
         protections.Add(new CoinProtection
         {
+            id = protectionId,
             target = target,
             remainingRounds = durationRounds,
             remainingBlockCount = blockCount
         });
+
+        CoinProtectionStarted?.Invoke(protectionId, target);
+        return protectionId;
     }
 
     public bool TryBlockCoinLoss(CoinStats target, int loss, CoinLossCause cause)
@@ -222,6 +281,7 @@ public class CoinRoundEffectManager : MonoBehaviour
             if (protection.remainingBlockCount <= 0)
             {
                 protections.RemoveAt(i);
+                NotifyProtectionEnded(protection);
             }
 
             return true;
@@ -293,6 +353,7 @@ public class CoinRoundEffectManager : MonoBehaviour
     private void OnRoundStarted(int roundIndex)
     {
         currentRound = roundIndex;
+        StartReadyDamageModifiers();
         ExecutePendingCoinLosses(roundIndex);
         TickDamageZones();
         CleanupDestroyedReferences();
@@ -347,8 +408,26 @@ public class CoinRoundEffectManager : MonoBehaviour
             if (modifier.remainingRounds <= 0)
             {
                 damageModifiers.RemoveAt(i);
+                NotifyDamageModifierEnded(modifier);
             }
         }
+    }
+
+    private void StartReadyDamageModifiers()
+    {
+        for (int i = 0; i < damageModifiers.Count; i++)
+        {
+            TryStartDamageModifier(damageModifiers[i]);
+        }
+    }
+
+    private void TryStartDamageModifier(DamageModifier modifier)
+    {
+        if (modifier == null || modifier.started || modifier.activateRound > currentRound)
+            return;
+
+        modifier.started = true;
+        DamageModifierStarted?.Invoke(modifier.id, modifier.sourceId);
     }
 
     private void TickProtectionDurations()
@@ -366,6 +445,7 @@ public class CoinRoundEffectManager : MonoBehaviour
             if (protection.remainingRounds <= 0)
             {
                 protections.RemoveAt(i);
+                NotifyProtectionEnded(protection);
             }
         }
     }
@@ -408,6 +488,31 @@ public class CoinRoundEffectManager : MonoBehaviour
     private void CleanupDestroyedReferences()
     {
         pendingCoinLosses.RemoveAll(pending => pending == null || pending.target == null);
-        protections.RemoveAll(protection => protection == null || protection.target == null);
+
+        for (int i = protections.Count - 1; i >= 0; i--)
+        {
+            CoinProtection protection = protections[i];
+            if (protection != null && protection.target != null)
+                continue;
+
+            protections.RemoveAt(i);
+            NotifyProtectionEnded(protection);
+        }
+    }
+
+    private void NotifyProtectionEnded(CoinProtection protection)
+    {
+        if (protection == null || protection.id <= 0)
+            return;
+
+        CoinProtectionEnded?.Invoke(protection.id, protection.target);
+    }
+
+    private void NotifyDamageModifierEnded(DamageModifier modifier)
+    {
+        if (modifier == null || modifier.id <= 0)
+            return;
+
+        DamageModifierEnded?.Invoke(modifier.id, modifier.sourceId);
     }
 }

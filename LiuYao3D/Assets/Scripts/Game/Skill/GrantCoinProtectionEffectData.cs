@@ -11,12 +11,19 @@ public class GrantCoinProtectionEffectData : CollisionSkillEffectData
     [SerializeField] private CollisionSkillTargetType targetType = CollisionSkillTargetType.HighestLossAlly;
 
     [Header("保护")]
+    [Tooltip("本效果最多给多少枚满足条件的己方硬币添加护盾。多个候选同时满足时，按行动顺序选择。")]
+    [Min(1)]
+    [SerializeField] private int protectionTargetCount = 1;
+
     [Min(1)]
     [SerializeField] private int durationRounds = 2;
 
     [Tooltip("持续期间最多抵挡多少次敌方攻击。")]
     [Min(1)]
     [SerializeField] private int blockCount = 1;
+
+    [Header("可选特效")]
+    [SerializeField] private SkillEffectVfxData vfx;
 
     public override ICollisionSkillEffectController CreateController()
     {
@@ -40,14 +47,19 @@ public class GrantCoinProtectionEffectData : CollisionSkillEffectData
                 return;
             }
 
-            List<CoinStats> targets = CollisionSkillTargetResolver.ResolveCoins(context, data.targetType);
+            List<CoinStats> targets = CollisionSkillTargetResolver.ResolveCoinsByActionOrder(
+                context,
+                data.targetType,
+                data.protectionTargetCount);
 
             for (int i = 0; i < targets.Count; i++)
             {
-                CoinRoundEffectManager.Instance.GrantCoinProtection(
+                int protectionId = CoinRoundEffectManager.Instance.GrantCoinProtection(
                     targets[i],
                     data.durationRounds,
                     data.blockCount);
+
+                SkillEffectVfxPlayer.PlayForProtection(data.vfx, targets[i], protectionId);
             }
         }
     }

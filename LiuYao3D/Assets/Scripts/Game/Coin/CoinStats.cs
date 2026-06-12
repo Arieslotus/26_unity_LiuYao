@@ -72,6 +72,7 @@ public class CoinStats : MonoBehaviour, IAttackable
 
         currentLoss = Mathf.Min(currentLoss + value, maxLoss);
         NotifyLossChanged();
+        CombatVfxEvents.RequestCoinDamaged(this, value, cause, transform.position);
 
         if (debugLog)
         {

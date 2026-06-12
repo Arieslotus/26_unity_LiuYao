@@ -74,6 +74,7 @@ public class EnemyStats : MonoBehaviour, IDamageable
 
         currentHP = Mathf.Max(currentHP - finalDamage, 0);
         NotifyHealthChanged();
+        CombatVfxEvents.RequestEnemyDamaged(this, finalDamage, transform.position);
 
         if (debugLog)
         {

@@ -1,11 +1,15 @@
 /// <summary>
 /// 实现功能：配置碰撞技能为己方硬币添加可延迟生效、可叠加的全局伤害增益。
 /// </summary>
+using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "Effect_AddDamageModifier_", menuName = "Config/Collision Skill Effects/Add Damage Modifier")]
 public class AddDamageModifierEffectData : CollisionSkillEffectData
 {
+    [Header("目标")]
+    [SerializeField] private CollisionSkillTargetType targetType = CollisionSkillTargetType.AllAllies;
+
     [Header("增伤")]
     [Tooltip("伤害增加比例。例如 30 表示伤害增加 30%。")]
     [SerializeField] private float addDamagePercent = 30f;
@@ -22,6 +26,9 @@ public class AddDamageModifierEffectData : CollisionSkillEffectData
 
     [Tooltip("非叠加效果使用该标识覆盖旧效果。留空时使用当前 Data 资源名。")]
     [SerializeField] private string modifierId;
+
+    [Header("可选特效")]
+    [SerializeField] private SkillEffectVfxData vfx;
 
     public override ICollisionSkillEffectController CreateController()
     {
@@ -49,12 +56,21 @@ public class AddDamageModifierEffectData : CollisionSkillEffectData
                 ? data.name
                 : data.modifierId.Trim();
 
-            CoinRoundEffectManager.Instance.AddDamageModifier(
+            List<CoinStats> targets = CollisionSkillTargetResolver.ResolveCoins(context, data.targetType);
+
+            int modifierId = CoinRoundEffectManager.Instance.AddDamageModifier(
                 sourceId,
                 data.addDamagePercent / 100f,
                 data.durationRounds,
                 data.activateAfterRounds,
-                data.stackable);
+                data.stackable,
+                targets);
+
+            SkillEffectVfxPlayer.PlayForDamageModifierTargets(
+                data.vfx,
+                targets,
+                modifierId,
+                data.activateAfterRounds);
         }
     }
 }

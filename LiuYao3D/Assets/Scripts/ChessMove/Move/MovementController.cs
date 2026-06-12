@@ -408,7 +408,11 @@ public class MovementController : MonoBehaviour
             ? remainingDistance / config.totalDistance
             : 0f;
 
-        chessPiece.RequestImpactFeedback(CollisionType.PlayerCoin, false, Mathf.Clamp01(strength), result.collider.transform.position);
+        ChessPiece passivePiece = result.collider.GetComponentInParent<ChessPiece>();
+        Vector3 hitPoint = result.hitPoint;
+
+        CombatVfxEvents.RequestCoinCollision(chessPiece, passivePiece, hitPoint);
+        chessPiece.RequestImpactFeedback(CollisionType.PlayerCoin, false, Mathf.Clamp01(strength), hitPoint);
     }
 
     private void TryRequestSkillTriggerFeedback(CollisionTarget target)
@@ -527,6 +531,8 @@ public class MovementController : MonoBehaviour
             shieldController.TryBreakShield(attackerPiece.CurrentTrigram, attackerPiece.name);
         }
 
+        EnemyStats enemyStats = result.collider.GetComponentInParent<EnemyStats>();
+
         if (damageable != null && damage > 0)
         {
             damageable.TakeDamage(damage);
@@ -542,7 +548,8 @@ public class MovementController : MonoBehaviour
 
         if (attackerPiece != null)
         {
-            attackerPiece.RequestImpactFeedback(CollisionType.Enemy, false, result.impactStrength, transform.position);
+            CombatVfxEvents.RequestCoinEnemyCollision(attackerPiece, enemyStats, result.hitPoint);
+            attackerPiece.RequestImpactFeedback(CollisionType.Enemy, false, result.impactStrength, result.hitPoint);
         }
 
         Debug.Log(

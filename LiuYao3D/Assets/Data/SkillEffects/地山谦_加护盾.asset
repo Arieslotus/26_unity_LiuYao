@@ -15,3 +15,13 @@ MonoBehaviour:
   targetType: 4
   durationRounds: 2
   blockCount: 5
+  vfx:
+    prefab: {fileID: 1289543790355709915, guid: b99922c2f59b1a542bdd06ae8bee47ae, type: 3}
+    targetType: 4
+    radius: 3
+    parentToTarget: 1
+    worldOffset: {x: 0, y: 0, z: 0}
+    lifetimeMode: 2
+    lifetime: 2
+    delay: 0
+    useUnscaledTimeForParticles: 1

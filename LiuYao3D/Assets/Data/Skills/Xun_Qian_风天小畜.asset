@@ -16,6 +16,10 @@ MonoBehaviour:
   passiveTrigram: 1
   skillName: "\u98CE\u5929\u5C0F\u755C"
   skillIcon: {fileID: 21300000, guid: 33917d46a7d13514d9fe112a2f649f85, type: 3}
-  description: "\u5168\u573A\u8303\u56F4\u7834\u5DFD\u3001\u4E7E\u76FE\u3002"
+  description: "\u5168\u573A\u8303\u56F4\u7834\u5DFD\u3001\u4E7E\u76FE\u3002\n\u5BF9\u968F\u673A2\u654C\u65B9\u5355\u4F4D\u9020\u6210\u4F24\u5BB3+\uFF0C\u5E76\u5728\u53D7\u51FB\u654C\u65B9\u4F4D\u7F6E\u7559\u4E0B\u540C\u7B49\u8303\u56F4\u7684\u4F24\u5BB3\u5708\uFF0C\u6301\u7EED2\u56DE\u5408\u3002"
   effectText: 
+  inlineEffects: []
   effects: []
+  references:
+    version: 2
+    RefIds: []

@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8756f6088a2c8d940a43a69064ecac6e, type: 3}
+  m_Name: CollisionVfxConfig
+  m_EditorClassIdentifier: 
+  coinCollisionPrefab: {fileID: 7893139646171172390, guid: 51da201bb67d10446817a72c986bfa0f, type: 3}
+  coinEnemyCollisionPrefab: {fileID: 4628685328733551452, guid: d99a9bd361ea3164883c6c5074356e54, type: 3}
+  collisionLifetime: 1
+  shockwavePrefabs:
+  - trigram: 1
+    prefab: {fileID: 1921079115439858272, guid: 82a5f28efe12eeb43812249f55eeb8bc, type: 3}
+  - trigram: 2
+    prefab: {fileID: 1921079115439858272, guid: efb18e8230cdb97448775769d790a67e, type: 3}
+  - trigram: 3
+    prefab: {fileID: 1921079115439858272, guid: e821995ff6a65e74796715ac8f07e683, type: 3}
+  - trigram: 8
+    prefab: {fileID: 1921079115439858272, guid: b36a66533b7d7bb459557d4f7875f5b1, type: 3}
+  - trigram: 6
+    prefab: {fileID: 1921079115439858272, guid: e5c4a050d7d1a6744a2bcd1d5df658fa, type: 3}
+  - trigram: 5
+    prefab: {fileID: 1921079115439858272, guid: aab96e1b0eea58245abba96c29474b5c, type: 3}
+  - trigram: 4
+    prefab: {fileID: 1921079115439858272, guid: b009e5dc9bd536f4c9900908afefb63b, type: 3}
+  - trigram: 7
+    prefab: {fileID: 1921079115439858272, guid: b364cfe9e59d0bc469be6ceb7c98e3a5, type: 3}
+  shockwaveInterval: 0.1
+  shockwaveLifetime: 2
+  enemyDamagedPrefab: {fileID: 4535006216103734310, guid: 98c4704d0fd7211449bcf5c451095a60, type: 3}
+  coinDamagedPrefab: {fileID: 2944396702758532163, guid: e190bf97c041e58448af6b043116cba0, type: 3}
+  damagedLifetime: 0.5
+  worldOffset: {x: 0, y: 0, z: 0}
+  parentDamagedVfxToTarget: 1
+  useUnscaledTimeForParticles: 0

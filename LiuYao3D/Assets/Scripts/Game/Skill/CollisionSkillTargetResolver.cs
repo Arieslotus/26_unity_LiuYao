@@ -84,6 +84,26 @@ public static class CollisionSkillTargetResolver
         return result;
     }
 
+    public static List<CoinStats> ResolveCoinsByActionOrder(
+        CollisionSkillContext context,
+        CollisionSkillTargetType targetType,
+        int maxCount)
+    {
+        List<CoinStats> result = targetType == CollisionSkillTargetType.HighestLossAlly
+            ? ResolveHighestLossCoins()
+            : ResolveCoins(context, targetType);
+
+        SortCoinsByActionOrder(result);
+
+        int validMaxCount = Mathf.Max(0, maxCount);
+        if (validMaxCount > 0 && result.Count > validMaxCount)
+        {
+            result.RemoveRange(validMaxCount, result.Count - validMaxCount);
+        }
+
+        return result;
+    }
+
     private static void AddAliveEnemies(List<EnemyStats> result, EnemyStats[] enemies)
     {
         for (int i = 0; i < enemies.Length; i++)
@@ -179,5 +199,72 @@ public static class CollisionSkillTargetResolver
         }
 
         return result;
+    }
+
+    private static List<CoinStats> ResolveHighestLossCoins()
+    {
+        List<CoinStats> result = new List<CoinStats>();
+        CoinStats[] coins = Object.FindObjectsOfType<CoinStats>();
+        int highestLoss = int.MinValue;
+
+        for (int i = 0; i < coins.Length; i++)
+        {
+            CoinStats coin = coins[i];
+            if (coin == null || coin.IsBroken)
+                continue;
+
+            if (coin.CurrentLoss > highestLoss)
+            {
+                highestLoss = coin.CurrentLoss;
+                result.Clear();
+                result.Add(coin);
+                continue;
+            }
+
+            if (coin.CurrentLoss == highestLoss)
+            {
+                result.Add(coin);
+            }
+        }
+
+        return result;
+    }
+
+    private static void SortCoinsByActionOrder(List<CoinStats> coins)
+    {
+        if (coins == null || coins.Count <= 1)
+            return;
+
+        ChessTurnController turnController = Object.FindObjectOfType<ChessTurnController>();
+        if (turnController == null || turnController.Pieces == null)
+            return;
+
+        List<CoinStats> ordered = new List<CoinStats>();
+        IReadOnlyList<ChessPiece> pieces = turnController.Pieces;
+
+        for (int i = 0; i < pieces.Count; i++)
+        {
+            ChessPiece piece = pieces[i];
+            if (piece == null)
+                continue;
+
+            CoinStats stats = piece.GetComponent<CoinStats>();
+            if (stats != null && coins.Contains(stats) && !ordered.Contains(stats))
+            {
+                ordered.Add(stats);
+            }
+        }
+
+        for (int i = 0; i < coins.Count; i++)
+        {
+            CoinStats coin = coins[i];
+            if (coin != null && !ordered.Contains(coin))
+            {
+                ordered.Add(coin);
+            }
+        }
+
+        coins.Clear();
+        coins.AddRange(ordered);
     }
 }
