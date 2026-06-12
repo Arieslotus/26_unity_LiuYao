@@ -46,7 +46,9 @@ public static class PhysicsBounceUtility
             pos,
             radius,
             dir,
-            maxDistance
+            maxDistance,
+            ~0,
+            QueryTriggerInteraction.Ignore
         );
 
         RaycastHit validHit = default;
@@ -316,7 +318,13 @@ public static class PhysicsBounceUtility
 
     public static bool ShouldIgnoreCollider(Collider candidate, Collider ignoreCollider)
     {
-        if (candidate == null || ignoreCollider == null)
+        if (candidate == null)
+            return false;
+
+        if (candidate.isTrigger)
+            return true;
+
+        if (ignoreCollider == null)
             return false;
 
         if (candidate == ignoreCollider)

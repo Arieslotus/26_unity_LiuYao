@@ -320,7 +320,9 @@ public class MovementController : MonoBehaviour
             currentCenter,
             Mathf.Max(0.001f, collisionRadius),
             direction,
-            castDistance
+            castDistance,
+            ~0,
+            QueryTriggerInteraction.Ignore
         );
 
         float nearestDistance = float.MaxValue;

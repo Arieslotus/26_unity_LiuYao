@@ -22,6 +22,7 @@ MonoBehaviour:
   - rid: 7184782103117561878
   - rid: 7184782103117561879
   - rid: 7184782103117561907
+  - rid: 7184782103117561918
   effects: []
   references:
     version: 2
@@ -64,3 +65,26 @@ MonoBehaviour:
           sortByActionOrder: 1
           currentTrigramFilter: 
         loss: 1
+    - rid: 7184782103117561918
+      type: {class: UntilFlipDamageStackEffectConfig, ns: , asm: Assembly-CSharp}
+      data:
+        watchedTargetSelector:
+          targetType: 0
+          targetCount: 1
+          sortByActionOrder: 1
+          currentTrigramFilter: 
+        maxStacks: 3
+        stackOutcome:
+          outcomeType: 0
+          targetSelector:
+            targetType: 0
+            targetCount: 1
+            sortByActionOrder: 1
+            currentTrigramFilter: 
+          loss: 1
+          reduceLoss: 1
+          addDamagePercent: 30
+          durationRounds: -1
+          activateAfterRounds: 0
+          stackable: 1
+          modifierId: 

@@ -21,6 +21,7 @@ MonoBehaviour:
   inlineEffects:
   - rid: 7184782103117561867
   - rid: 7184782103117561868
+  - rid: 7184782103117561917
   effects: []
   references:
     version: 2
@@ -54,3 +55,26 @@ MonoBehaviour:
           lifetime: 2
           delay: 0
           useUnscaledTimeForParticles: 1
+    - rid: 7184782103117561917
+      type: {class: UntilFlipDamageStackEffectConfig, ns: , asm: Assembly-CSharp}
+      data:
+        watchedTargetSelector:
+          targetType: 0
+          targetCount: 1
+          sortByActionOrder: 1
+          currentTrigramFilter: 0400000008000000
+        maxStacks: 1
+        stackOutcome:
+          outcomeType: 1
+          targetSelector:
+            targetType: 1
+            targetCount: 1
+            sortByActionOrder: 1
+            currentTrigramFilter: 0400000008000000
+          loss: 1
+          reduceLoss: 1
+          addDamagePercent: 30
+          durationRounds: -1
+          activateAfterRounds: 0
+          stackable: 1
+          modifierId: 

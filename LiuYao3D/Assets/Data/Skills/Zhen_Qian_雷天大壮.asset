@@ -39,7 +39,7 @@ MonoBehaviour:
       data:
         spawnMode: 0
         zonePrefab: {fileID: 5039200316752278330, guid: bc00999e2fe1d344bb7b13f82271761f, type: 3}
-        prefabScale: 0.25
+        prefabScale: 1
         damageSource: 0
         damagePercent: 50
         fixedDamage: 0
