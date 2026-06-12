@@ -33,7 +33,7 @@ public class ReduceLossEffectData : CollisionSkillEffectData
 
         public void Execute(CollisionSkillContext context)
         {
-            List<CoinStats> targets = CollisionSkillTargetResolver.ResolveCoins(context, data.targetType);
+            List<CoinStats> targets = CollisionSkillTargetResolver.ResolveCoins(context, data.targetType, 0, true);
 
             for (int i = 0; i < targets.Count; i++)
             {

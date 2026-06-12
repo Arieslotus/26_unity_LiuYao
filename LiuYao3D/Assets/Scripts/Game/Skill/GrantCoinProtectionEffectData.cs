@@ -51,13 +51,17 @@ public class GrantCoinProtectionEffectData : CollisionSkillEffectData
                 context,
                 data.targetType,
                 data.protectionTargetCount);
+            string sourceId = context != null && context.skill != null
+                ? context.skill.SkillName
+                : data.name;
 
             for (int i = 0; i < targets.Count; i++)
             {
                 int protectionId = CoinRoundEffectManager.Instance.GrantCoinProtection(
                     targets[i],
                     data.durationRounds,
-                    data.blockCount);
+                    data.blockCount,
+                    sourceId);
 
                 SkillEffectVfxPlayer.PlayForProtection(data.vfx, targets[i], protectionId);
             }

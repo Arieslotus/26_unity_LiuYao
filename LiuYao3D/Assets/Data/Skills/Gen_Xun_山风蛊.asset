@@ -18,8 +18,39 @@ MonoBehaviour:
   skillIcon: {fileID: 21300000, guid: c47eb70a80131dd428e79a3b077fa299, type: 3}
   description: "\u5168\u573A\u8303\u56F4\u7834\u826E\u3001\u5DFD\u76FE\u3002\n\u5BF9\u8303\u56F4\u5185\u654C\u65B9\u9020\u6210\u653B\u51FB\uFF0B\uFF0B\uFF1B\u82E5\u540E2\u56DE\u5408\u5DF1\u65B9\u94DC\u94B1\u672A\u7FFB\u9762\uFF0C\u5219\u5DF1\u65B9\u826E\u3001\u5DFD\u94DC\u94B1\u9020\u62101\u70B9\u635F\u8017\u3002"
   effectText: 
-  inlineEffects: []
+  inlineEffects:
+  - rid: 7184782103117561867
+  - rid: 7184782103117561868
   effects: []
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 7184782103117561867
+      type: {class: BreakEnemyShieldEffectConfig, ns: , asm: Assembly-CSharp}
+      data:
+        targetSelector:
+          targetType: 0
+          radius: 3
+          targetCount: 1
+        trigramMode: 0
+        specifiedTrigrams: 
+    - rid: 7184782103117561868
+      type: {class: DealDamageEffectConfig, ns: , asm: Assembly-CSharp}
+      data:
+        targetSelector:
+          targetType: 0
+          radius: 3
+          targetCount: 1
+        damageSource: 0
+        damagePercent: 200
+        fixedDamage: 0
+        vfx:
+          prefab: {fileID: 0}
+          targetType: 5
+          radius: 3
+          parentToTarget: 1
+          worldOffset: {x: 0, y: 0, z: 0}
+          lifetimeMode: 0
+          lifetime: 2
+          delay: 0
+          useUnscaledTimeForParticles: 1

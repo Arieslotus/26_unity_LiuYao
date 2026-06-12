@@ -14,6 +14,10 @@ public class BreakEnemyShieldEffectData : CollisionSkillEffectData
     [Min(0f)]
     [SerializeField] private float radius = 3f;
 
+    [Header("可破护盾卦象")]
+    [SerializeField] private BreakShieldTrigramMode trigramMode = BreakShieldTrigramMode.CollisionParticipants;
+    [SerializeField] private List<TrigramType> specifiedTrigrams = new List<TrigramType>();
+
     public override ICollisionSkillEffectController CreateController()
     {
         return new Controller(this);
@@ -43,20 +47,26 @@ public class BreakEnemyShieldEffectData : CollisionSkillEffectData
                 if (shield == null || !shield.HasShield)
                     continue;
 
-                if (!CanBreakShield(context, shield.CurrentShieldType))
+                if (!data.CanBreakShield(context, shield.CurrentShieldType))
                     continue;
 
                 shield.TryBreakShield(shield.CurrentShieldType, sourceName);
             }
         }
+    }
 
-        private static bool CanBreakShield(CollisionSkillContext context, TrigramType shieldType)
-        {
-            if (context == null || shieldType == TrigramType.None)
-                return false;
+    private bool CanBreakShield(CollisionSkillContext context, TrigramType shieldType)
+    {
+        if (shieldType == TrigramType.None)
+            return false;
 
-            return shieldType == context.activeTrigram ||
-                shieldType == context.passiveTrigram;
-        }
+        if (trigramMode == BreakShieldTrigramMode.SpecifiedTrigrams)
+            return specifiedTrigrams != null && specifiedTrigrams.Contains(shieldType);
+
+        if (context == null)
+            return false;
+
+        return shieldType == context.activeTrigram ||
+            shieldType == context.passiveTrigram;
     }
 }

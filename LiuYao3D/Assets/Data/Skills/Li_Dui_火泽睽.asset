@@ -18,8 +18,59 @@ MonoBehaviour:
   skillIcon: {fileID: 21300000, guid: 0c12d56b0280a9c4b957ac7aeef130c1, type: 3}
   description: "\u5168\u573A\u8303\u56F4\u7834\u79BB\u3001\u5151\u76FE\u3002\n\u5BF9\u5168\u4F53\u654C\u65B9\u9020\u6210\u653B\u51FB\uFF0B\uFF1B\u968F\u673A1\u5DF1\u65B9\u56DE\u590D1\u70B9\u635F\u8017\u3002"
   effectText: 
-  inlineEffects: []
+  inlineEffects:
+  - rid: 7184782103117561883
+  - rid: 7184782103117561884
+  - rid: 7184782103117561885
   effects: []
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 7184782103117561883
+      type: {class: BreakEnemyShieldEffectConfig, ns: , asm: Assembly-CSharp}
+      data:
+        targetSelector:
+          targetType: 0
+          radius: 3
+          targetCount: 1
+        trigramMode: 0
+        specifiedTrigrams: 
+    - rid: 7184782103117561884
+      type: {class: DealDamageEffectConfig, ns: , asm: Assembly-CSharp}
+      data:
+        targetSelector:
+          targetType: 0
+          radius: 3
+          targetCount: 1
+        damageSource: 0
+        damagePercent: 150
+        fixedDamage: 0
+        vfx:
+          prefab: {fileID: 0}
+          targetType: 5
+          radius: 3
+          parentToTarget: 1
+          worldOffset: {x: 0, y: 0, z: 0}
+          lifetimeMode: 0
+          lifetime: 2
+          delay: 0
+          useUnscaledTimeForParticles: 1
+    - rid: 7184782103117561885
+      type: {class: ReduceLossEffectConfig, ns: , asm: Assembly-CSharp}
+      data:
+        targetSelector:
+          targetType: 2
+          targetCount: 1
+          sortByActionOrder: 1
+          currentTrigramFilter: 
+        reduceLoss: 1
+        vfx:
+          prefab: {fileID: 9017484664307500583, guid: 1245b8d2997d5b34fb1637be70a7eb05, type: 3}
+          targetType: 5
+          radius: 3
+          parentToTarget: 1
+          worldOffset: {x: 0, y: 0, z: 0}
+          lifetimeMode: 0
+          lifetime: 2
+          delay: 0
+          useUnscaledTimeForParticles: 1

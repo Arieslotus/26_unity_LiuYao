@@ -18,7 +18,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: d102aea4bcaeff14fa25d815029e8a16, type: 2}
   - {fileID: 11400000, guid: 584ba317a3a35a0469417c47cc6b9d6d, type: 2}
   fixedCoins:
-  - coinDefinition: {fileID: 11400000, guid: 0dc4ae2614fd2e64bb36269f803d4675, type: 2}
+  - coinDefinition: {fileID: 11400000, guid: d102aea4bcaeff14fa25d815029e8a16, type: 2}
     initialSide: 0
   drawCount: 3
   allowDuplicate: 0

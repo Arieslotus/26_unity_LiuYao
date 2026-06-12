@@ -22,6 +22,7 @@ public class CoinRuntimeData : MonoBehaviour
     public bool IsFrontSide => isFrontSide;
 
     public event Action<CoinRuntimeData> VisualStateChanged;
+    public event Action<CoinRuntimeData, TrigramType, TrigramType> RuntimeTrigramChanged;
 
     public TrigramType CurrentTrigram
     {
@@ -109,11 +110,13 @@ public class CoinRuntimeData : MonoBehaviour
 
     public void SetFace(bool frontSide, bool playAnimation)
     {
+        TrigramType oldTrigram = CurrentTrigram;
         isFrontSide = frontSide;
 
         if (visualController == null)
         {
             NotifyVisualStateChanged();
+            NotifyRuntimeTrigramChanged(oldTrigram);
             return;
         }
 
@@ -131,6 +134,8 @@ public class CoinRuntimeData : MonoBehaviour
             $"[CoinRuntimeData] 设置正反面 | 物体:{name} | " +
             $"当前面:{(isFrontSide ? "正面" : "反面")} | 当前卦象:{CurrentTrigram}"
         );
+
+        NotifyRuntimeTrigramChanged(oldTrigram);
     }
 
     public void SetCoinDefinition(CoinDefinition definition, bool refreshVisual = true)
@@ -162,6 +167,15 @@ public class CoinRuntimeData : MonoBehaviour
     private void NotifyVisualStateChanged()
     {
         VisualStateChanged?.Invoke(this);
+    }
+
+    private void NotifyRuntimeTrigramChanged(TrigramType oldTrigram)
+    {
+        TrigramType newTrigram = CurrentTrigram;
+        if (oldTrigram == newTrigram)
+            return;
+
+        RuntimeTrigramChanged?.Invoke(this, oldTrigram, newTrigram);
     }
 
 #if UNITY_EDITOR

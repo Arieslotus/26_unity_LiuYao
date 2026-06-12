@@ -18,8 +18,39 @@ MonoBehaviour:
   skillIcon: {fileID: 21300000, guid: ada885f47601b3f4897faf92ab174729, type: 3}
   description: "\u5168\u573A\u8303\u56F4\u7834\u5DFD\u3001\u9707\u76FE\u3002\n\u5BF9\u5168\u4F53\u654C\u65B9\u9020\u6210\u653B\u51FB+\uFF1B\u654C\u65B9\u62A4\u76FE\u505C\u6B62\u751F\u62101\u8F6E\u3002"
   effectText: 
-  inlineEffects: []
+  inlineEffects:
+  - rid: 7184782103117561894
+  - rid: 7184782103117561913
   effects: []
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 7184782103117561894
+      type: {class: BreakEnemyShieldEffectConfig, ns: , asm: Assembly-CSharp}
+      data:
+        targetSelector:
+          targetType: 0
+          radius: 3
+          targetCount: 1
+        trigramMode: 0
+        specifiedTrigrams: 
+    - rid: 7184782103117561913
+      type: {class: DealDamageEffectConfig, ns: , asm: Assembly-CSharp}
+      data:
+        targetSelector:
+          targetType: 0
+          radius: 3
+          targetCount: 1
+        damageSource: 0
+        damagePercent: 150
+        fixedDamage: 0
+        vfx:
+          prefab: {fileID: 0}
+          targetType: 7
+          radius: 3
+          parentToTarget: 1
+          worldOffset: {x: 0, y: 0, z: 0}
+          lifetimeMode: 0
+          lifetime: 2
+          delay: 0
+          useUnscaledTimeForParticles: 1

@@ -1,5 +1,5 @@
 /// <summary>
-/// 实现功能：定义硬币碰撞技能的单项效果配置基类，具体技能效果通过派生 Data 提供可调参数。
+/// 实现功能：定义碰撞技能的内嵌效果配置，供技能资产直接组合伤害、恢复、增伤、损耗、破盾、伤害圈与翻面条件。
 /// </summary>
 using System;
 using System.Collections.Generic;
@@ -17,24 +17,28 @@ public abstract class CollisionSkillEffectConfig
     public abstract ICollisionSkillEffectController CreateController();
 }
 
+public enum BreakShieldTrigramMode
+{
+    CollisionParticipants,
+    SpecifiedTrigrams
+}
+
+public enum DamageZoneSpawnMode
+{
+    CollisionPosition,
+    LastDamagedEnemies
+}
+
 [Serializable]
 public sealed class DealDamageEffectConfig : CollisionSkillEffectConfig
 {
     [Header("目标")]
-    [SerializeField] private CollisionSkillTargetType targetType = CollisionSkillTargetType.AllEnemies;
-
-    [Tooltip("目标为碰撞范围内敌人时使用。")]
-    [Min(0f)]
-    [SerializeField] private float radius = 3f;
+    [SerializeField] private EnemySkillTargetSelector targetSelector = new EnemySkillTargetSelector();
 
     [Header("伤害")]
     [SerializeField] private SkillDamageSource damageSource = SkillDamageSource.ActiveCoinAttack;
-
-    [Tooltip("攻击力倍率。例如 130 表示造成攻击力 130% 的伤害。固定伤害模式下不使用。")]
     [Min(0f)]
     [SerializeField] private float damagePercent = 100f;
-
-    [Tooltip("固定伤害模式下使用。")]
     [Min(0)]
     [SerializeField] private int fixedDamage;
 
@@ -59,42 +63,33 @@ public sealed class DealDamageEffectConfig : CollisionSkillEffectConfig
 
         public void Execute(CollisionSkillContext context)
         {
-            int damage = config.CalculateDamage(context);
+            int damage = CollisionSkillDamageUtility.CalculateDamage(
+                context,
+                config.damageSource,
+                config.damagePercent,
+                config.fixedDamage);
+
             if (damage <= 0)
                 return;
 
-            List<EnemyStats> targets = CollisionSkillTargetResolver.ResolveEnemies(context, config.targetType, config.radius);
+            List<EnemyStats> targets = config.targetSelector.Resolve(context);
+
+            if (context != null)
+            {
+                context.lastDamagedEnemies.Clear();
+            }
 
             for (int i = 0; i < targets.Count; i++)
             {
                 targets[i].TakeDamage(damage);
+                if (context != null && targets[i] != null && !context.lastDamagedEnemies.Contains(targets[i]))
+                {
+                    context.lastDamagedEnemies.Add(targets[i]);
+                }
             }
 
             SkillEffectVfxPlayer.PlayForEnemies(config.vfx, targets);
         }
-    }
-
-    private int CalculateDamage(CollisionSkillContext context)
-    {
-        if (context == null)
-            return 0;
-
-        if (damageSource == SkillDamageSource.FixedValue)
-            return Mathf.Max(0, fixedDamage);
-
-        CoinStats sourceStats = damageSource == SkillDamageSource.PassiveCoinAttack
-            ? context.passiveStats
-            : context.activeStats;
-
-        int attackSnapshot = damageSource == SkillDamageSource.PassiveCoinAttack
-            ? context.passiveAttackSnapshot
-            : context.activeAttackSnapshot;
-
-        float addPercent = CoinRoundEffectManager.Instance != null
-            ? CoinRoundEffectManager.Instance.GetDamageAddPercent(sourceStats)
-            : 0f;
-
-        return CoinDamageCalculator.CalculateFromSnapshot(attackSnapshot, damagePercent / 100f, addPercent);
     }
 }
 
@@ -102,7 +97,7 @@ public sealed class DealDamageEffectConfig : CollisionSkillEffectConfig
 public sealed class ReduceLossEffectConfig : CollisionSkillEffectConfig
 {
     [Header("目标")]
-    [SerializeField] private CollisionSkillTargetType targetType = CollisionSkillTargetType.AllAllies;
+    [SerializeField] private CoinSkillTargetSelector targetSelector = new CoinSkillTargetSelector();
 
     [Header("恢复")]
     [Min(0)]
@@ -129,7 +124,7 @@ public sealed class ReduceLossEffectConfig : CollisionSkillEffectConfig
 
         public void Execute(CollisionSkillContext context)
         {
-            List<CoinStats> targets = CollisionSkillTargetResolver.ResolveCoins(context, config.targetType);
+            List<CoinStats> targets = config.targetSelector.Resolve(context, true);
 
             for (int i = 0; i < targets.Count; i++)
             {
@@ -142,26 +137,55 @@ public sealed class ReduceLossEffectConfig : CollisionSkillEffectConfig
 }
 
 [Serializable]
+public sealed class AddCoinLossEffectConfig : CollisionSkillEffectConfig
+{
+    [Header("目标")]
+    [SerializeField] private CoinSkillTargetSelector targetSelector = new CoinSkillTargetSelector();
+
+    [Header("损耗")]
+    [Min(0)]
+    [SerializeField] private int loss = 1;
+
+    public override string DisplayName => "增加己方损耗";
+
+    public override ICollisionSkillEffectController CreateController()
+    {
+        return new Controller(this);
+    }
+
+    private sealed class Controller : ICollisionSkillEffectController
+    {
+        private readonly AddCoinLossEffectConfig config;
+
+        public Controller(AddCoinLossEffectConfig config)
+        {
+            this.config = config;
+        }
+
+        public void Execute(CollisionSkillContext context)
+        {
+            List<CoinStats> targets = config.targetSelector.Resolve(context);
+
+            for (int i = 0; i < targets.Count; i++)
+            {
+                targets[i].AddLoss(config.loss, CoinLossCause.Skill);
+            }
+        }
+    }
+}
+
+[Serializable]
 public sealed class AddDamageModifierEffectConfig : CollisionSkillEffectConfig
 {
     [Header("目标")]
-    [SerializeField] private CollisionSkillTargetType targetType = CollisionSkillTargetType.AllAllies;
+    [SerializeField] private CoinSkillTargetSelector targetSelector = new CoinSkillTargetSelector();
 
     [Header("增伤")]
-    [Tooltip("伤害增加比例。例如 30 表示伤害增加 30%。")]
     [SerializeField] private float addDamagePercent = 30f;
-
-    [Tooltip("-1 表示永久有效；正数表示持续对应数量的回合。")]
     [SerializeField] private int durationRounds = -1;
-
-    [Tooltip("0 表示立即生效；1 表示下一回合开始生效。")]
     [Min(0)]
     [SerializeField] private int activateAfterRounds;
-
-    [Tooltip("开启后，同一个效果可重复叠加。")]
     [SerializeField] private bool stackable = true;
-
-    [Tooltip("非叠加效果使用该标识覆盖旧效果。留空时使用当前技能名。")]
     [SerializeField] private string modifierId;
 
     [Header("可选特效")]
@@ -187,7 +211,7 @@ public sealed class AddDamageModifierEffectConfig : CollisionSkillEffectConfig
         {
             if (CoinRoundEffectManager.Instance == null)
             {
-                Debug.LogWarning("[AddDamageModifierEffectConfig] 缺少 CoinRoundEffectManager，无法添加增伤效果。");
+                Debug.LogWarning("[AddDamageModifierEffectConfig] 缺少 CoinRoundEffectManager，无法添加增伤。");
                 return;
             }
 
@@ -195,7 +219,7 @@ public sealed class AddDamageModifierEffectConfig : CollisionSkillEffectConfig
                 ? (context != null && context.skill != null ? context.skill.SkillName : nameof(AddDamageModifierEffectConfig))
                 : config.modifierId.Trim();
 
-            List<CoinStats> targets = CollisionSkillTargetResolver.ResolveCoins(context, config.targetType);
+            List<CoinStats> targets = config.targetSelector.Resolve(context);
 
             int runtimeModifierId = CoinRoundEffectManager.Instance.AddDamageModifier(
                 sourceId,
@@ -214,16 +238,13 @@ public sealed class AddDamageModifierEffectConfig : CollisionSkillEffectConfig
 public sealed class ScheduleCoinLossEffectConfig : CollisionSkillEffectConfig
 {
     [Header("目标")]
-    [SerializeField] private CollisionSkillTargetType targetType = CollisionSkillTargetType.ActiveCoin;
+    [SerializeField] private CoinSkillTargetSelector targetSelector = new CoinSkillTargetSelector(CoinSkillTargetType.ActiveCoin);
 
     [Header("延迟损耗")]
     [Min(0)]
     [SerializeField] private int loss = 1;
-
     [Min(0)]
     [SerializeField] private int delayRounds = 1;
-
-    [Tooltip("非 None 时，延迟结算时仅对当前仍为该卦象的硬币生效。")]
     [SerializeField] private TrigramType requiredCurrentTrigram = TrigramType.None;
 
     public override string DisplayName => "延迟增加损耗";
@@ -250,7 +271,10 @@ public sealed class ScheduleCoinLossEffectConfig : CollisionSkillEffectConfig
                 return;
             }
 
-            List<CoinStats> targets = CollisionSkillTargetResolver.ResolveCoins(context, config.targetType);
+            List<CoinStats> targets = config.targetSelector.Resolve(context);
+            string sourceId = context != null && context.skill != null
+                ? context.skill.SkillName
+                : nameof(ScheduleCoinLossEffectConfig);
 
             for (int i = 0; i < targets.Count; i++)
             {
@@ -258,7 +282,8 @@ public sealed class ScheduleCoinLossEffectConfig : CollisionSkillEffectConfig
                     targets[i],
                     config.loss,
                     config.delayRounds,
-                    config.requiredCurrentTrigram);
+                    config.requiredCurrentTrigram,
+                    sourceId);
             }
         }
     }
@@ -268,17 +293,11 @@ public sealed class ScheduleCoinLossEffectConfig : CollisionSkillEffectConfig
 public sealed class GrantCoinProtectionEffectConfig : CollisionSkillEffectConfig
 {
     [Header("目标")]
-    [SerializeField] private CollisionSkillTargetType targetType = CollisionSkillTargetType.HighestLossAlly;
+    [SerializeField] private CoinSkillTargetSelector targetSelector = new CoinSkillTargetSelector(CoinSkillTargetType.HighestLossAlly);
 
     [Header("保护")]
-    [Tooltip("本效果最多给多少枚满足条件的己方硬币添加护盾。多个候选同时满足时，按行动顺序选择。")]
-    [Min(1)]
-    [SerializeField] private int protectionTargetCount = 1;
-
     [Min(1)]
     [SerializeField] private int durationRounds = 2;
-
-    [Tooltip("持续期间最多抵挡多少次敌方攻击。")]
     [Min(1)]
     [SerializeField] private int blockCount = 1;
 
@@ -305,21 +324,22 @@ public sealed class GrantCoinProtectionEffectConfig : CollisionSkillEffectConfig
         {
             if (CoinRoundEffectManager.Instance == null)
             {
-                Debug.LogWarning("[GrantCoinProtectionEffectConfig] 缺少 CoinRoundEffectManager，无法添加保护效果。");
+                Debug.LogWarning("[GrantCoinProtectionEffectConfig] 缺少 CoinRoundEffectManager，无法添加保护。");
                 return;
             }
 
-            List<CoinStats> targets = CollisionSkillTargetResolver.ResolveCoinsByActionOrder(
-                context,
-                config.targetType,
-                config.protectionTargetCount);
+            List<CoinStats> targets = config.targetSelector.Resolve(context);
+            string sourceId = context != null && context.skill != null
+                ? context.skill.SkillName
+                : nameof(GrantCoinProtectionEffectConfig);
 
             for (int i = 0; i < targets.Count; i++)
             {
                 int protectionId = CoinRoundEffectManager.Instance.GrantCoinProtection(
                     targets[i],
                     config.durationRounds,
-                    config.blockCount);
+                    config.blockCount,
+                    sourceId);
 
                 SkillEffectVfxPlayer.PlayForProtection(config.vfx, targets[i], protectionId);
             }
@@ -331,11 +351,11 @@ public sealed class GrantCoinProtectionEffectConfig : CollisionSkillEffectConfig
 public sealed class BreakEnemyShieldEffectConfig : CollisionSkillEffectConfig
 {
     [Header("目标")]
-    [SerializeField] private CollisionSkillTargetType targetType = CollisionSkillTargetType.AllEnemies;
+    [SerializeField] private EnemySkillTargetSelector targetSelector = new EnemySkillTargetSelector();
 
-    [Tooltip("目标为碰撞范围内敌人时使用。")]
-    [Min(0f)]
-    [SerializeField] private float radius = 3f;
+    [Header("可破护盾卦象")]
+    [SerializeField] private BreakShieldTrigramMode trigramMode = BreakShieldTrigramMode.CollisionParticipants;
+    [SerializeField] private List<TrigramType> specifiedTrigrams = new List<TrigramType>();
 
     public override string DisplayName => "破除敌方护盾";
 
@@ -355,7 +375,7 @@ public sealed class BreakEnemyShieldEffectConfig : CollisionSkillEffectConfig
 
         public void Execute(CollisionSkillContext context)
         {
-            List<EnemyStats> targets = CollisionSkillTargetResolver.ResolveEnemies(context, config.targetType, config.radius);
+            List<EnemyStats> targets = config.targetSelector.Resolve(context);
 
             string sourceName = context != null && context.skill != null
                 ? context.skill.SkillName
@@ -367,20 +387,258 @@ public sealed class BreakEnemyShieldEffectConfig : CollisionSkillEffectConfig
                 if (shield == null || !shield.HasShield)
                     continue;
 
-                if (!CanBreakShield(context, shield.CurrentShieldType))
+                if (!config.CanBreakShield(context, shield.CurrentShieldType))
                     continue;
 
                 shield.TryBreakShield(shield.CurrentShieldType, sourceName);
             }
         }
+    }
 
-        private static bool CanBreakShield(CollisionSkillContext context, TrigramType shieldType)
+    private bool CanBreakShield(CollisionSkillContext context, TrigramType shieldType)
+    {
+        if (shieldType == TrigramType.None)
+            return false;
+
+        if (trigramMode == BreakShieldTrigramMode.SpecifiedTrigrams)
+            return specifiedTrigrams != null && specifiedTrigrams.Contains(shieldType);
+
+        if (context == null)
+            return false;
+
+        return shieldType == context.activeTrigram || shieldType == context.passiveTrigram;
+    }
+}
+
+[Serializable]
+public sealed class CreateDamageZoneEffectConfig : CollisionSkillEffectConfig
+{
+    [Header("生成位置")]
+    [SerializeField] private DamageZoneSpawnMode spawnMode = DamageZoneSpawnMode.CollisionPosition;
+
+    [Header("区域预制体")]
+    [SerializeField] private GameObject zonePrefab;
+    [Min(0.01f)]
+    [SerializeField] private float prefabScale = 1f;
+
+    [Header("伤害")]
+    [SerializeField] private SkillDamageSource damageSource = SkillDamageSource.ActiveCoinAttack;
+    [Min(0f)]
+    [SerializeField] private float damagePercent = 50f;
+    [Min(0)]
+    [SerializeField] private int fixedDamage;
+    [Min(1)]
+    [SerializeField] private int tickCount = 3;
+
+    public override string DisplayName => "创建持续伤害圈";
+
+    public override ICollisionSkillEffectController CreateController()
+    {
+        return new Controller(this);
+    }
+
+    private sealed class Controller : ICollisionSkillEffectController
+    {
+        private readonly CreateDamageZoneEffectConfig config;
+
+        public Controller(CreateDamageZoneEffectConfig config)
         {
-            if (context == null || shieldType == TrigramType.None)
-                return false;
-
-            return shieldType == context.activeTrigram ||
-                shieldType == context.passiveTrigram;
+            this.config = config;
         }
+
+        public void Execute(CollisionSkillContext context)
+        {
+            if (CoinRoundEffectManager.Instance == null)
+            {
+                Debug.LogWarning("[CreateDamageZoneEffectConfig] 缺少 CoinRoundEffectManager，无法创建伤害圈。");
+                return;
+            }
+
+            int damage = CollisionSkillDamageUtility.CalculateDamage(
+                context,
+                config.damageSource,
+                config.damagePercent,
+                config.fixedDamage);
+
+            if (damage <= 0)
+                return;
+
+            if (config.spawnMode == DamageZoneSpawnMode.LastDamagedEnemies)
+            {
+                if (context == null || context.lastDamagedEnemies.Count == 0)
+                    return;
+
+                for (int i = 0; i < context.lastDamagedEnemies.Count; i++)
+                {
+                    EnemyStats enemy = context.lastDamagedEnemies[i];
+                    if (enemy == null)
+                        continue;
+
+                    CoinRoundEffectManager.Instance.AddColliderDamageZone(
+                        enemy.transform.position,
+                        config.zonePrefab,
+                        config.prefabScale,
+                        damage,
+                        config.tickCount,
+                        context != null && context.skill != null ? context.skill.SkillName : nameof(CreateDamageZoneEffectConfig));
+                }
+                return;
+            }
+
+            if (context != null)
+            {
+                CoinRoundEffectManager.Instance.AddColliderDamageZone(
+                    context.collisionPosition,
+                    config.zonePrefab,
+                    config.prefabScale,
+                    damage,
+                    config.tickCount,
+                    context.skill != null ? context.skill.SkillName : nameof(CreateDamageZoneEffectConfig));
+            }
+        }
+    }
+}
+
+[Serializable]
+public sealed class CoinFlipConditionEffectConfig : CollisionSkillEffectConfig
+{
+    [Header("监听目标")]
+    [SerializeField] private CoinSkillTargetSelector watchedTargetSelector = new CoinSkillTargetSelector();
+
+    [Header("检查")]
+    [Tooltip("1 表示本大回合 RoundEnded 检查；2 表示下一个大回合 RoundEnded 检查。")]
+    [Min(1)]
+    [SerializeField] private int roundEndChecks = 1;
+    [SerializeField] private bool requireNoFlip = true;
+
+    [Header("满足条件时")]
+    [SerializeField] private CoinSkillOutcomeConfig successOutcome = new CoinSkillOutcomeConfig();
+
+    [Header("不满足条件时")]
+    [SerializeField] private CoinSkillOutcomeConfig failureOutcome = new CoinSkillOutcomeConfig();
+
+    public override string DisplayName => "翻面条件";
+
+    public override ICollisionSkillEffectController CreateController()
+    {
+        return new Controller(this);
+    }
+
+    private sealed class Controller : ICollisionSkillEffectController
+    {
+        private readonly CoinFlipConditionEffectConfig config;
+
+        public Controller(CoinFlipConditionEffectConfig config)
+        {
+            this.config = config;
+        }
+
+        public void Execute(CollisionSkillContext context)
+        {
+            if (CoinRoundEffectManager.Instance == null)
+            {
+                Debug.LogWarning("[CoinFlipConditionEffectConfig] 缺少 CoinRoundEffectManager，无法监听翻面条件。");
+                return;
+            }
+
+            List<CoinStats> watchedTargets = config.watchedTargetSelector.Resolve(context);
+
+            string sourceId = context != null && context.skill != null
+                ? context.skill.SkillName
+                : nameof(CoinFlipConditionEffectConfig);
+
+            CoinRoundEffectManager.Instance.ScheduleFlipCondition(
+                context,
+                sourceId,
+                watchedTargets,
+                config.roundEndChecks,
+                config.requireNoFlip,
+                config.successOutcome,
+                config.failureOutcome);
+        }
+    }
+}
+
+[Serializable]
+public sealed class UntilFlipDamageStackEffectConfig : CollisionSkillEffectConfig
+{
+    [Header("监听目标")]
+    [SerializeField] private CoinSkillTargetSelector watchedTargetSelector = new CoinSkillTargetSelector();
+
+    [Header("叠层")]
+    [Min(1)]
+    [SerializeField] private int maxStacks = 3;
+    [SerializeField] private CoinSkillOutcomeConfig stackOutcome = new CoinSkillOutcomeConfig();
+
+    public override string DisplayName => "直到翻面停止叠增伤";
+
+    public override ICollisionSkillEffectController CreateController()
+    {
+        return new Controller(this);
+    }
+
+    private sealed class Controller : ICollisionSkillEffectController
+    {
+        private readonly UntilFlipDamageStackEffectConfig config;
+
+        public Controller(UntilFlipDamageStackEffectConfig config)
+        {
+            this.config = config;
+        }
+
+        public void Execute(CollisionSkillContext context)
+        {
+            if (CoinRoundEffectManager.Instance == null)
+            {
+                Debug.LogWarning("[UntilFlipDamageStackEffectConfig] 缺少 CoinRoundEffectManager，无法添加直到翻面的叠层效果。");
+                return;
+            }
+
+            List<CoinStats> watchedTargets = config.watchedTargetSelector.Resolve(context);
+
+            string sourceId = context != null && context.skill != null
+                ? context.skill.SkillName
+                : nameof(UntilFlipDamageStackEffectConfig);
+
+            CoinRoundEffectManager.Instance.StartUntilFlipDamageStacks(
+                context,
+                sourceId,
+                watchedTargets,
+                config.maxStacks,
+                config.stackOutcome);
+        }
+    }
+}
+
+public static class CollisionSkillDamageUtility
+{
+    public static int CalculateDamage(
+        CollisionSkillContext context,
+        SkillDamageSource damageSource,
+        float damagePercent,
+        int fixedDamage)
+    {
+        if (context == null)
+            return 0;
+
+        if (damageSource == SkillDamageSource.FixedValue)
+            return Mathf.Max(0, fixedDamage);
+
+        CoinStats sourceStats = damageSource == SkillDamageSource.PassiveCoinAttack
+            ? context.passiveStats
+            : context.activeStats;
+
+        int attackSnapshot = damageSource == SkillDamageSource.PassiveCoinAttack
+            ? context.passiveAttackSnapshot
+            : context.activeAttackSnapshot;
+
+        float addPercent = CoinRoundEffectManager.Instance != null
+            ? CoinRoundEffectManager.Instance.GetDamageAddPercent(sourceStats)
+            : 0f;
+
+        return CoinDamageCalculator.CalculateFromSnapshot(
+            attackSnapshot,
+            damagePercent / 100f,
+            addPercent);
     }
 }

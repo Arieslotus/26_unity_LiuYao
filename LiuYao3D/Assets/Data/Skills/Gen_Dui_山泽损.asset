@@ -21,6 +21,7 @@ MonoBehaviour:
   inlineEffects:
   - rid: 7184782103117561864
   - rid: 7184782103117561865
+  - rid: 7184782103117561903
   effects: []
   references:
     version: 2
@@ -28,13 +29,19 @@ MonoBehaviour:
     - rid: 7184782103117561864
       type: {class: BreakEnemyShieldEffectConfig, ns: , asm: Assembly-CSharp}
       data:
-        targetType: 0
-        radius: 3
+        targetSelector:
+          targetType: 0
+          radius: 3
+          targetCount: 1
+        trigramMode: 0
+        specifiedTrigrams: 
     - rid: 7184782103117561865
       type: {class: DealDamageEffectConfig, ns: , asm: Assembly-CSharp}
       data:
-        targetType: 0
-        radius: 3
+        targetSelector:
+          targetType: 0
+          radius: 3
+          targetCount: 1
         damageSource: 0
         damagePercent: 200
         fixedDamage: 0
@@ -48,3 +55,12 @@ MonoBehaviour:
           lifetime: 2
           delay: 0
           useUnscaledTimeForParticles: 1
+    - rid: 7184782103117561903
+      type: {class: AddCoinLossEffectConfig, ns: , asm: Assembly-CSharp}
+      data:
+        targetSelector:
+          targetType: 1
+          targetCount: 1
+          sortByActionOrder: 1
+          currentTrigramFilter: 0400000007000000
+        loss: 1

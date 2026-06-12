@@ -21,6 +21,10 @@ public class DealDamageEffectData : CollisionSkillEffectData
     [Min(0f)]
     [SerializeField] private float radius = 3f;
 
+    [Tooltip("大于 0 时只取指定数量目标。随机目标请把目标类型设为 RandomEnemies。")]
+    [Min(0)]
+    [SerializeField] private int targetCount;
+
     [Header("伤害")]
     [SerializeField] private SkillDamageSource damageSource = SkillDamageSource.ActiveCoinAttack;
 
@@ -51,47 +55,36 @@ public class DealDamageEffectData : CollisionSkillEffectData
 
         public void Execute(CollisionSkillContext context)
         {
-            int damage = data.CalculateDamage(context);
+            int damage = CollisionSkillDamageUtility.CalculateDamage(
+                context,
+                data.damageSource,
+                data.damagePercent,
+                data.fixedDamage);
             if (damage <= 0)
                 return;
 
             List<EnemyStats> targets = CollisionSkillTargetResolver.ResolveEnemies(
                 context,
                 data.targetType,
-                data.radius);
+                data.radius,
+                data.targetCount);
+
+            if (context != null)
+            {
+                context.lastDamagedEnemies.Clear();
+            }
 
             for (int i = 0; i < targets.Count; i++)
             {
                 targets[i].TakeDamage(damage);
+                if (context != null && targets[i] != null && !context.lastDamagedEnemies.Contains(targets[i]))
+                {
+                    context.lastDamagedEnemies.Add(targets[i]);
+                }
             }
 
             SkillEffectVfxPlayer.PlayForEnemies(data.vfx, targets);
         }
     }
 
-    private int CalculateDamage(CollisionSkillContext context)
-    {
-        if (context == null)
-            return 0;
-
-        if (damageSource == SkillDamageSource.FixedValue)
-            return Mathf.Max(0, fixedDamage);
-
-        CoinStats sourceStats = damageSource == SkillDamageSource.PassiveCoinAttack
-            ? context.passiveStats
-            : context.activeStats;
-
-        int attackSnapshot = damageSource == SkillDamageSource.PassiveCoinAttack
-            ? context.passiveAttackSnapshot
-            : context.activeAttackSnapshot;
-
-        float addPercent = CoinRoundEffectManager.Instance != null
-            ? CoinRoundEffectManager.Instance.GetDamageAddPercent(sourceStats)
-            : 0f;
-
-        return CoinDamageCalculator.CalculateFromSnapshot(
-            attackSnapshot,
-            damagePercent / 100f,
-            addPercent);
-    }
 }

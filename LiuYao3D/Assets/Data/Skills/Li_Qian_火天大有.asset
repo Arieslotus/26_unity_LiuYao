@@ -18,8 +18,29 @@ MonoBehaviour:
   skillIcon: {fileID: 21300000, guid: 13dccc09b06e0f047a971d7fde899e60, type: 3}
   description: "\u5168\u573A\u8303\u56F4\u7834\u79BB\u3001\u4E7E\u76FE\u3002\n\u5BF9\u8303\u56F4\u5185\u654C\u65B9\u9020\u6210\u653B\u51FB\uFF0B\uFF0B\uFF1B\u8303\u56F4\u6301\u7EED\u5B58\u57282\u56DE\u5408\u3002"
   effectText: 
-  inlineEffects: []
+  inlineEffects:
+  - rid: 7184782103117561886
+  - rid: 7184782103117561911
   effects: []
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 7184782103117561886
+      type: {class: BreakEnemyShieldEffectConfig, ns: , asm: Assembly-CSharp}
+      data:
+        targetSelector:
+          targetType: 0
+          radius: 3
+          targetCount: 1
+        trigramMode: 0
+        specifiedTrigrams: 
+    - rid: 7184782103117561911
+      type: {class: CreateDamageZoneEffectConfig, ns: , asm: Assembly-CSharp}
+      data:
+        spawnMode: 0
+        zonePrefab: {fileID: 5039200316752278330, guid: bc00999e2fe1d344bb7b13f82271761f, type: 3}
+        prefabScale: 1
+        damageSource: 0
+        damagePercent: 50
+        fixedDamage: 0
+        tickCount: 3

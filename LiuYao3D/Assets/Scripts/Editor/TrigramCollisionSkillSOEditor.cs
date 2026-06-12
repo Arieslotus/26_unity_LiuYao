@@ -12,10 +12,14 @@ public sealed class TrigramCollisionSkillSOEditor : Editor
     {
         new EffectTypeEntry("造成伤害", typeof(DealDamageEffectConfig)),
         new EffectTypeEntry("恢复损耗", typeof(ReduceLossEffectConfig)),
+        new EffectTypeEntry("增加己方损耗", typeof(AddCoinLossEffectConfig)),
         new EffectTypeEntry("添加增伤", typeof(AddDamageModifierEffectConfig)),
         new EffectTypeEntry("延迟增加损耗", typeof(ScheduleCoinLossEffectConfig)),
         new EffectTypeEntry("添加保护", typeof(GrantCoinProtectionEffectConfig)),
         new EffectTypeEntry("破除敌方护盾", typeof(BreakEnemyShieldEffectConfig)),
+        new EffectTypeEntry("创建持续伤害圈", typeof(CreateDamageZoneEffectConfig)),
+        new EffectTypeEntry("翻面条件", typeof(CoinFlipConditionEffectConfig)),
+        new EffectTypeEntry("直到翻面停止叠增伤", typeof(UntilFlipDamageStackEffectConfig)),
     };
 
     private SerializedProperty activeTrigram;

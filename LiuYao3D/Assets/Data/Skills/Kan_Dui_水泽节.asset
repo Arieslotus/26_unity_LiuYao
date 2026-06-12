@@ -18,8 +18,29 @@ MonoBehaviour:
   skillIcon: {fileID: 21300000, guid: b0c9944349391f34081cb4c7ff2c8087, type: 3}
   description: "\u5168\u573A\u8303\u56F4\u7834\u574E\u3001\u5151\u76FE\u3002\n\u5BF9\u8303\u56F4\u5185\u654C\u65B9\u9020\u6210\u653B\u51FB\uFF0B\uFF0C\u8303\u56F4\u53EF\u6301\u7EED\u5B58\u57283\u56DE\u5408\u3002\u4E00\u56DE\u5408\u4EC5\u53EF\u89E6\u53D1\u4E00\u6B21\u3002"
   effectText: 
-  inlineEffects: []
+  inlineEffects:
+  - rid: 7184782103117561872
+  - rid: 7184782103117561905
   effects: []
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 7184782103117561872
+      type: {class: BreakEnemyShieldEffectConfig, ns: , asm: Assembly-CSharp}
+      data:
+        targetSelector:
+          targetType: 0
+          radius: 3
+          targetCount: 1
+        trigramMode: 0
+        specifiedTrigrams: 
+    - rid: 7184782103117561905
+      type: {class: CreateDamageZoneEffectConfig, ns: , asm: Assembly-CSharp}
+      data:
+        spawnMode: 0
+        zonePrefab: {fileID: 5039200316752278330, guid: bc00999e2fe1d344bb7b13f82271761f, type: 3}
+        prefabScale: 1
+        damageSource: 0
+        damagePercent: 50
+        fixedDamage: 0
+        tickCount: 3

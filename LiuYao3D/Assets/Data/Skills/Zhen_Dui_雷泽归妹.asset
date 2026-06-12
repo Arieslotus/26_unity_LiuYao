@@ -18,8 +18,49 @@ MonoBehaviour:
   skillIcon: {fileID: 21300000, guid: c6b3059354337b7419b6795361570ff1, type: 3}
   description: "\u5168\u573A\u8303\u56F4\u7834\u9707\u3001\u5151\u76FE\u3002\n\u5BF9\u8303\u56F4\u5185\u654C\u65B9\u9020\u6210\u653B\u51FB+++\uFF0C\u56DE\u5408\u5185\u4EC5\u53EF\u89E6\u53D11\u6B21\uFF1B\u5BF9\u968F\u673A2\u5DF1\u65B9\u5355\u4F4D\u9020\u62101\u635F\u8017\u3002"
   effectText: 
-  inlineEffects: []
+  inlineEffects:
+  - rid: 7184782103117561895
+  - rid: 7184782103117561896
+  - rid: 7184782103117561914
   effects: []
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 7184782103117561895
+      type: {class: BreakEnemyShieldEffectConfig, ns: , asm: Assembly-CSharp}
+      data:
+        targetSelector:
+          targetType: 0
+          radius: 3
+          targetCount: 1
+        trigramMode: 0
+        specifiedTrigrams: 
+    - rid: 7184782103117561896
+      type: {class: DealDamageEffectConfig, ns: , asm: Assembly-CSharp}
+      data:
+        targetSelector:
+          targetType: 0
+          radius: 3
+          targetCount: 1
+        damageSource: 0
+        damagePercent: 250
+        fixedDamage: 0
+        vfx:
+          prefab: {fileID: 0}
+          targetType: 5
+          radius: 3
+          parentToTarget: 1
+          worldOffset: {x: 0, y: 0, z: 0}
+          lifetimeMode: 0
+          lifetime: 2
+          delay: 0
+          useUnscaledTimeForParticles: 1
+    - rid: 7184782103117561914
+      type: {class: AddCoinLossEffectConfig, ns: , asm: Assembly-CSharp}
+      data:
+        targetSelector:
+          targetType: 2
+          targetCount: 2
+          sortByActionOrder: 1
+          currentTrigramFilter: 
+        loss: 1

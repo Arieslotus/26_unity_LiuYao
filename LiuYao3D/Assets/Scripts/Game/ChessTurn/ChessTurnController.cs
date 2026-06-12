@@ -17,6 +17,7 @@ public class ChessTurnController : MonoBehaviour
     private bool hasFiredCurrent = false;
     private bool isPlayerRoundActive = false;
     private bool hasEndedPlayerRound = false;
+    private TrigramType currentPieceActionStartTrigram = TrigramType.None;
 
     public ChessPiece CurrentPiece =>
         (currentIndex >= 0 && currentIndex < pieces.Count) ? pieces[currentIndex] : null;
@@ -26,6 +27,7 @@ public class ChessTurnController : MonoBehaviour
     public IReadOnlyList<ChessPiece> Pieces => pieces;
 
     public event Action<int, ChessPiece> CurrentPieceChanged;
+    public event Action<ChessPiece, TrigramType, TrigramType> PieceActionResolved;
 
     private void Start()
     {
@@ -46,6 +48,7 @@ public class ChessTurnController : MonoBehaviour
         if (hasFiredCurrent && (CurrentPiece == null || !CurrentPiece.IsMoving))
         {
             Debug.Log($"[ChessTurnController] 棋子 {currentIndex} 已完成行动，准备切换。");
+            NotifyPieceActionResolved();
             AdvanceToNextControllablePiece();
         }
     }
@@ -142,6 +145,7 @@ public class ChessTurnController : MonoBehaviour
 
         currentIndex = index;
         hasFiredCurrent = false;
+        currentPieceActionStartTrigram = TrigramType.None;
 
         ChessPiece piece = CurrentPiece;
         if (piece == null)
@@ -157,6 +161,7 @@ public class ChessTurnController : MonoBehaviour
 
         piece.SetTurnHighlight(true);
         piece.SetControlHintVisible(true);
+        currentPieceActionStartTrigram = piece.CurrentTrigram;
         RefreshAllHighlights();
         NotifyCurrentPieceChanged();
 
@@ -244,5 +249,14 @@ public class ChessTurnController : MonoBehaviour
     private void NotifyCurrentPieceChanged()
     {
         CurrentPieceChanged?.Invoke(currentIndex, CurrentPiece);
+    }
+
+    private void NotifyPieceActionResolved()
+    {
+        ChessPiece piece = CurrentPiece;
+        if (piece == null)
+            return;
+
+        PieceActionResolved?.Invoke(piece, currentPieceActionStartTrigram, piece.CurrentTrigram);
     }
 }

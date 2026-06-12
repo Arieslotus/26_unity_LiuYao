@@ -19,8 +19,29 @@ MonoBehaviour:
   description: "\u5168\u573A\u8303\u56F4\u7834\u5764\u76FE\u3002\n\u5BF9\u8303\u56F4\u5185\u654C\u65B9\u9020\u6210\u653B\u51FB\uFF0B\uFF0B\uFF0C\u8303\u56F4\u5B58\u5728\u6301\u7EED3\u56DE\u5408\u3002"
   effectText: "\u5BF9\u5168\u573A\u6C34\u5C5E\u6027\u654C\u4EBA\u7834\u76FE\u3002\u5728\u78B0\u649E\u5904\u5F62\u6210\u4E00\u4E2A\u5706\uFF0C\u5706\u5185\u654C\u65B9\u6BCF\u56DE\u5408\u53D7\u5230
     50% \u4F24\u5BB3\uFF0C\u5706\u57283\u56DE\u5408\u540E\u6D88\u5931\u3002"
-  inlineEffects: []
+  inlineEffects:
+  - rid: 7184782103117561909
+  - rid: 7184782103117561910
   effects: []
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 7184782103117561909
+      type: {class: BreakEnemyShieldEffectConfig, ns: , asm: Assembly-CSharp}
+      data:
+        targetSelector:
+          targetType: 0
+          radius: 3
+          targetCount: 1
+        trigramMode: 0
+        specifiedTrigrams: 
+    - rid: 7184782103117561910
+      type: {class: CreateDamageZoneEffectConfig, ns: , asm: Assembly-CSharp}
+      data:
+        spawnMode: 0
+        zonePrefab: {fileID: 5039200316752278330, guid: bc00999e2fe1d344bb7b13f82271761f, type: 3}
+        prefabScale: 1
+        damageSource: 0
+        damagePercent: 50
+        fixedDamage: 0
+        tickCount: 3

@@ -16,7 +16,7 @@ MonoBehaviour:
   passiveTrigram: 5
   skillName: "\u5C71\u706B\u8D32"
   skillIcon: {fileID: 21300000, guid: c4b428bb2ca5ab04895b16c564aed1b0, type: 3}
-  description: "\u5168\u573A\u8303\u56F4\u7834\u826E\u3001\u79BB\u76FE\u3002\n\u5BF9\u8303\u56F4\u5185\u654C\u65B9\u9020\u6210\u653B\u51FB\uFF0B\u3002"
+  description: "\u5168\u573A\u8303\u56F4\u7834\u826E\u3001\u79BB\u76FE\u3002\n\u5BF9\u8303\u56F4\u5185\u654C\u65B9\u9020\u6210\u653B\u51FB\uFF0B++\u3002"
   effectText: 
   inlineEffects:
   - rid: 7184782103117561860
@@ -28,15 +28,21 @@ MonoBehaviour:
     - rid: 7184782103117561860
       type: {class: BreakEnemyShieldEffectConfig, ns: , asm: Assembly-CSharp}
       data:
-        targetType: 0
-        radius: 3
+        targetSelector:
+          targetType: 0
+          radius: 3
+          targetCount: 1
+        trigramMode: 0
+        specifiedTrigrams: 
     - rid: 7184782103117561861
       type: {class: DealDamageEffectConfig, ns: , asm: Assembly-CSharp}
       data:
-        targetType: 1
-        radius: 2
+        targetSelector:
+          targetType: 0
+          radius: 3
+          targetCount: 1
         damageSource: 0
-        damagePercent: 150
+        damagePercent: 250
         fixedDamage: 0
         vfx:
           prefab: {fileID: 0}

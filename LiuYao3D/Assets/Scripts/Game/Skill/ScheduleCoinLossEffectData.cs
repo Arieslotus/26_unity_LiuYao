@@ -43,6 +43,9 @@ public class ScheduleCoinLossEffectData : CollisionSkillEffectData
             }
 
             List<CoinStats> targets = CollisionSkillTargetResolver.ResolveCoins(context, data.targetType);
+            string sourceId = context != null && context.skill != null
+                ? context.skill.SkillName
+                : data.name;
 
             for (int i = 0; i < targets.Count; i++)
             {
@@ -50,7 +53,8 @@ public class ScheduleCoinLossEffectData : CollisionSkillEffectData
                     targets[i],
                     data.loss,
                     data.delayRounds,
-                    data.requiredCurrentTrigram);
+                    data.requiredCurrentTrigram,
+                    sourceId);
             }
         }
     }
