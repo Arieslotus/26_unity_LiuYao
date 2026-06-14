@@ -20,6 +20,9 @@ public sealed class TrigramCollisionSkillSOEditor : Editor
         new EffectTypeEntry("创建持续伤害圈", typeof(CreateDamageZoneEffectConfig)),
         new EffectTypeEntry("翻面条件", typeof(CoinFlipConditionEffectConfig)),
         new EffectTypeEntry("直到翻面停止叠增伤", typeof(UntilFlipDamageStackEffectConfig)),
+        new EffectTypeEntry("延迟执行结果", typeof(ScheduleCoinOutcomeEffectConfig)),
+        new EffectTypeEntry("本回合触发次数限制", typeof(TurnTriggerCountEffectConfig)),
+        new EffectTypeEntry("临时碰撞物理修正", typeof(CoinPhysicsModifierEffectConfig)),
     };
 
     private SerializedProperty activeTrigram;

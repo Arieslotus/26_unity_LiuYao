@@ -21,7 +21,7 @@ MonoBehaviour:
   inlineEffects:
   - rid: 7184782103117561862
   - rid: 7184782103117561863
-  - rid: 7184782103117561904
+  - rid: 7184782143613829125
   effects: []
   references:
     version: 2
@@ -55,12 +55,23 @@ MonoBehaviour:
           lifetime: 2
           delay: 0
           useUnscaledTimeForParticles: 1
-    - rid: 7184782103117561904
-      type: {class: AddCoinLossEffectConfig, ns: , asm: Assembly-CSharp}
+    - rid: 7184782143613829125
+      type: {class: TurnTriggerCountEffectConfig, ns: , asm: Assembly-CSharp}
       data:
-        targetSelector:
-          targetType: 0
-          targetCount: 1
-          sortByActionOrder: 1
-          currentTrigramFilter: 
-        loss: 1
+        counterId: 
+        triggerLimit: 2
+        triggerMode: 0
+        overLimitOutcome:
+          outcomeType: 1
+          targetSelector:
+            targetType: 0
+            targetCount: 1
+            sortByActionOrder: 1
+            currentTrigramFilter: 
+          loss: 1
+          reduceLoss: 1
+          addDamagePercent: 30
+          durationRounds: -1
+          activateAfterRounds: 0
+          stackable: 1
+          modifierId: 

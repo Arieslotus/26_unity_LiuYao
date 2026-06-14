@@ -20,7 +20,10 @@ public enum CoinSkillRuntimeEffectKind
     CoinProtection,
     DamageZone,
     FlipCondition,
-    UntilFlipDamageStack
+    UntilFlipDamageStack,
+    ScheduledOutcome,
+    TurnTriggerCounter,
+    PhysicsModifier
 }
 
 public readonly struct CoinSkillRuntimeEffectSnapshot
@@ -208,6 +211,43 @@ public class CoinRoundEffectManager : MonoBehaviour
         public int startRound;
     }
 
+    private sealed class ScheduledOutcome
+    {
+        public int id;
+        public CollisionSkillContext context;
+        public string sourceId;
+        public int executeRound;
+        public CoinSkillScheduleTiming timing;
+        public CoinSkillOutcomeConfig outcome;
+    }
+
+    private sealed class TurnTriggerCounter
+    {
+        public int id;
+        public string counterId;
+        public string sourceId;
+        public int round;
+        public int count;
+        public bool triggeredThisRound;
+    }
+
+    private sealed class PhysicsModifier
+    {
+        public int id;
+        public string sourceId;
+        public CoinPhysicsModifierType modifierType;
+        public float multiplier;
+        public List<CoinStats> targets;
+
+        public bool ContainsTarget(CoinStats coin)
+        {
+            if (targets == null || targets.Count == 0)
+                return true;
+
+            return coin != null && targets.Contains(coin);
+        }
+    }
+
     public static CoinRoundEffectManager Instance { get; private set; }
 
     [Header("调试")]
@@ -219,6 +259,9 @@ public class CoinRoundEffectManager : MonoBehaviour
     private readonly List<RoundDamageZone> damageZones = new List<RoundDamageZone>();
     private readonly List<FlipCondition> flipConditions = new List<FlipCondition>();
     private readonly List<UntilFlipDamageStack> untilFlipStacks = new List<UntilFlipDamageStack>();
+    private readonly List<ScheduledOutcome> scheduledOutcomes = new List<ScheduledOutcome>();
+    private readonly List<TurnTriggerCounter> turnTriggerCounters = new List<TurnTriggerCounter>();
+    private readonly List<PhysicsModifier> physicsModifiers = new List<PhysicsModifier>();
     private readonly Dictionary<CoinStats, int> coinFlipVersions = new Dictionary<CoinStats, int>();
     private readonly List<CoinRuntimeData> subscribedCoinData = new List<CoinRuntimeData>();
 
@@ -421,6 +464,52 @@ public class CoinRoundEffectManager : MonoBehaviour
                 stack.sourceId,
                 Mathf.Max(0, stack.maxStacks - stack.appliedStacks),
                 Mathf.Max(1, stack.appliedStacks),
+                null));
+        }
+
+        for (int i = 0; i < scheduledOutcomes.Count; i++)
+        {
+            ScheduledOutcome scheduled = scheduledOutcomes[i];
+            if (scheduled == null)
+                continue;
+
+            int remainingRounds = Mathf.Max(0, scheduled.executeRound - currentRound);
+            result.Add(new CoinSkillRuntimeEffectSnapshot(
+                scheduled.id,
+                CoinSkillRuntimeEffectKind.ScheduledOutcome,
+                scheduled.sourceId,
+                remainingRounds,
+                1,
+                null));
+        }
+
+        for (int i = 0; i < turnTriggerCounters.Count; i++)
+        {
+            TurnTriggerCounter counter = turnTriggerCounters[i];
+            if (counter == null || counter.round != currentRound)
+                continue;
+
+            result.Add(new CoinSkillRuntimeEffectSnapshot(
+                counter.id,
+                CoinSkillRuntimeEffectKind.TurnTriggerCounter,
+                counter.sourceId,
+                0,
+                Mathf.Max(1, counter.count),
+                null));
+        }
+
+        for (int i = 0; i < physicsModifiers.Count; i++)
+        {
+            PhysicsModifier modifier = physicsModifiers[i];
+            if (modifier == null)
+                continue;
+
+            result.Add(new CoinSkillRuntimeEffectSnapshot(
+                modifier.id,
+                CoinSkillRuntimeEffectKind.PhysicsModifier,
+                modifier.sourceId,
+                0,
+                1,
                 null));
         }
 
@@ -710,6 +799,107 @@ public class CoinRoundEffectManager : MonoBehaviour
         return runtimeId;
     }
 
+    public int ScheduleOutcome(
+        CollisionSkillContext context,
+        string sourceId,
+        int delayRounds,
+        CoinSkillScheduleTiming timing,
+        CoinSkillOutcomeConfig outcome)
+    {
+        if (outcome == null || outcome.OutcomeType == CoinSkillOutcomeType.None)
+            return 0;
+
+        int safeDelay = Mathf.Max(0, delayRounds);
+        if (safeDelay == 0 && timing == CoinSkillScheduleTiming.RoundStarted)
+        {
+            outcome.Apply(context, sourceId);
+            return 0;
+        }
+
+        int runtimeId = AllocateRuntimeId();
+        scheduledOutcomes.Add(new ScheduledOutcome
+        {
+            id = runtimeId,
+            context = context,
+            sourceId = sourceId,
+            executeRound = currentRound + safeDelay,
+            timing = timing,
+            outcome = outcome
+        });
+
+        return runtimeId;
+    }
+
+    public int RecordTurnTrigger(
+        CollisionSkillContext context,
+        string counterId,
+        string sourceId,
+        int triggerLimit,
+        TurnTriggerCountMode triggerMode,
+        CoinSkillOutcomeConfig overLimitOutcome)
+    {
+        if (string.IsNullOrWhiteSpace(counterId))
+            return 0;
+
+        TurnTriggerCounter counter = FindOrCreateTurnTriggerCounter(counterId.Trim(), sourceId);
+        counter.count++;
+
+        if (counter.count <= Mathf.Max(0, triggerLimit))
+            return counter.id;
+
+        if (triggerMode == TurnTriggerCountMode.OncePerRoundOverLimit && counter.triggeredThisRound)
+            return counter.id;
+
+        counter.triggeredThisRound = true;
+        if (overLimitOutcome != null)
+        {
+            overLimitOutcome.Apply(context, sourceId);
+        }
+
+        return counter.id;
+    }
+
+    public int AddPhysicsModifier(
+        string sourceId,
+        CoinPhysicsModifierType modifierType,
+        float multiplier,
+        IReadOnlyList<CoinStats> targets = null)
+    {
+        if (multiplier < 0f)
+            return 0;
+
+        int runtimeId = AllocateRuntimeId();
+        physicsModifiers.Add(new PhysicsModifier
+        {
+            id = runtimeId,
+            sourceId = sourceId,
+            modifierType = modifierType,
+            multiplier = multiplier,
+            targets = CopyTargets(targets)
+        });
+
+        return runtimeId;
+    }
+
+    public float GetPhysicsModifierMultiplier(CoinPhysicsModifierType modifierType, CoinStats coin)
+    {
+        float result = 1f;
+
+        for (int i = 0; i < physicsModifiers.Count; i++)
+        {
+            PhysicsModifier modifier = physicsModifiers[i];
+            if (modifier == null || modifier.modifierType != modifierType)
+                continue;
+
+            if (!modifier.ContainsTarget(coin))
+                continue;
+
+            result *= modifier.multiplier;
+        }
+
+        return result;
+    }
+
     public CoinStats FindHighestLossCoin()
     {
         CoinStats[] coins = FindObjectsOfType<CoinStats>();
@@ -745,6 +935,38 @@ public class CoinRoundEffectManager : MonoBehaviour
         });
 
         return runtimeId;
+    }
+
+    private TurnTriggerCounter FindOrCreateTurnTriggerCounter(string counterId, string sourceId)
+    {
+        for (int i = 0; i < turnTriggerCounters.Count; i++)
+        {
+            TurnTriggerCounter counter = turnTriggerCounters[i];
+            if (counter == null || counter.counterId != counterId)
+                continue;
+
+            if (counter.round != currentRound)
+            {
+                counter.round = currentRound;
+                counter.count = 0;
+                counter.triggeredThisRound = false;
+            }
+
+            return counter;
+        }
+
+        TurnTriggerCounter created = new TurnTriggerCounter
+        {
+            id = AllocateRuntimeId(),
+            counterId = counterId,
+            sourceId = sourceId,
+            round = currentRound,
+            count = 0,
+            triggeredThisRound = false
+        };
+
+        turnTriggerCounters.Add(created);
+        return created;
     }
 
     private static List<CoinStats> CopyTargets(IReadOnlyList<CoinStats> targets)
@@ -926,6 +1148,7 @@ public class CoinRoundEffectManager : MonoBehaviour
     private void OnRoundStarted(int roundIndex)
     {
         currentRound = roundIndex;
+        ExecuteScheduledOutcomes(roundIndex, CoinSkillScheduleTiming.RoundStarted);
         StartReadyDamageModifiers();
         ExecutePendingCoinLosses(roundIndex);
         TickUntilFlipStacks(roundIndex);
@@ -934,11 +1157,42 @@ public class CoinRoundEffectManager : MonoBehaviour
 
     private void OnRoundEnded(int roundIndex)
     {
+        ExecuteScheduledOutcomes(roundIndex, CoinSkillScheduleTiming.RoundEnded);
         TickDamageZones();
         ResolveFlipConditions(roundIndex);
         TickDamageModifierDurations(roundIndex);
         TickProtectionDurations();
+        ClearRoundOnlyEffects();
         CleanupDestroyedReferences();
+    }
+
+    private void ExecuteScheduledOutcomes(int roundIndex, CoinSkillScheduleTiming timing)
+    {
+        for (int i = scheduledOutcomes.Count - 1; i >= 0; i--)
+        {
+            ScheduledOutcome scheduled = scheduledOutcomes[i];
+            if (scheduled == null)
+            {
+                scheduledOutcomes.RemoveAt(i);
+                continue;
+            }
+
+            if (scheduled.timing != timing || scheduled.executeRound > roundIndex)
+                continue;
+
+            scheduledOutcomes.RemoveAt(i);
+
+            if (scheduled.outcome != null)
+            {
+                scheduled.outcome.Apply(scheduled.context, scheduled.sourceId);
+            }
+        }
+    }
+
+    private void ClearRoundOnlyEffects()
+    {
+        physicsModifiers.Clear();
+        turnTriggerCounters.RemoveAll(counter => counter == null || counter.round <= currentRound);
     }
 
     private void ExecutePendingCoinLosses(int roundIndex)

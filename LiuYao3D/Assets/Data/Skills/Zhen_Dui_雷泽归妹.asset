@@ -22,6 +22,7 @@ MonoBehaviour:
   - rid: 7184782103117561895
   - rid: 7184782103117561896
   - rid: 7184782103117561914
+  - rid: 7184782143613829127
   effects: []
   references:
     version: 2
@@ -64,3 +65,23 @@ MonoBehaviour:
           sortByActionOrder: 1
           currentTrigramFilter: 
         loss: 1
+    - rid: 7184782143613829127
+      type: {class: TurnTriggerCountEffectConfig, ns: , asm: Assembly-CSharp}
+      data:
+        counterId: 
+        triggerLimit: 1
+        triggerMode: 0
+        overLimitOutcome:
+          outcomeType: 0
+          targetSelector:
+            targetType: 0
+            targetCount: 1
+            sortByActionOrder: 1
+            currentTrigramFilter: 
+          loss: 1
+          reduceLoss: 1
+          addDamagePercent: 30
+          durationRounds: -1
+          activateAfterRounds: 0
+          stackable: 1
+          modifierId: 

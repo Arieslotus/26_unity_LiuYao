@@ -21,7 +21,8 @@ MonoBehaviour:
   inlineEffects:
   - rid: 7184782103117561869
   - rid: 7184782103117561870
-  - rid: 7184782103117561871
+  - rid: 7184782143613829124
+  - rid: 7184782143613829123
   effects: []
   references:
     version: 2
@@ -55,7 +56,27 @@ MonoBehaviour:
           lifetime: 2
           delay: 0
           useUnscaledTimeForParticles: 1
-    - rid: 7184782103117561871
+    - rid: 7184782143613829123
+      type: {class: ScheduleCoinOutcomeEffectConfig, ns: , asm: Assembly-CSharp}
+      data:
+        delayRounds: 1
+        timing: 1
+        outcome:
+          outcomeType: 2
+          targetSelector:
+            targetType: 0
+            targetCount: 1
+            sortByActionOrder: 1
+            currentTrigramFilter: 
+          loss: 1
+          reduceLoss: 1
+          addDamagePercent: 30
+          durationRounds: -1
+          activateAfterRounds: 0
+          stackable: 1
+          modifierId: 
+        sourceId: 
+    - rid: 7184782143613829124
       type: {class: ReduceLossEffectConfig, ns: , asm: Assembly-CSharp}
       data:
         targetSelector:
@@ -66,7 +87,7 @@ MonoBehaviour:
         reduceLoss: 1
         vfx:
           prefab: {fileID: 0}
-          targetType: 5
+          targetType: 7
           radius: 3
           parentToTarget: 1
           worldOffset: {x: 0, y: 0, z: 0}

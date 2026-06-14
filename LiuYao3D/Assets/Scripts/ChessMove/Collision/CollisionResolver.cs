@@ -34,6 +34,8 @@ public static class CollisionResolver
                 break;
         }
 
+        ApplySelfRemainingDistanceModifier(ctx, ref result);
+
         if (!ctx.suppressSideEffects)
         {
             Debug.Log($"[CollisionResolver] 普通碰撞类型: {ctx.target.type}");
@@ -188,7 +190,15 @@ public static class CollisionResolver
 
         pushDirection = pushDirection.normalized;
 
-        float transferredDistance = GetRemainingDistance(ctx) * collisionConfig.coinTransferDistanceRatio;
+        CoinStats selfStats = selfPiece.GetComponentInParent<CoinStats>();
+        float transferDistanceMultiplier = GetPhysicsModifierMultiplier(
+            CoinPhysicsModifierType.CoinTransferDistance,
+            selfStats);
+        float transferSpeedMultiplier = GetPhysicsModifierMultiplier(
+            CoinPhysicsModifierType.CoinTransferSpeed,
+            selfStats);
+
+        float transferredDistance = GetRemainingDistance(ctx) * collisionConfig.coinTransferDistanceRatio * transferDistanceMultiplier;
         transferredDistance = Mathf.Max(0f, transferredDistance);
 
         if (transferredDistance <= 0.0001f)
@@ -209,7 +219,7 @@ public static class CollisionResolver
         result.otherCoin = otherPiece;
         result.otherCoinDirection = pushDirection;
         result.otherCoinStartDistance = transferredDistance;
-        result.otherCoinSpeedScale = collisionConfig.coinTransferSpeedRatio;
+        result.otherCoinSpeedScale = collisionConfig.coinTransferSpeedRatio * transferSpeedMultiplier;
 
         if (!ctx.suppressSideEffects)
         {
@@ -296,5 +306,22 @@ public static class CollisionResolver
             return Mathf.Max(0f, ctx.remainingDistanceOverride);
 
         return ctx.self != null ? Mathf.Max(0f, ctx.self.RemainingDistance) : 0f;
+    }
+
+    private static void ApplySelfRemainingDistanceModifier(CollisionContext ctx, ref CollisionResult result)
+    {
+        if (ctx.self == null)
+            return;
+
+        CoinStats selfStats = ctx.self.GetComponentInParent<CoinStats>();
+        float multiplier = GetPhysicsModifierMultiplier(CoinPhysicsModifierType.SelfRemainingDistance, selfStats);
+        result.remainingDistanceMultiplier *= multiplier;
+    }
+
+    private static float GetPhysicsModifierMultiplier(CoinPhysicsModifierType modifierType, CoinStats coin)
+    {
+        return CoinRoundEffectManager.Instance != null
+            ? CoinRoundEffectManager.Instance.GetPhysicsModifierMultiplier(modifierType, coin)
+            : 1f;
     }
 }

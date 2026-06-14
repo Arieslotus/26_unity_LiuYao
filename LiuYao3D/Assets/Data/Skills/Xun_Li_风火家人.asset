@@ -21,6 +21,7 @@ MonoBehaviour:
   inlineEffects:
   - rid: 7184782103117561890
   - rid: 7184782103117561891
+  - rid: 7184782143613829126
   effects: []
   references:
     version: 2
@@ -54,3 +55,14 @@ MonoBehaviour:
           lifetime: 2
           delay: 0
           useUnscaledTimeForParticles: 1
+    - rid: 7184782143613829126
+      type: {class: CoinPhysicsModifierEffectConfig, ns: , asm: Assembly-CSharp}
+      data:
+        targetSelector:
+          targetType: 5
+          targetCount: 1
+          sortByActionOrder: 1
+          currentTrigramFilter: 
+        modifierType: 2
+        multiplier: 1.3
+        modifierId: 

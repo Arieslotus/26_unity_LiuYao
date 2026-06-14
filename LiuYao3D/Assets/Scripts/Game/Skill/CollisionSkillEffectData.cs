@@ -35,6 +35,25 @@ public enum SkillDamageSource
     FixedValue
 }
 
+public enum CoinSkillScheduleTiming
+{
+    RoundStarted,
+    RoundEnded
+}
+
+public enum TurnTriggerCountMode
+{
+    OncePerRoundOverLimit,
+    EveryTimeOverLimit
+}
+
+public enum CoinPhysicsModifierType
+{
+    CoinTransferDistance,
+    CoinTransferSpeed,
+    SelfRemainingDistance
+}
+
 public static class CollisionSkillDamageUtility
 {
     public static int CalculateDamage(
