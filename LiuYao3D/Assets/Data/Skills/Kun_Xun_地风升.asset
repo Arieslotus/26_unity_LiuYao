@@ -29,17 +29,24 @@ MonoBehaviour:
     - rid: 7184781992140472326
       type: {class: BreakEnemyShieldEffectConfig, ns: , asm: Assembly-CSharp}
       data:
-        targetType: 1
-        radius: 2
+        targetSelector:
+          targetType: 0
+          radius: 3
+          targetCount: 1
+        trigramMode: 0
+        specifiedTrigrams: 
     - rid: 7184781992140472327
       type: {class: AddDamageModifierEffectConfig, ns: , asm: Assembly-CSharp}
       data:
-        targetType: 3
+        targetSelector:
+          targetType: 0
+          targetCount: 1
+          sortByActionOrder: 1
+          currentTrigramFilter: 
         addDamagePercent: 30
         durationRounds: 2
         activateAfterRounds: 0
         stackable: 1
-        modifierId: 
         vfx:
           prefab: {fileID: 7155335147208632822, guid: 97c43495f80a3244fad1301dfafbe252, type: 3}
           targetType: 5

@@ -339,10 +339,16 @@ public class CoinRoundEffectManager : MonoBehaviour
     public event Action<int, string> DamageModifierEnded;
     public event Action<int, CoinStats> CoinProtectionStarted;
     public event Action<int, CoinStats> CoinProtectionEnded;
+    public event Action RuntimeEffectsChanged;
 
     private int AllocateRuntimeId()
     {
         return nextRuntimeEffectId++;
+    }
+
+    private void NotifyRuntimeEffectsChanged()
+    {
+        RuntimeEffectsChanged?.Invoke();
     }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -677,6 +683,7 @@ public class CoinRoundEffectManager : MonoBehaviour
             );
         }
 
+        NotifyRuntimeEffectsChanged();
         return modifier.id;
     }
 
@@ -696,6 +703,7 @@ public class CoinRoundEffectManager : MonoBehaviour
         }
 
         RefreshDamageModifierStackCounts();
+        NotifyRuntimeEffectsChanged();
     }
 
     private void RefreshDamageModifierStackCounts()
@@ -771,6 +779,7 @@ public class CoinRoundEffectManager : MonoBehaviour
             requiredCurrentTrigram = requiredCurrentTrigram
         });
 
+        NotifyRuntimeEffectsChanged();
         return runtimeId;
     }
 
@@ -891,6 +900,7 @@ public class CoinRoundEffectManager : MonoBehaviour
             failureOutcome = failureOutcome
         });
 
+        NotifyRuntimeEffectsChanged();
         return runtimeId;
     }
 
@@ -921,6 +931,7 @@ public class CoinRoundEffectManager : MonoBehaviour
             startRound = currentRound + 1
         });
 
+        NotifyRuntimeEffectsChanged();
         return runtimeId;
     }
 
@@ -953,6 +964,7 @@ public class CoinRoundEffectManager : MonoBehaviour
             outcome = outcome
         });
 
+        NotifyRuntimeEffectsChanged();
         return runtimeId;
     }
 
@@ -1044,6 +1056,7 @@ public class CoinRoundEffectManager : MonoBehaviour
             Debug.Log($"[CoinRoundEffectManager] 停止敌方护盾生成 | source:{sourceId} | rounds:{safeRoundCount}");
         }
 
+        NotifyRuntimeEffectsChanged();
         return runtimeId;
     }
 
@@ -1312,6 +1325,7 @@ public class CoinRoundEffectManager : MonoBehaviour
         ExecutePendingCoinLosses(roundIndex);
         TickUntilFlipStacks(roundIndex);
         CleanupDestroyedReferences();
+        NotifyRuntimeEffectsChanged();
     }
 
     private void OnRoundEnded(int roundIndex)
@@ -1324,6 +1338,7 @@ public class CoinRoundEffectManager : MonoBehaviour
         TickEnemyShieldGenerationBlocks();
         ClearRoundOnlyEffects();
         CleanupDestroyedReferences();
+        NotifyRuntimeEffectsChanged();
     }
 
     private void TickEnemyShieldGenerationBlocks()

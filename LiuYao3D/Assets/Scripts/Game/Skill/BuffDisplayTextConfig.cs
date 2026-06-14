@@ -1,8 +1,9 @@
 /// <summary>
-/// 实现功能：配置并格式化跨回合 Buff 显示文本，供 Buff 面板根据运行时效果快照生成描述。
+/// 实现功能：配置并格式化跨回合 Buff 显示文本，供全局 Buff 面板根据运行时效果快照生成描述。
 /// </summary>
 using System.Collections.Generic;
 using UnityEngine;
+using UnityObject = UnityEngine.Object;
 
 [CreateAssetMenu(fileName = "BuffDisplayTextConfig", menuName = "Config/Buff Display Text Config")]
 public sealed class BuffDisplayTextConfig : ScriptableObject
@@ -15,11 +16,11 @@ public sealed class BuffDisplayTextConfig : ScriptableObject
     [TextArea]
     [SerializeField] private string pendingCoinLossTemplate = "{RemainingRounds} 回合后，{Target} 增加 {Loss} 点损耗";
     [TextArea]
-    [SerializeField] private string flipConditionNoFlipTemplate = "若 {Target} 在 {RemainingRounds} 回合内未翻面，则获得：{SuccessOutcome}";
+    [SerializeField] private string flipConditionNoFlipTemplate = "控制 {Target} {RemainingRounds} 回合不翻面后获得：{SuccessOutcome}";
     [TextArea]
-    [SerializeField] private string flipConditionFlipTemplate = "若 {Target} 在 {RemainingRounds} 回合内翻面，则获得：{SuccessOutcome}";
+    [SerializeField] private string flipConditionFlipTemplate = "控制 {Target} {RemainingRounds} 回合翻面后获得：{SuccessOutcome}";
     [TextArea]
-    [SerializeField] private string untilFlipDamageStackTemplate = "{Target} 未翻面期间，每回合攻击力增加 {AddDamagePercent}%，剩余可叠 {RemainingRounds} 次，当前 {StackCount} 层";
+    [SerializeField] private string untilFlipDamageStackTemplate = "控制 {Target} 不翻面，每回合攻击力增加 {AddDamagePercent}%，剩余可叠 {RemainingRounds} 次，当前 {StackCount} 层";
     [TextArea]
     [SerializeField] private string scheduledOutcomeTemplate = "延迟执行：{OutcomeText}，剩余 {RemainingRounds} 回合";
 
@@ -34,7 +35,9 @@ public sealed class BuffDisplayTextConfig : ScriptableObject
     [SerializeField] private string addDamageModifierOutcomeTemplate = "{Target} 攻击力增加 {AddDamagePercent}%，持续 {DurationRoundsText}";
 
     [Header("通用文本")]
+    [SerializeField] private string unknownSkillText = "未知技能";
     [SerializeField] private string globalTargetText = "全局";
+    [SerializeField] private string targetSeparator = "、";
     [SerializeField] private string permanentDurationText = "永久";
     [SerializeField] private string roundSuffix = " 回合";
 
@@ -140,10 +143,10 @@ public sealed class BuffDisplayTextConfig : ScriptableObject
         if (snapshot.sourceSkill != null && !string.IsNullOrWhiteSpace(snapshot.sourceSkill.SkillName))
             return snapshot.sourceSkill.SkillName;
 
-        return string.IsNullOrWhiteSpace(snapshot.sourceId) ? "未知技能" : snapshot.sourceId;
+        return string.IsNullOrWhiteSpace(snapshot.sourceId) ? unknownSkillText : snapshot.sourceId;
     }
 
-    private string FormatTargets(IReadOnlyList<CoinStats> targets, Object fallbackTarget)
+    private string FormatTargets(IReadOnlyList<CoinStats> targets, UnityObject fallbackTarget)
     {
         if (targets != null && targets.Count > 0)
         {
@@ -157,7 +160,7 @@ public sealed class BuffDisplayTextConfig : ScriptableObject
             }
 
             if (names.Count > 0)
-                return string.Join("、", names);
+                return string.Join(targetSeparator, names);
         }
 
         if (fallbackTarget != null)
