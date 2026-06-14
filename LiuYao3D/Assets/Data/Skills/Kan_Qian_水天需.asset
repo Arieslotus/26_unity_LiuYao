@@ -21,6 +21,7 @@ MonoBehaviour:
   inlineEffects:
   - rid: 7184782103117561876
   - rid: 7184782103117561877
+  - rid: 7184782103117561920
   effects: []
   references:
     version: 2
@@ -54,3 +55,41 @@ MonoBehaviour:
           lifetime: 2
           delay: 0
           useUnscaledTimeForParticles: 1
+    - rid: 7184782103117561920
+      type: {class: CoinFlipConditionEffectConfig, ns: , asm: Assembly-CSharp}
+      data:
+        watchedTargetSelector:
+          targetType: 1
+          targetCount: 1
+          sortByActionOrder: 1
+          currentTrigramFilter: 0600000001000000
+        roundEndChecks: 1
+        requireNoFlip: 1
+        successOutcome:
+          outcomeType: 3
+          targetSelector:
+            targetType: 0
+            targetCount: 1
+            sortByActionOrder: 1
+            currentTrigramFilter: 00000000
+          loss: 1
+          reduceLoss: 1
+          addDamagePercent: 10
+          durationRounds: -1
+          activateAfterRounds: 0
+          stackable: 1
+          modifierId: 
+        failureOutcome:
+          outcomeType: 1
+          targetSelector:
+            targetType: 1
+            targetCount: 1
+            sortByActionOrder: 1
+            currentTrigramFilter: 0600000001000000
+          loss: 1
+          reduceLoss: 1
+          addDamagePercent: 30
+          durationRounds: -1
+          activateAfterRounds: 0
+          stackable: 1
+          modifierId: 
