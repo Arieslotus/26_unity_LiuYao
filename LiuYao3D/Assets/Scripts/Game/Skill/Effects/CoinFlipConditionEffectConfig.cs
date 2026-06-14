@@ -1,5 +1,6 @@
 /// <summary>
 /// 实现功能：定义内嵌技能效果“翻面条件”，在延迟回合检查硬币是否翻面并执行对应结果。
+/// 需要放在技能效果列表第一个
 /// </summary>
 using System;
 using System.Collections.Generic;
@@ -39,18 +40,18 @@ public sealed class CoinFlipConditionEffectConfig : CollisionSkillEffectConfig
             this.config = config;
         }
 
-        public void Execute(CollisionSkillContext context)
+        public CollisionSkillEffectExecutionResult Execute(CollisionSkillContext context)
         {
             if (CoinRoundEffectManager.Instance == null)
             {
                 Debug.LogWarning("[CoinFlipConditionEffectConfig] 缺少 CoinRoundEffectManager，无法监听翻面条件。");
-                return;
+                return CollisionSkillEffectExecutionResult.Continue;
             }
 
             List<CoinStats> watchedTargets = config.watchedTargetSelector.Resolve(context);
 
-            string sourceId = context != null && context.skill != null
-                ? context.skill.SkillName
+            string sourceId = context != null
+                ? context.GetRuntimeSourceId(nameof(CoinFlipConditionEffectConfig))
                 : nameof(CoinFlipConditionEffectConfig);
 
             CoinRoundEffectManager.Instance.ScheduleFlipCondition(
@@ -61,6 +62,8 @@ public sealed class CoinFlipConditionEffectConfig : CollisionSkillEffectConfig
                 config.requireNoFlip,
                 config.successOutcome,
                 config.failureOutcome);
+
+            return CollisionSkillEffectExecutionResult.Continue;
         }
     }
 }

@@ -1,5 +1,5 @@
 /// <summary>
-/// 实现功能：管理单枚硬币的损耗值、攻击力与碎裂状态，并为敌人攻击、主动操作和技能损耗提供统一入口。
+/// 实现功能：管理单枚硬币的损耗值、攻击力与碎裂状态，并为敌人攻击、敌人碰撞、主动操作和技能损耗提供统一入口。
 /// </summary>
 using System;
 using UnityEngine;
@@ -7,6 +7,7 @@ using UnityEngine;
 public enum CoinLossCause
 {
     Operation,
+    EnemyCollision,
     EnemyAttack,
     Skill
 }
@@ -17,9 +18,13 @@ public class CoinStats : MonoBehaviour, IAttackable
     [SerializeField] private int maxLoss = 10;
     [SerializeField] private int currentLoss;
 
-    [Tooltip("玩家主动操作该硬币并停止移动后增加的损耗值")]
+    [Tooltip("玩家主动操作该硬币并停止移动后增加的损耗值。当前规则暂不使用，保留给后续切换。")]
     [Min(0)]
     [SerializeField] private int operationLoss = 1;
+
+    [Tooltip("硬币每次碰撞敌人时增加的损耗值")]
+    [Min(0)]
+    [SerializeField] private int enemyCollisionLoss = 1;
 
     [Header("攻击")]
     [SerializeField] private int attack = 1;
@@ -32,15 +37,8 @@ public class CoinStats : MonoBehaviour, IAttackable
     public int Attack => attack;
     public bool IsBroken => currentLoss >= maxLoss;
 
-    // 兼容现有胜负检测代码，后续可以逐步迁移为 IsBroken。
-    public bool IsDead => IsBroken;
-
     public event Action<int, int> LossChanged;
     public event Action Broken;
-
-    // 兼容现有监听代码，事件参数仍然是“当前值 / 最大值”。
-    public event Action<int, int> HealthChanged;
-    public event Action Died;
 
     private void Awake()
     {
@@ -57,6 +55,11 @@ public class CoinStats : MonoBehaviour, IAttackable
     public void AddOperationLoss()
     {
         AddLoss(operationLoss, CoinLossCause.Operation);
+    }
+
+    public void AddEnemyCollisionLoss()
+    {
+        AddLoss(enemyCollisionLoss, CoinLossCause.EnemyCollision);
     }
 
     public void AddLoss(int value, CoinLossCause cause = CoinLossCause.Skill)
@@ -109,20 +112,10 @@ public class CoinStats : MonoBehaviour, IAttackable
         return transform;
     }
 
-    public void Heal(int value)
-    {
-        ReduceLoss(value);
-    }
-
     public void ResetLoss()
     {
         currentLoss = 0;
         NotifyLossChanged();
-    }
-
-    public void ResetHealth()
-    {
-        ResetLoss();
     }
 
     private void BreakCoin()
@@ -133,13 +126,11 @@ public class CoinStats : MonoBehaviour, IAttackable
         }
 
         Broken?.Invoke();
-        Died?.Invoke();
         Destroy(gameObject);
     }
 
     private void NotifyLossChanged()
     {
         LossChanged?.Invoke(currentLoss, maxLoss);
-        HealthChanged?.Invoke(currentLoss, maxLoss);
     }
 }

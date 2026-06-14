@@ -11,15 +11,17 @@ public static class CollisionSkillExecutor
         if (skill == null || context == null)
             return;
 
-        ExecuteInlineEffects(skill, context);
+        if (ExecuteInlineEffects(skill, context) == CollisionSkillEffectExecutionResult.StopSkill)
+            return;
+
         ExecuteLegacyEffects(skill, context);
     }
 
-    private static void ExecuteInlineEffects(TrigramCollisionSkillSO skill, CollisionSkillContext context)
+    private static CollisionSkillEffectExecutionResult ExecuteInlineEffects(TrigramCollisionSkillSO skill, CollisionSkillContext context)
     {
         IReadOnlyList<CollisionSkillEffectConfig> effects = skill.InlineEffects;
         if (effects == null)
-            return;
+            return CollisionSkillEffectExecutionResult.Continue;
 
         for (int i = 0; i < effects.Count; i++)
         {
@@ -34,15 +36,22 @@ public static class CollisionSkillExecutor
                 continue;
             }
 
-            controller.Execute(context);
+            string previousRuntimeEffectId = context.runtimeEffectId;
+            context.runtimeEffectId = BuildRuntimeEffectId(skill, "Inline", i, effect.GetType().Name);
+            CollisionSkillEffectExecutionResult result = controller.Execute(context);
+            context.runtimeEffectId = previousRuntimeEffectId;
+            if (result == CollisionSkillEffectExecutionResult.StopSkill)
+                return result;
         }
+
+        return CollisionSkillEffectExecutionResult.Continue;
     }
 
-    private static void ExecuteLegacyEffects(TrigramCollisionSkillSO skill, CollisionSkillContext context)
+    private static CollisionSkillEffectExecutionResult ExecuteLegacyEffects(TrigramCollisionSkillSO skill, CollisionSkillContext context)
     {
         IReadOnlyList<CollisionSkillEffectData> effects = skill.Effects;
         if (effects == null)
-            return;
+            return CollisionSkillEffectExecutionResult.Continue;
 
         for (int i = 0; i < effects.Count; i++)
         {
@@ -57,7 +66,27 @@ public static class CollisionSkillExecutor
                 continue;
             }
 
-            controller.Execute(context);
+            string previousRuntimeEffectId = context.runtimeEffectId;
+            context.runtimeEffectId = BuildRuntimeEffectId(skill, "Legacy", i, effect.name);
+            CollisionSkillEffectExecutionResult result = controller.Execute(context);
+            context.runtimeEffectId = previousRuntimeEffectId;
+            if (result == CollisionSkillEffectExecutionResult.StopSkill)
+                return result;
         }
+
+        return CollisionSkillEffectExecutionResult.Continue;
+    }
+
+    private static string BuildRuntimeEffectId(TrigramCollisionSkillSO skill, string group, int index, string effectName)
+    {
+        string skillName = skill != null && !string.IsNullOrWhiteSpace(skill.SkillName)
+            ? skill.SkillName
+            : "TrigramCollisionSkill";
+
+        string safeEffectName = string.IsNullOrWhiteSpace(effectName)
+            ? "Effect"
+            : effectName;
+
+        return $"{skillName}/{group}#{index}:{safeEffectName}";
     }
 }

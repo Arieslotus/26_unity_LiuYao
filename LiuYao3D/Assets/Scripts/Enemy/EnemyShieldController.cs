@@ -180,6 +180,16 @@ public class EnemyShieldController : MonoBehaviour
             return;
         }
 
+        if (CoinRoundEffectManager.Instance != null && CoinRoundEffectManager.Instance.IsEnemyShieldGenerationBlocked())
+        {
+            if (debugLog)
+            {
+                Debug.Log($"[EnemyShieldController] 敌方护盾生成被技能阻止 | enemy:{name} | round:{roundIndex}");
+            }
+
+            return;
+        }
+
         passedRounds++;
 
         if (passedRounds < shieldIntervalRounds)

@@ -54,6 +54,13 @@ public enum CoinPhysicsModifierType
     SelfRemainingDistance
 }
 
+public enum TurnTriggerOverLimitAction
+{
+    RunOutcomeAndContinue,
+    RunOutcomeAndStopSkill,
+    StopSkillOnly
+}
+
 public static class CollisionSkillDamageUtility
 {
     public static int CalculateDamage(

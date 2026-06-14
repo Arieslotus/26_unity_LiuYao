@@ -19,10 +19,10 @@ MonoBehaviour:
   description: "\u5168\u573A\u8303\u56F4\u7834\u9707\u3001\u5151\u76FE\u3002\n\u5BF9\u8303\u56F4\u5185\u654C\u65B9\u9020\u6210\u653B\u51FB+++\uFF0C\u56DE\u5408\u5185\u4EC5\u53EF\u89E6\u53D11\u6B21\uFF1B\u5BF9\u968F\u673A2\u5DF1\u65B9\u5355\u4F4D\u9020\u62101\u635F\u8017\u3002"
   effectText: 
   inlineEffects:
+  - rid: 7184782143613829128
   - rid: 7184782103117561895
   - rid: 7184782103117561896
   - rid: 7184782103117561914
-  - rid: 7184782143613829127
   effects: []
   references:
     version: 2
@@ -65,12 +65,13 @@ MonoBehaviour:
           sortByActionOrder: 1
           currentTrigramFilter: 
         loss: 1
-    - rid: 7184782143613829127
+    - rid: 7184782143613829128
       type: {class: TurnTriggerCountEffectConfig, ns: , asm: Assembly-CSharp}
       data:
         counterId: 
         triggerLimit: 1
         triggerMode: 0
+        overLimitAction: 2
         overLimitOutcome:
           outcomeType: 0
           targetSelector:

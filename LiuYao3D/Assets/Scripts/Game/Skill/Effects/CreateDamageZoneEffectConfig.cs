@@ -40,12 +40,12 @@ public sealed class CreateDamageZoneEffectConfig : CollisionSkillEffectConfig
             this.config = config;
         }
 
-        public void Execute(CollisionSkillContext context)
+        public CollisionSkillEffectExecutionResult Execute(CollisionSkillContext context)
         {
             if (CoinRoundEffectManager.Instance == null)
             {
                 Debug.LogWarning("[CreateDamageZoneEffectConfig] 缺少 CoinRoundEffectManager，无法创建伤害圈。");
-                return;
+                return CollisionSkillEffectExecutionResult.Continue;
             }
 
             int damage = CollisionSkillDamageUtility.CalculateDamage(
@@ -55,12 +55,12 @@ public sealed class CreateDamageZoneEffectConfig : CollisionSkillEffectConfig
                 config.fixedDamage);
 
             if (damage <= 0)
-                return;
+                return CollisionSkillEffectExecutionResult.Continue;
 
             if (config.spawnMode == DamageZoneSpawnMode.LastDamagedEnemies)
             {
                 if (context == null || context.lastDamagedEnemies.Count == 0)
-                    return;
+                    return CollisionSkillEffectExecutionResult.Continue;
 
                 for (int i = 0; i < context.lastDamagedEnemies.Count; i++)
                 {
@@ -76,7 +76,7 @@ public sealed class CreateDamageZoneEffectConfig : CollisionSkillEffectConfig
                         config.tickCount,
                         context != null && context.skill != null ? context.skill.SkillName : nameof(CreateDamageZoneEffectConfig));
                 }
-                return;
+                return CollisionSkillEffectExecutionResult.Continue;
             }
 
             if (context != null)
@@ -89,6 +89,8 @@ public sealed class CreateDamageZoneEffectConfig : CollisionSkillEffectConfig
                     config.tickCount,
                     context.skill != null ? context.skill.SkillName : nameof(CreateDamageZoneEffectConfig));
             }
+
+            return CollisionSkillEffectExecutionResult.Continue;
         }
     }
 }

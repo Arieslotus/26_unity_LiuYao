@@ -34,17 +34,17 @@ public sealed class ScheduleCoinLossEffectConfig : CollisionSkillEffectConfig
             this.config = config;
         }
 
-        public void Execute(CollisionSkillContext context)
+        public CollisionSkillEffectExecutionResult Execute(CollisionSkillContext context)
         {
             if (CoinRoundEffectManager.Instance == null)
             {
                 Debug.LogWarning("[ScheduleCoinLossEffectConfig] 缺少 CoinRoundEffectManager，无法安排延迟损耗。");
-                return;
+                return CollisionSkillEffectExecutionResult.Continue;
             }
 
             List<CoinStats> targets = config.targetSelector.Resolve(context);
-            string sourceId = context != null && context.skill != null
-                ? context.skill.SkillName
+            string sourceId = context != null
+                ? context.GetRuntimeSourceId(nameof(ScheduleCoinLossEffectConfig))
                 : nameof(ScheduleCoinLossEffectConfig);
 
             for (int i = 0; i < targets.Count; i++)
@@ -54,8 +54,11 @@ public sealed class ScheduleCoinLossEffectConfig : CollisionSkillEffectConfig
                     config.loss,
                     config.delayRounds,
                     config.requiredCurrentTrigram,
-                    sourceId);
+                    sourceId,
+                    context != null ? context.skill : null);
             }
+
+            return CollisionSkillEffectExecutionResult.Continue;
         }
     }
 }

@@ -409,7 +409,7 @@ public class EnemyWaveManager : MonoBehaviour
         for (int i = 0; i < coins.Length; i++)
         {
             CoinStats coin = coins[i];
-            if (coin == null || coin.IsDead)
+            if (coin == null || coin.IsBroken)
                 continue;
 
             unitPlacements.Add(new UnitPlacement(coin.transform, coin.transform.position, EnemySpawnFootprintUtility.GetHorizontalRadius(coin.transform)));

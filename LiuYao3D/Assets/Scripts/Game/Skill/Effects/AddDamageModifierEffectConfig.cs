@@ -17,7 +17,6 @@ public sealed class AddDamageModifierEffectConfig : CollisionSkillEffectConfig
     [Min(0)]
     [SerializeField] private int activateAfterRounds;
     [SerializeField] private bool stackable = true;
-    [SerializeField] private string modifierId;
 
     [Header("可选特效")]
     [SerializeField] private SkillEffectVfxData vfx;
@@ -38,17 +37,17 @@ public sealed class AddDamageModifierEffectConfig : CollisionSkillEffectConfig
             this.config = config;
         }
 
-        public void Execute(CollisionSkillContext context)
+        public CollisionSkillEffectExecutionResult Execute(CollisionSkillContext context)
         {
             if (CoinRoundEffectManager.Instance == null)
             {
                 Debug.LogWarning("[AddDamageModifierEffectConfig] 缺少 CoinRoundEffectManager，无法添加增伤。");
-                return;
+                return CollisionSkillEffectExecutionResult.Continue;
             }
 
-            string sourceId = string.IsNullOrWhiteSpace(config.modifierId)
-                ? (context != null && context.skill != null ? context.skill.SkillName : nameof(AddDamageModifierEffectConfig))
-                : config.modifierId.Trim();
+            string sourceId = context != null
+                ? context.GetRuntimeSourceId(nameof(AddDamageModifierEffectConfig))
+                : nameof(AddDamageModifierEffectConfig);
 
             List<CoinStats> targets = config.targetSelector.Resolve(context);
 
@@ -58,9 +57,11 @@ public sealed class AddDamageModifierEffectConfig : CollisionSkillEffectConfig
                 config.durationRounds,
                 config.activateAfterRounds,
                 config.stackable,
-                targets);
+                targets,
+                context != null ? context.skill : null);
 
             SkillEffectVfxPlayer.PlayForDamageModifierTargets(config.vfx, targets, runtimeModifierId, config.activateAfterRounds);
+            return CollisionSkillEffectExecutionResult.Continue;
         }
     }
 }

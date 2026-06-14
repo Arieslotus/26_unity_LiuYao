@@ -30,7 +30,9 @@ public class MovementController : MonoBehaviour
 
     private ChessPiece chessPiece;
     private Collider lastPreImpactCollider;
-    private bool hasSettledOperationLoss;
+    private bool hasResolvedFirstCollision;
+    private bool firstCollisionWasEnemy;
+    private bool hasAppliedEnemyCollisionLoss;
 
     public bool IsMoving => isMoving;
     public float RemainingDistance => remainingDistance;
@@ -65,7 +67,9 @@ public class MovementController : MonoBehaviour
 
         isMoving = true;
         lastPreImpactCollider = null;
-        hasSettledOperationLoss = false;
+        hasResolvedFirstCollision = false;
+        firstCollisionWasEnemy = false;
+        hasAppliedEnemyCollisionLoss = false;
 
         //Debug.Log($"[Movement] 开始移动 | 物体:{name} | 来源:{shotContext.sourceType} | 方向:{direction} | 总路径:{remainingDistance:F2}");
     }
@@ -82,7 +86,9 @@ public class MovementController : MonoBehaviour
 
         isMoving = true;
         lastPreImpactCollider = null;
-        hasSettledOperationLoss = true;
+        hasResolvedFirstCollision = false;
+        firstCollisionWasEnemy = false;
+        hasAppliedEnemyCollisionLoss = false;
 
         //Debug.Log($"[Movement] 碰撞启动移动 | 物体:{name} | 来源:{shotContext.sourceType} | 方向:{direction} | 路径:{remainingDistance:F2} | 初速度:{currentSpeed:F2}");
     }
@@ -210,6 +216,8 @@ public class MovementController : MonoBehaviour
         if (result.collider != null)
             target = result.collider.GetComponentInParent<CollisionTarget>();
 
+        ResolveFirstCollisionTarget(target);
+
         CollisionContext ctx = new CollisionContext
         {
             self = this,
@@ -224,6 +232,15 @@ public class MovementController : MonoBehaviour
 
         CollisionResult collisionResult = CollisionResolver.Resolve(ctx, config, collisionConfig);
         ApplyCollisionResult(collisionResult);
+    }
+
+    private void ResolveFirstCollisionTarget(CollisionTarget target)
+    {
+        if (hasResolvedFirstCollision || target == null)
+            return;
+
+        hasResolvedFirstCollision = true;
+        firstCollisionWasEnemy = target.type == CollisionType.Enemy;
     }
 
     private void ApplyCollisionResult(CollisionResult result)
@@ -548,6 +565,15 @@ public class MovementController : MonoBehaviour
             );
         }
 
+        if (attackerStats != null &&
+            shotContext.isPlayerShot &&
+            firstCollisionWasEnemy &&
+            !hasAppliedEnemyCollisionLoss)
+        {
+            hasAppliedEnemyCollisionLoss = true;
+            attackerStats.AddEnemyCollisionLoss();
+        }
+
         if (attackerPiece != null)
         {
             CombatVfxEvents.RequestCoinEnemyCollision(attackerPiece, enemyStats, result.hitPoint);
@@ -633,21 +659,6 @@ public class MovementController : MonoBehaviour
         isMoving = false;
         currentSpeed = 0f;
         lastPreImpactCollider = null;
-
-        if (!hasSettledOperationLoss && shotContext.isPlayerShot)
-        {
-            hasSettledOperationLoss = true;
-
-            CoinStats stats = GetComponentInParent<CoinStats>();
-            if (stats != null)
-            {
-                stats.AddOperationLoss();
-            }
-            else
-            {
-                Debug.LogWarning($"[Movement] 主动操作结束但未找到 CoinStats | 物体:{name}");
-            }
-        }
 
         Debug.Log($"[Movement] 停止移动 | 物体:{name}");
     }

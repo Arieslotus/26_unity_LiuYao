@@ -31,7 +31,7 @@ public sealed class AddCoinLossEffectConfig : CollisionSkillEffectConfig
             this.config = config;
         }
 
-        public void Execute(CollisionSkillContext context)
+        public CollisionSkillEffectExecutionResult Execute(CollisionSkillContext context)
         {
             List<CoinStats> targets = config.targetSelector.Resolve(context);
 
@@ -39,6 +39,8 @@ public sealed class AddCoinLossEffectConfig : CollisionSkillEffectConfig
             {
                 targets[i].AddLoss(config.loss, CoinLossCause.Skill);
             }
+
+            return CollisionSkillEffectExecutionResult.Continue;
         }
     }
 }

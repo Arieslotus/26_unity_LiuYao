@@ -36,17 +36,17 @@ public sealed class GrantCoinProtectionEffectConfig : CollisionSkillEffectConfig
             this.config = config;
         }
 
-        public void Execute(CollisionSkillContext context)
+        public CollisionSkillEffectExecutionResult Execute(CollisionSkillContext context)
         {
             if (CoinRoundEffectManager.Instance == null)
             {
                 Debug.LogWarning("[GrantCoinProtectionEffectConfig] 缺少 CoinRoundEffectManager，无法添加保护。");
-                return;
+                return CollisionSkillEffectExecutionResult.Continue;
             }
 
             List<CoinStats> targets = config.targetSelector.Resolve(context);
-            string sourceId = context != null && context.skill != null
-                ? context.skill.SkillName
+            string sourceId = context != null
+                ? context.GetRuntimeSourceId(nameof(GrantCoinProtectionEffectConfig))
                 : nameof(GrantCoinProtectionEffectConfig);
 
             for (int i = 0; i < targets.Count; i++)
@@ -59,6 +59,8 @@ public sealed class GrantCoinProtectionEffectConfig : CollisionSkillEffectConfig
 
                 SkillEffectVfxPlayer.PlayForProtection(config.vfx, targets[i], protectionId);
             }
+
+            return CollisionSkillEffectExecutionResult.Continue;
         }
     }
 }

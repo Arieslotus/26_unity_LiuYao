@@ -21,6 +21,7 @@ MonoBehaviour:
   inlineEffects:
   - rid: 7184782103117561894
   - rid: 7184782103117561913
+  - rid: 7184782143613829129
   effects: []
   references:
     version: 2
@@ -54,3 +55,8 @@ MonoBehaviour:
           lifetime: 2
           delay: 0
           useUnscaledTimeForParticles: 1
+    - rid: 7184782143613829129
+      type: {class: BlockEnemyShieldGenerationEffectConfig, ns: , asm: Assembly-CSharp}
+      data:
+        roundCount: 1
+        sourceId: 

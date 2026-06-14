@@ -32,18 +32,18 @@ public sealed class UntilFlipDamageStackEffectConfig : CollisionSkillEffectConfi
             this.config = config;
         }
 
-        public void Execute(CollisionSkillContext context)
+        public CollisionSkillEffectExecutionResult Execute(CollisionSkillContext context)
         {
             if (CoinRoundEffectManager.Instance == null)
             {
                 Debug.LogWarning("[UntilFlipDamageStackEffectConfig] 缺少 CoinRoundEffectManager，无法添加直到翻面的叠层效果。");
-                return;
+                return CollisionSkillEffectExecutionResult.Continue;
             }
 
             List<CoinStats> watchedTargets = config.watchedTargetSelector.Resolve(context);
 
-            string sourceId = context != null && context.skill != null
-                ? context.skill.SkillName
+            string sourceId = context != null
+                ? context.GetRuntimeSourceId(nameof(UntilFlipDamageStackEffectConfig))
                 : nameof(UntilFlipDamageStackEffectConfig);
 
             CoinRoundEffectManager.Instance.StartUntilFlipDamageStacks(
@@ -52,6 +52,8 @@ public sealed class UntilFlipDamageStackEffectConfig : CollisionSkillEffectConfi
                 watchedTargets,
                 config.maxStacks,
                 config.stackOutcome);
+
+            return CollisionSkillEffectExecutionResult.Continue;
         }
     }
 }

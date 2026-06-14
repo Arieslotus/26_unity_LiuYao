@@ -1,4 +1,4 @@
-/// <summary>
+﻿/// <summary>
 /// 实现功能：统一管理碰撞技能产生的跨回合效果，包括增伤、延迟损耗、护盾、伤害区域与翻面条件。
 /// </summary>
 using System;
@@ -23,7 +23,8 @@ public enum CoinSkillRuntimeEffectKind
     UntilFlipDamageStack,
     ScheduledOutcome,
     TurnTriggerCounter,
-    PhysicsModifier
+    PhysicsModifier,
+    EnemyShieldGenerationBlock
 }
 
 public readonly struct CoinSkillRuntimeEffectSnapshot
@@ -31,24 +32,55 @@ public readonly struct CoinSkillRuntimeEffectSnapshot
     public readonly int runtimeId;
     public readonly CoinSkillRuntimeEffectKind kind;
     public readonly string sourceId;
+    public readonly TrigramCollisionSkillSO sourceSkill;
+    public readonly TrigramType activeTrigram;
+    public readonly TrigramType passiveTrigram;
     public readonly int remainingRounds;
     public readonly int stackCount;
     public readonly UnityEngine.Object target;
+    public readonly IReadOnlyList<CoinStats> targets;
+    public readonly float addDamagePercent;
+    public readonly int loss;
+    public readonly bool requireNoFlip;
+    public readonly CoinSkillOutcomeConfig outcome;
+    public readonly CoinSkillOutcomeConfig successOutcome;
+    public readonly CoinSkillOutcomeConfig failureOutcome;
+    public readonly CollisionSkillContext context;
 
     public CoinSkillRuntimeEffectSnapshot(
         int runtimeId,
         CoinSkillRuntimeEffectKind kind,
         string sourceId,
+        TrigramCollisionSkillSO sourceSkill,
         int remainingRounds,
         int stackCount,
-        UnityEngine.Object target)
+        UnityEngine.Object target,
+        IReadOnlyList<CoinStats> targets = null,
+        float addDamagePercent = 0f,
+        int loss = 0,
+        bool requireNoFlip = false,
+        CoinSkillOutcomeConfig outcome = null,
+        CoinSkillOutcomeConfig successOutcome = null,
+        CoinSkillOutcomeConfig failureOutcome = null,
+        CollisionSkillContext context = null)
     {
         this.runtimeId = runtimeId;
         this.kind = kind;
         this.sourceId = sourceId;
+        this.sourceSkill = sourceSkill;
+        this.activeTrigram = sourceSkill != null ? sourceSkill.ActiveTrigram : TrigramType.None;
+        this.passiveTrigram = sourceSkill != null ? sourceSkill.PassiveTrigram : TrigramType.None;
         this.remainingRounds = remainingRounds;
         this.stackCount = stackCount;
         this.target = target;
+        this.targets = targets;
+        this.addDamagePercent = addDamagePercent;
+        this.loss = loss;
+        this.requireNoFlip = requireNoFlip;
+        this.outcome = outcome;
+        this.successOutcome = successOutcome;
+        this.failureOutcome = failureOutcome;
+        this.context = context;
     }
 }
 
@@ -73,9 +105,13 @@ public sealed class CoinSkillOutcomeConfig
     [Min(0)]
     [SerializeField] private int activateAfterRounds;
     [SerializeField] private bool stackable = true;
-    [SerializeField] private string modifierId;
 
     public CoinSkillOutcomeType OutcomeType => outcomeType;
+    public int Loss => loss;
+    public int ReduceLoss => reduceLoss;
+    public float AddDamagePercent => addDamagePercent;
+    public int DurationRounds => durationRounds;
+    public int ActivateAfterRounds => activateAfterRounds;
 
     public void Apply(CollisionSkillContext context, string fallbackSourceId)
     {
@@ -117,9 +153,7 @@ public sealed class CoinSkillOutcomeConfig
             if (CoinRoundEffectManager.Instance == null)
                 return;
 
-            string sourceId = string.IsNullOrWhiteSpace(modifierId)
-                ? fallbackSourceId
-                : modifierId.Trim();
+            string sourceId = BuildChildSourceId(fallbackSourceId, "DamageModifier");
 
             CoinRoundEffectManager.Instance.AddDamageModifier(
                 sourceId,
@@ -127,8 +161,23 @@ public sealed class CoinSkillOutcomeConfig
                 durationRounds,
                 activateAfterRounds,
                 stackable,
-                targets);
+                targets,
+                context != null ? context.skill : null);
         }
+    }
+
+    public List<CoinStats> ResolveTargets(CollisionSkillContext context)
+    {
+        return targetSelector.Resolve(
+            context,
+            outcomeType == CoinSkillOutcomeType.ReduceLoss);
+    }
+
+    private static string BuildChildSourceId(string sourceId, string childName)
+    {
+        string root = string.IsNullOrWhiteSpace(sourceId) ? "CoinSkillEffect" : sourceId.Trim();
+        string child = string.IsNullOrWhiteSpace(childName) ? "Child" : childName.Trim();
+        return root + "/" + child;
     }
 
 }
@@ -139,6 +188,7 @@ public class CoinRoundEffectManager : MonoBehaviour
     {
         public int id;
         public string sourceId;
+        public TrigramCollisionSkillSO sourceSkill;
         public float addPercent;
         public int activateRound;
         public int remainingRounds;
@@ -159,6 +209,7 @@ public class CoinRoundEffectManager : MonoBehaviour
     {
         public int id;
         public string sourceId;
+        public TrigramCollisionSkillSO sourceSkill;
         public CoinStats target;
         public int loss;
         public int executeRound;
@@ -190,6 +241,7 @@ public class CoinRoundEffectManager : MonoBehaviour
         public int id;
         public CollisionSkillContext context;
         public string sourceId;
+        public TrigramCollisionSkillSO sourceSkill;
         public List<CoinStats> watchedTargets;
         public Dictionary<CoinStats, int> startFlipVersions;
         public int checkRoundEnd;
@@ -203,6 +255,7 @@ public class CoinRoundEffectManager : MonoBehaviour
         public int id;
         public CollisionSkillContext context;
         public string sourceId;
+        public TrigramCollisionSkillSO sourceSkill;
         public List<CoinStats> watchedTargets;
         public Dictionary<CoinStats, int> startFlipVersions;
         public CoinSkillOutcomeConfig stackOutcome;
@@ -216,6 +269,7 @@ public class CoinRoundEffectManager : MonoBehaviour
         public int id;
         public CollisionSkillContext context;
         public string sourceId;
+        public TrigramCollisionSkillSO sourceSkill;
         public int executeRound;
         public CoinSkillScheduleTiming timing;
         public CoinSkillOutcomeConfig outcome;
@@ -248,6 +302,14 @@ public class CoinRoundEffectManager : MonoBehaviour
         }
     }
 
+    private sealed class EnemyShieldGenerationBlock
+    {
+        public int id;
+        public string sourceId;
+        public TrigramCollisionSkillSO sourceSkill;
+        public int remainingRounds;
+    }
+
     public static CoinRoundEffectManager Instance { get; private set; }
 
     [Header("调试")]
@@ -262,6 +324,7 @@ public class CoinRoundEffectManager : MonoBehaviour
     private readonly List<ScheduledOutcome> scheduledOutcomes = new List<ScheduledOutcome>();
     private readonly List<TurnTriggerCounter> turnTriggerCounters = new List<TurnTriggerCounter>();
     private readonly List<PhysicsModifier> physicsModifiers = new List<PhysicsModifier>();
+    private readonly List<EnemyShieldGenerationBlock> enemyShieldGenerationBlocks = new List<EnemyShieldGenerationBlock>();
     private readonly Dictionary<CoinStats, int> coinFlipVersions = new Dictionary<CoinStats, int>();
     private readonly List<CoinRuntimeData> subscribedCoinData = new List<CoinRuntimeData>();
 
@@ -385,9 +448,12 @@ public class CoinRoundEffectManager : MonoBehaviour
                 modifier.id,
                 CoinSkillRuntimeEffectKind.DamageModifier,
                 modifier.sourceId,
+                modifier.sourceSkill,
                 modifier.remainingRounds,
                 Mathf.Max(1, modifier.stackCount),
-                null));
+                null,
+                modifier.targets,
+                modifier.addPercent * 100f));
         }
 
         for (int i = 0; i < pendingCoinLosses.Count; i++)
@@ -401,9 +467,13 @@ public class CoinRoundEffectManager : MonoBehaviour
                 pending.id,
                 CoinSkillRuntimeEffectKind.PendingCoinLoss,
                 pending.sourceId,
+                pending.sourceSkill,
                 remainingRounds,
                 1,
-                pending.target));
+                pending.target,
+                new List<CoinStats> { pending.target },
+                0f,
+                pending.loss));
         }
 
         for (int i = 0; i < protections.Count; i++)
@@ -416,6 +486,7 @@ public class CoinRoundEffectManager : MonoBehaviour
                 protection.id,
                 CoinSkillRuntimeEffectKind.CoinProtection,
                 protection.sourceId,
+                null,
                 protection.remainingRounds,
                 1,
                 protection.target));
@@ -431,6 +502,7 @@ public class CoinRoundEffectManager : MonoBehaviour
                 zone.id,
                 CoinSkillRuntimeEffectKind.DamageZone,
                 zone.sourceId,
+                null,
                 zone.remainingTicks,
                 1,
                 zone.instance));
@@ -447,9 +519,18 @@ public class CoinRoundEffectManager : MonoBehaviour
                 condition.id,
                 CoinSkillRuntimeEffectKind.FlipCondition,
                 condition.sourceId,
+                condition.sourceSkill,
                 remainingRounds,
                 1,
-                null));
+                null,
+                condition.watchedTargets,
+                0f,
+                0,
+                condition.requireNoFlip,
+                null,
+                condition.successOutcome,
+                condition.failureOutcome,
+                condition.context));
         }
 
         for (int i = 0; i < untilFlipStacks.Count; i++)
@@ -462,9 +543,20 @@ public class CoinRoundEffectManager : MonoBehaviour
                 stack.id,
                 CoinSkillRuntimeEffectKind.UntilFlipDamageStack,
                 stack.sourceId,
+                stack.sourceSkill,
                 Mathf.Max(0, stack.maxStacks - stack.appliedStacks),
                 Mathf.Max(1, stack.appliedStacks),
-                null));
+                null,
+                stack.watchedTargets,
+                stack.stackOutcome != null && stack.stackOutcome.OutcomeType == CoinSkillOutcomeType.AddDamageModifier
+                    ? stack.stackOutcome.AddDamagePercent
+                    : 0f,
+                0,
+                true,
+                stack.stackOutcome,
+                null,
+                null,
+                stack.context));
         }
 
         for (int i = 0; i < scheduledOutcomes.Count; i++)
@@ -478,9 +570,18 @@ public class CoinRoundEffectManager : MonoBehaviour
                 scheduled.id,
                 CoinSkillRuntimeEffectKind.ScheduledOutcome,
                 scheduled.sourceId,
+                scheduled.sourceSkill,
                 remainingRounds,
                 1,
-                null));
+                null,
+                null,
+                0f,
+                0,
+                false,
+                scheduled.outcome,
+                null,
+                null,
+                scheduled.context));
         }
 
         for (int i = 0; i < turnTriggerCounters.Count; i++)
@@ -493,6 +594,7 @@ public class CoinRoundEffectManager : MonoBehaviour
                 counter.id,
                 CoinSkillRuntimeEffectKind.TurnTriggerCounter,
                 counter.sourceId,
+                null,
                 0,
                 Mathf.Max(1, counter.count),
                 null));
@@ -508,7 +610,24 @@ public class CoinRoundEffectManager : MonoBehaviour
                 modifier.id,
                 CoinSkillRuntimeEffectKind.PhysicsModifier,
                 modifier.sourceId,
+                null,
                 0,
+                1,
+                null));
+        }
+
+        for (int i = 0; i < enemyShieldGenerationBlocks.Count; i++)
+        {
+            EnemyShieldGenerationBlock block = enemyShieldGenerationBlocks[i];
+            if (block == null)
+                continue;
+
+            result.Add(new CoinSkillRuntimeEffectSnapshot(
+                block.id,
+                CoinSkillRuntimeEffectKind.EnemyShieldGenerationBlock,
+                block.sourceId,
+                block.sourceSkill,
+                block.remainingRounds,
                 1,
                 null));
         }
@@ -522,7 +641,8 @@ public class CoinRoundEffectManager : MonoBehaviour
         int durationRounds = -1,
         int activateAfterRounds = 0,
         bool stackable = true,
-        IReadOnlyList<CoinStats> targets = null)
+        IReadOnlyList<CoinStats> targets = null,
+        TrigramCollisionSkillSO sourceSkill = null)
     {
         if (string.IsNullOrWhiteSpace(sourceId) || Mathf.Approximately(addPercent, 0f))
             return 0;
@@ -537,6 +657,7 @@ public class CoinRoundEffectManager : MonoBehaviour
         {
             id = AllocateRuntimeId(),
             sourceId = sourceId,
+            sourceSkill = sourceSkill,
             addPercent = addPercent,
             activateRound = activateRound,
             remainingRounds = durationRounds,
@@ -631,7 +752,8 @@ public class CoinRoundEffectManager : MonoBehaviour
         int loss,
         int delayRounds,
         TrigramType requiredCurrentTrigram = TrigramType.None,
-        string sourceId = null)
+        string sourceId = null,
+        TrigramCollisionSkillSO sourceSkill = null)
     {
         if (target == null || loss <= 0)
             return 0;
@@ -642,6 +764,7 @@ public class CoinRoundEffectManager : MonoBehaviour
         {
             id = runtimeId,
             sourceId = sourceId,
+            sourceSkill = sourceSkill,
             target = target,
             loss = loss,
             executeRound = currentRound + Mathf.Max(0, delayRounds),
@@ -759,6 +882,7 @@ public class CoinRoundEffectManager : MonoBehaviour
             id = runtimeId,
             context = context,
             sourceId = sourceId,
+            sourceSkill = context != null ? context.skill : null,
             watchedTargets = targets,
             startFlipVersions = CaptureFlipVersions(targets),
             checkRoundEnd = currentRound + Mathf.Max(0, roundEndChecks - 1),
@@ -788,6 +912,7 @@ public class CoinRoundEffectManager : MonoBehaviour
             id = runtimeId,
             context = context,
             sourceId = sourceId,
+            sourceSkill = context != null ? context.skill : null,
             watchedTargets = targets,
             startFlipVersions = CaptureFlipVersions(targets),
             stackOutcome = stackOutcome,
@@ -812,7 +937,7 @@ public class CoinRoundEffectManager : MonoBehaviour
         int safeDelay = Mathf.Max(0, delayRounds);
         if (safeDelay == 0 && timing == CoinSkillScheduleTiming.RoundStarted)
         {
-            outcome.Apply(context, sourceId);
+            outcome.Apply(context, BuildChildSourceId(sourceId, "ImmediateOutcome"));
             return 0;
         }
 
@@ -822,6 +947,7 @@ public class CoinRoundEffectManager : MonoBehaviour
             id = runtimeId,
             context = context,
             sourceId = sourceId,
+            sourceSkill = context != null ? context.skill : null,
             executeRound = currentRound + safeDelay,
             timing = timing,
             outcome = outcome
@@ -830,33 +956,34 @@ public class CoinRoundEffectManager : MonoBehaviour
         return runtimeId;
     }
 
-    public int RecordTurnTrigger(
+    public bool RecordTurnTrigger(
         CollisionSkillContext context,
         string counterId,
         string sourceId,
         int triggerLimit,
         TurnTriggerCountMode triggerMode,
+        TurnTriggerOverLimitAction overLimitAction,
         CoinSkillOutcomeConfig overLimitOutcome)
     {
         if (string.IsNullOrWhiteSpace(counterId))
-            return 0;
+            return false;
 
         TurnTriggerCounter counter = FindOrCreateTurnTriggerCounter(counterId.Trim(), sourceId);
         counter.count++;
 
         if (counter.count <= Mathf.Max(0, triggerLimit))
-            return counter.id;
+            return false;
 
         if (triggerMode == TurnTriggerCountMode.OncePerRoundOverLimit && counter.triggeredThisRound)
-            return counter.id;
+            return true;
 
         counter.triggeredThisRound = true;
-        if (overLimitOutcome != null)
+        if (overLimitAction != TurnTriggerOverLimitAction.StopSkillOnly && overLimitOutcome != null)
         {
-            overLimitOutcome.Apply(context, sourceId);
+            overLimitOutcome.Apply(context, BuildChildSourceId(sourceId, "OverLimitOutcome"));
         }
 
-        return counter.id;
+        return true;
     }
 
     public int AddPhysicsModifier(
@@ -898,6 +1025,38 @@ public class CoinRoundEffectManager : MonoBehaviour
         }
 
         return result;
+    }
+
+    public int BlockEnemyShieldGeneration(int roundCount, string sourceId = null, TrigramCollisionSkillSO sourceSkill = null)
+    {
+        int safeRoundCount = Mathf.Max(1, roundCount);
+        int runtimeId = AllocateRuntimeId();
+        enemyShieldGenerationBlocks.Add(new EnemyShieldGenerationBlock
+        {
+            id = runtimeId,
+            sourceId = sourceId,
+            sourceSkill = sourceSkill,
+            remainingRounds = safeRoundCount
+        });
+
+        if (debugLog)
+        {
+            Debug.Log($"[CoinRoundEffectManager] 停止敌方护盾生成 | source:{sourceId} | rounds:{safeRoundCount}");
+        }
+
+        return runtimeId;
+    }
+
+    public bool IsEnemyShieldGenerationBlocked()
+    {
+        for (int i = 0; i < enemyShieldGenerationBlocks.Count; i++)
+        {
+            EnemyShieldGenerationBlock block = enemyShieldGenerationBlocks[i];
+            if (block != null && block.remainingRounds > 0)
+                return true;
+        }
+
+        return false;
     }
 
     public CoinStats FindHighestLossCoin()
@@ -1162,8 +1321,28 @@ public class CoinRoundEffectManager : MonoBehaviour
         ResolveFlipConditions(roundIndex);
         TickDamageModifierDurations(roundIndex);
         TickProtectionDurations();
+        TickEnemyShieldGenerationBlocks();
         ClearRoundOnlyEffects();
         CleanupDestroyedReferences();
+    }
+
+    private void TickEnemyShieldGenerationBlocks()
+    {
+        for (int i = enemyShieldGenerationBlocks.Count - 1; i >= 0; i--)
+        {
+            EnemyShieldGenerationBlock block = enemyShieldGenerationBlocks[i];
+            if (block == null)
+            {
+                enemyShieldGenerationBlocks.RemoveAt(i);
+                continue;
+            }
+
+            block.remainingRounds--;
+            if (block.remainingRounds <= 0)
+            {
+                enemyShieldGenerationBlocks.RemoveAt(i);
+            }
+        }
     }
 
     private void ExecuteScheduledOutcomes(int roundIndex, CoinSkillScheduleTiming timing)
@@ -1184,7 +1363,7 @@ public class CoinRoundEffectManager : MonoBehaviour
 
             if (scheduled.outcome != null)
             {
-                scheduled.outcome.Apply(scheduled.context, scheduled.sourceId);
+                scheduled.outcome.Apply(scheduled.context, BuildChildSourceId(scheduled.sourceId, "ScheduledOutcome"));
             }
         }
     }
@@ -1393,7 +1572,10 @@ public class CoinRoundEffectManager : MonoBehaviour
 
             if (outcome != null)
             {
-                outcome.Apply(condition.context, condition.sourceId);
+                string outcomeSourceId = BuildChildSourceId(
+                    condition.sourceId,
+                    success ? "SuccessOutcome" : "FailureOutcome");
+                outcome.Apply(condition.context, outcomeSourceId);
             }
         }
     }
@@ -1418,7 +1600,7 @@ public class CoinRoundEffectManager : MonoBehaviour
                 continue;
             }
 
-            stack.stackOutcome.Apply(stack.context, stack.sourceId);
+            stack.stackOutcome.Apply(stack.context, BuildChildSourceId(stack.sourceId, "StackOutcome"));
             stack.appliedStacks++;
 
             if (stack.appliedStacks >= stack.maxStacks)
@@ -1486,6 +1668,13 @@ public class CoinRoundEffectManager : MonoBehaviour
             return;
 
         DamageModifierEnded?.Invoke(modifier.id, modifier.sourceId);
+    }
+
+    private static string BuildChildSourceId(string sourceId, string childName)
+    {
+        string root = string.IsNullOrWhiteSpace(sourceId) ? "CoinSkillEffect" : sourceId.Trim();
+        string child = string.IsNullOrWhiteSpace(childName) ? "Child" : childName.Trim();
+        return root + "/" + child;
     }
 
     private static Vector3 AbsScale(Vector3 value)

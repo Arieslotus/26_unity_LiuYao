@@ -1,8 +1,21 @@
 /// <summary>
-/// 实现功能：显示单枚硬币的当前状态信息，包括名称、当前面 Sprite、背面 Sprite 与剩余血量，并支持已操作置灰。
+/// 实现功能：显示单枚硬币的当前状态信息，包括名称、当前面 Sprite、背面 Sprite、剩余完整度与损耗小块。
 /// </summary>
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+
+public enum CoinLossBlockDirection
+{
+    LeftToRight,
+    RightToLeft
+}
+
+public enum CoinLossBlockDisplayMode
+{
+    Replace,
+    Overlay
+}
 
 public class CoinTurnInfoItem : MonoBehaviour
 {
@@ -11,18 +24,33 @@ public class CoinTurnInfoItem : MonoBehaviour
     [SerializeField] private Image currentSideImage;
     [SerializeField] private Image backSideImage;
 
-    [Header("血量显示")]
-    [Tooltip("硬币血条 Slider，可选；绑定后会显示剩余血量比例。")]
-    [SerializeField] private Slider healthSlider;
+    [Tooltip("硬币本回合碎裂时显示的 UI 根节点。")]
+    [SerializeField] private GameObject brokenStateRoot;
 
-    [Tooltip("硬币血条填充 Image，可选；如果不用 Slider，可以直接绑定 Fill Image。")]
-    [SerializeField] private Image healthFillImage;
+    [Tooltip("当前硬币攻击力文本，可选。")]
+    [SerializeField] private Text attackText;
 
-    [Tooltip("硬币血量文本，可选；显示格式为 当前剩余/最大值。")]
-    [SerializeField] private Text healthText;
+    [Header("损耗小块")]
+    [Tooltip("损耗小块父节点，可挂 HorizontalLayoutGroup 或 GridLayoutGroup 自动排列与对齐。")]
+    [SerializeField] private Transform lossBlockRoot;
 
-    [Tooltip("缺少 CoinStats 时是否隐藏血条相关 UI。")]
-    [SerializeField] private bool hideHealthWhenMissingStats = true;
+    [Tooltip("单个损耗小块的完整形态 Image 模板。运行时会根据 MaxLoss 自动复用/生成。")]
+    [SerializeField] private Image lossBlockTemplate;
+
+    [Tooltip("完整形态小块 Sprite。")]
+    [SerializeField] private Sprite intactBlockSprite;
+
+    [Tooltip("损耗形态小块 Sprite。")]
+    [SerializeField] private Sprite damagedBlockSprite;
+
+    [Tooltip("损耗值增加时，小块从哪个方向开始变为损耗形态。")]
+    [SerializeField] private CoinLossBlockDirection lossBlockDirection = CoinLossBlockDirection.LeftToRight;
+
+    [Tooltip("Replace：直接替换 Sprite。Overlay：保留完整图，并叠加损耗图。")]
+    [SerializeField] private CoinLossBlockDisplayMode lossBlockDisplayMode = CoinLossBlockDisplayMode.Replace;
+
+    [Tooltip("缺少 CoinStats 时是否隐藏损耗小块。")]
+    [SerializeField] private bool hideLossBlocksWhenMissingStats = true;
 
     [Header("透明度")]
     [Range(0f, 1f)]
@@ -31,11 +59,16 @@ public class CoinTurnInfoItem : MonoBehaviour
     [Range(0f, 1f)]
     [SerializeField] private float actedAlpha = 0.6f;
 
+    private readonly List<LossBlockView> lossBlocks = new List<LossBlockView>();
     private CoinStats currentStats;
+    private CoinRoundEffectManager subscribedRoundEffectManager;
     private float currentAlpha = 1f;
+    private bool isBrokenThisRound;
 
     public void Set(ChessPiece piece, bool hasActed)
     {
+        SubscribeRoundEffectManager();
+
         CoinDefinition definition = piece != null ? piece.CoinDefinition : null;
         bool isFrontSide = piece == null || piece.IsFrontSide;
 
@@ -58,12 +91,20 @@ public class CoinTurnInfoItem : MonoBehaviour
         SetImage(currentSideImage, currentSprite);
         SetImage(backSideImage, backSprite);
         BindStats(piece != null ? piece.GetComponent<CoinStats>() : null);
-        RefreshHealth();
+        RefreshAttack();
+        RefreshLossDisplay();
+        RefreshBrokenState();
         ApplyAlpha(hasActed ? actedAlpha : activeAlpha);
+    }
+
+    private void OnEnable()
+    {
+        SubscribeRoundEffectManager();
     }
 
     private void OnDisable()
     {
+        UnsubscribeRoundEffectManager();
         UnbindStats();
     }
 
@@ -82,17 +123,8 @@ public class CoinTurnInfoItem : MonoBehaviour
         SetGraphicAlpha(coinNameText, alpha);
         SetGraphicAlpha(currentSideImage, alpha);
         SetGraphicAlpha(backSideImage, alpha);
-        SetGraphicAlpha(healthFillImage, alpha);
-        SetGraphicAlpha(healthText, alpha);
-
-        if (healthSlider != null)
-        {
-            Graphic[] graphics = healthSlider.GetComponentsInChildren<Graphic>(true);
-            for (int i = 0; i < graphics.Length; i++)
-            {
-                SetGraphicAlpha(graphics[i], alpha);
-            }
-        }
+        SetGraphicAlpha(attackText, alpha);
+        ApplyLossBlockAlpha(alpha);
     }
 
     private void SetGraphicAlpha(Graphic graphic, float alpha)
@@ -115,8 +147,12 @@ public class CoinTurnInfoItem : MonoBehaviour
 
         if (currentStats != null)
         {
+            if (attackText != null)
+            attackText.text = $"攻击:{CoinDamageCalculator.Calculate(currentStats)}";
             currentStats.LossChanged -= OnLossChanged;
+            currentStats.Broken -= OnBroken;
             currentStats.LossChanged += OnLossChanged;
+            currentStats.Broken += OnBroken;
         }
     }
 
@@ -125,71 +161,225 @@ public class CoinTurnInfoItem : MonoBehaviour
         if (currentStats != null)
         {
             currentStats.LossChanged -= OnLossChanged;
+            currentStats.Broken -= OnBroken;
             currentStats = null;
         }
     }
 
-    private void OnLossChanged(int currentLoss, int maxLoss)
+    private void SubscribeRoundEffectManager()
     {
-        RefreshHealth(currentLoss, maxLoss);
+        if (subscribedRoundEffectManager == CoinRoundEffectManager.Instance)
+            return;
+
+        UnsubscribeRoundEffectManager();
+        subscribedRoundEffectManager = CoinRoundEffectManager.Instance;
+        if (subscribedRoundEffectManager == null)
+            return;
+
+        subscribedRoundEffectManager.DamageModifierStarted += OnDamageModifierChanged;
+        subscribedRoundEffectManager.DamageModifierEnded += OnDamageModifierChanged;
     }
 
-    private void RefreshHealth()
+    private void UnsubscribeRoundEffectManager()
+    {
+        if (subscribedRoundEffectManager == null)
+            return;
+
+        subscribedRoundEffectManager.DamageModifierStarted -= OnDamageModifierChanged;
+        subscribedRoundEffectManager.DamageModifierEnded -= OnDamageModifierChanged;
+        subscribedRoundEffectManager = null;
+    }
+
+    private void OnDamageModifierChanged(int modifierId, string sourceId)
+    {
+        RefreshAttack();
+    }
+
+    private void OnLossChanged(int currentLoss, int maxLoss)
+    {
+        RefreshLossDisplay(currentLoss, maxLoss);
+    }
+
+    private void OnBroken()
+    {
+        isBrokenThisRound = true;
+        RefreshBrokenState();
+    }
+
+    public void ClearRoundState()
+    {
+        isBrokenThisRound = false;
+        RefreshBrokenState();
+    }
+
+    private void RefreshLossDisplay()
     {
         if (currentStats == null)
         {
-            SetHealthVisible(!hideHealthWhenMissingStats);
-            RefreshHealth(0, 1);
+            SetLossBlocksVisible(!hideLossBlocksWhenMissingStats);
+            RefreshLossDisplay(0, 1);
             return;
         }
 
-        SetHealthVisible(true);
-        RefreshHealth(currentStats.CurrentLoss, currentStats.MaxLoss);
+        SetLossBlocksVisible(true);
+        RefreshLossDisplay(currentStats.CurrentLoss, currentStats.MaxLoss);
     }
 
-    private void RefreshHealth(int currentLoss, int maxLoss)
+    private void RefreshAttack()
+    {
+        if (attackText == null)
+            return;
+
+        attackText.gameObject.SetActive(currentStats != null);
+        if (currentStats != null)
+        {
+            attackText.text = $"攻击:{currentStats.Attack}";
+        }
+
+        if (currentStats != null)
+        {
+            attackText.text = $"攻击:{CoinDamageCalculator.Calculate(currentStats)}";
+        }
+    }
+
+    private void RefreshLossDisplay(int currentLoss, int maxLoss)
     {
         maxLoss = Mathf.Max(1, maxLoss);
         currentLoss = Mathf.Clamp(currentLoss, 0, maxLoss);
 
-        int remainingHealth = maxLoss - currentLoss;
-        float normalized = (float)remainingHealth / maxLoss;
-
-        if (healthSlider != null)
-        {
-            healthSlider.minValue = 0f;
-            healthSlider.maxValue = 1f;
-            healthSlider.value = normalized;
-        }
-
-        if (healthFillImage != null)
-        {
-            healthFillImage.fillAmount = normalized;
-        }
-
-        if (healthText != null)
-        {
-            healthText.text = $"{remainingHealth}/{maxLoss}";
-        }
-
+        RefreshLossBlocks(currentLoss, maxLoss);
         ApplyAlpha(currentAlpha);
     }
 
-    private void SetHealthVisible(bool visible)
+    private void RefreshLossBlocks(int currentLoss, int maxLoss)
     {
-        if (healthSlider != null)
+        if (lossBlockRoot == null || lossBlockTemplate == null)
+            return;
+
+        EnsureLossBlockCount(maxLoss);
+
+        for (int i = 0; i < lossBlocks.Count; i++)
         {
-            healthSlider.gameObject.SetActive(visible);
+            LossBlockView block = lossBlocks[i];
+            bool active = i < maxLoss;
+
+            if (block.Root != null)
+            {
+                block.Root.SetActive(active);
+            }
+
+            if (!active)
+                continue;
+
+            int lossIndex = lossBlockDirection == CoinLossBlockDirection.LeftToRight
+                ? i
+                : maxLoss - 1 - i;
+            bool damaged = lossIndex < currentLoss;
+            RefreshLossBlock(block, damaged);
+        }
+    }
+
+    private void EnsureLossBlockCount(int maxLoss)
+    {
+        for (int i = lossBlocks.Count; i < maxLoss; i++)
+        {
+            Image intactImage = i == 0 ? lossBlockTemplate : Instantiate(lossBlockTemplate, lossBlockRoot);
+            if (intactImage.transform.parent != lossBlockRoot)
+            {
+                intactImage.transform.SetParent(lossBlockRoot, false);
+            }
+
+            GameObject root = intactImage.gameObject;
+            Image damagedImage = GetOrCreateDamagedImage(root.transform);
+
+            lossBlocks.Add(new LossBlockView
+            {
+                Root = root,
+                IntactImage = intactImage,
+                DamagedImage = damagedImage
+            });
+        }
+    }
+
+    private Image GetOrCreateDamagedImage(Transform blockRoot)
+    {
+        Transform damagedChild = blockRoot.Find("Damaged");
+        if (damagedChild != null)
+        {
+            Image existingImage = damagedChild.GetComponent<Image>();
+            if (existingImage != null)
+                return existingImage;
         }
 
-        if (healthFillImage != null)
+        GameObject damagedObject = new GameObject("Damaged", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        damagedObject.transform.SetParent(blockRoot, false);
+
+        RectTransform rectTransform = damagedObject.GetComponent<RectTransform>();
+        rectTransform.anchorMin = Vector2.zero;
+        rectTransform.anchorMax = Vector2.one;
+        rectTransform.offsetMin = Vector2.zero;
+        rectTransform.offsetMax = Vector2.zero;
+
+        Image image = damagedObject.GetComponent<Image>();
+        image.raycastTarget = false;
+        return image;
+    }
+
+    private void RefreshLossBlock(LossBlockView block, bool damaged)
+    {
+        if (block == null)
+            return;
+
+        if (block.IntactImage != null)
         {
-            healthFillImage.gameObject.SetActive(visible);
+            block.IntactImage.sprite = lossBlockDisplayMode == CoinLossBlockDisplayMode.Replace && damaged
+                ? damagedBlockSprite
+                : intactBlockSprite;
+            block.IntactImage.enabled = block.IntactImage.sprite != null;
         }
 
-        if (healthText != null)
+        if (block.DamagedImage != null)
         {
-            healthText.gameObject.SetActive(visible);
+            block.DamagedImage.sprite = damagedBlockSprite;
+            block.DamagedImage.enabled = lossBlockDisplayMode == CoinLossBlockDisplayMode.Overlay &&
+                                         damaged &&
+                                         damagedBlockSprite != null;
         }
+    }
+
+    private void ApplyLossBlockAlpha(float alpha)
+    {
+        for (int i = 0; i < lossBlocks.Count; i++)
+        {
+            LossBlockView block = lossBlocks[i];
+            if (block == null)
+                continue;
+
+            SetGraphicAlpha(block.IntactImage, alpha);
+            SetGraphicAlpha(block.DamagedImage, alpha);
+        }
+    }
+
+    private void SetLossBlocksVisible(bool visible)
+    {
+        if (lossBlockRoot != null)
+        {
+            lossBlockRoot.gameObject.SetActive(visible);
+        }
+    }
+
+    private void RefreshBrokenState()
+    {
+        if (brokenStateRoot != null)
+        {
+            brokenStateRoot.SetActive(isBrokenThisRound);
+        }
+    }
+
+    private sealed class LossBlockView
+    {
+        public GameObject Root;
+        public Image IntactImage;
+        public Image DamagedImage;
     }
 }

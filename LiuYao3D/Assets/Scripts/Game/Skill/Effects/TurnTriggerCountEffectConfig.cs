@@ -1,5 +1,5 @@
 /// <summary>
-/// 实现功能：定义内嵌技能效果“本回合触发次数限制”，超过阈值后执行通用技能结果。
+/// 实现功能：定义内嵌技能效果“本回合触发次数限制”，超过阈值后执行通用技能结果或停止技能。
 /// </summary>
 using System;
 using UnityEngine;
@@ -8,11 +8,10 @@ using UnityEngine;
 public sealed class TurnTriggerCountEffectConfig : CollisionSkillEffectConfig
 {
     [Header("计数")]
-    [Tooltip("为空时默认使用技能名。多个技能填同一个 ID 时会共享本回合计数。")]
-    [SerializeField] private string counterId;
     [Min(0)]
     [SerializeField] private int triggerLimit = 2;
     [SerializeField] private TurnTriggerCountMode triggerMode = TurnTriggerCountMode.OncePerRoundOverLimit;
+    [SerializeField] private TurnTriggerOverLimitAction overLimitAction = TurnTriggerOverLimitAction.RunOutcomeAndContinue;
 
     [Header("超过限制时")]
     [SerializeField] private CoinSkillOutcomeConfig overLimitOutcome = new CoinSkillOutcomeConfig();
@@ -33,29 +32,37 @@ public sealed class TurnTriggerCountEffectConfig : CollisionSkillEffectConfig
             this.config = config;
         }
 
-        public void Execute(CollisionSkillContext context)
+        public CollisionSkillEffectExecutionResult Execute(CollisionSkillContext context)
         {
             if (CoinRoundEffectManager.Instance == null)
             {
                 Debug.LogWarning("[TurnTriggerCountEffectConfig] 缺少 CoinRoundEffectManager，无法记录本回合触发次数。");
-                return;
+                return CollisionSkillEffectExecutionResult.Continue;
             }
 
-            string fallbackSourceId = context != null && context.skill != null
-                ? context.skill.SkillName
+            string sourceId = context != null
+                ? context.GetRuntimeSourceId(nameof(TurnTriggerCountEffectConfig))
                 : nameof(TurnTriggerCountEffectConfig);
 
-            string runtimeCounterId = string.IsNullOrWhiteSpace(config.counterId)
-                ? fallbackSourceId
-                : config.counterId.Trim();
-
-            CoinRoundEffectManager.Instance.RecordTurnTrigger(
+            bool isOverLimit = CoinRoundEffectManager.Instance.RecordTurnTrigger(
                 context,
-                runtimeCounterId,
-                fallbackSourceId,
+                sourceId,
+                sourceId,
                 config.triggerLimit,
                 config.triggerMode,
+                config.overLimitAction,
                 config.overLimitOutcome);
+
+            if (!isOverLimit)
+                return CollisionSkillEffectExecutionResult.Continue;
+
+            if (config.overLimitAction == TurnTriggerOverLimitAction.RunOutcomeAndStopSkill ||
+                config.overLimitAction == TurnTriggerOverLimitAction.StopSkillOnly)
+            {
+                return CollisionSkillEffectExecutionResult.StopSkill;
+            }
+
+            return CollisionSkillEffectExecutionResult.Continue;
         }
     }
 }

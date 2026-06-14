@@ -34,7 +34,7 @@ public sealed class ReduceLossEffectConfig : CollisionSkillEffectConfig
             this.config = config;
         }
 
-        public void Execute(CollisionSkillContext context)
+        public CollisionSkillEffectExecutionResult Execute(CollisionSkillContext context)
         {
             List<CoinStats> targets = config.targetSelector.Resolve(context, true);
 
@@ -44,6 +44,7 @@ public sealed class ReduceLossEffectConfig : CollisionSkillEffectConfig
             }
 
             SkillEffectVfxPlayer.PlayForCoins(config.vfx, targets);
+            return CollisionSkillEffectExecutionResult.Continue;
         }
     }
 }

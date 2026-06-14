@@ -23,6 +23,7 @@ public sealed class TrigramCollisionSkillSOEditor : Editor
         new EffectTypeEntry("延迟执行结果", typeof(ScheduleCoinOutcomeEffectConfig)),
         new EffectTypeEntry("本回合触发次数限制", typeof(TurnTriggerCountEffectConfig)),
         new EffectTypeEntry("临时碰撞物理修正", typeof(CoinPhysicsModifierEffectConfig)),
+        new EffectTypeEntry("停止敌方护盾生成", typeof(BlockEnemyShieldGenerationEffectConfig)),
     };
 
     private SerializedProperty activeTrigram;

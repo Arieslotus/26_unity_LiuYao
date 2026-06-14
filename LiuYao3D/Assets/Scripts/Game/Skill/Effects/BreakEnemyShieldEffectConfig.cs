@@ -31,7 +31,7 @@ public sealed class BreakEnemyShieldEffectConfig : CollisionSkillEffectConfig
             this.config = config;
         }
 
-        public void Execute(CollisionSkillContext context)
+        public CollisionSkillEffectExecutionResult Execute(CollisionSkillContext context)
         {
             List<EnemyStats> targets = config.targetSelector.Resolve(context);
 
@@ -50,6 +50,8 @@ public sealed class BreakEnemyShieldEffectConfig : CollisionSkillEffectConfig
 
                 shield.TryBreakShield(shield.CurrentShieldType, sourceName);
             }
+
+            return CollisionSkillEffectExecutionResult.Continue;
         }
     }
 

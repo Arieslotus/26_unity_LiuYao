@@ -268,8 +268,8 @@ public class GameFlowController : MonoBehaviour
             if (coin == null)
                 continue;
 
-            coin.Died -= OnAnyTargetDied;
-            coin.Died += OnAnyTargetDied;
+            coin.Broken -= OnAnyTargetDied;
+            coin.Broken += OnAnyTargetDied;
         }
 
         hasSubscribedTargets = true;
@@ -294,7 +294,7 @@ public class GameFlowController : MonoBehaviour
             CoinStats coin = coins[i];
             if (coin != null)
             {
-                coin.Died -= OnAnyTargetDied;
+                coin.Broken -= OnAnyTargetDied;
             }
         }
 
@@ -376,7 +376,7 @@ public class GameFlowController : MonoBehaviour
                 continue;
             }
 
-            if (!coin.IsDead)
+            if (!coin.IsBroken)
             {
                 count++;
             }

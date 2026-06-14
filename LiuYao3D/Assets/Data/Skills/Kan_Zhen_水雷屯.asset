@@ -73,8 +73,7 @@ MonoBehaviour:
             currentTrigramFilter: 
           loss: 1
           reduceLoss: 1
-          addDamagePercent: 10
+          addDamagePercent: 30
           durationRounds: -1
           activateAfterRounds: 1
           stackable: 1
-          modifierId: 

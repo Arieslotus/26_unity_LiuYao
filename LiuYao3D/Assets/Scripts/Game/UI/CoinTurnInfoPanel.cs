@@ -17,6 +17,9 @@ public class CoinTurnInfoPanel : MonoBehaviour
     [Tooltip("剩余硬币信息的生成根物体。")]
     [SerializeField] private Transform remainingRoot;
 
+    [Tooltip("按硬币原始顺序生成全部回合信息的根物体。未绑定时优先使用 remainingRoot。")]
+    [SerializeField] private Transform orderedRoot;
+
     [Header("显示")]
     [SerializeField] private Vector3 currentItemScale = Vector3.one;
     [SerializeField] private Vector3 remainingItemScale = new Vector3(0.8f, 0.8f, 0.8f);
@@ -27,6 +30,7 @@ public class CoinTurnInfoPanel : MonoBehaviour
     private readonly Dictionary<ChessPiece, CoinTurnInfoItem> itemMap = new Dictionary<ChessPiece, CoinTurnInfoItem>();
     private readonly List<CoinTurnInfoItem> spawnedItems = new List<CoinTurnInfoItem>();
     private readonly List<CoinRuntimeData> subscribedCoinData = new List<CoinRuntimeData>();
+    private TurnManager turnManager;
 
     private void Awake()
     {
@@ -34,11 +38,14 @@ public class CoinTurnInfoPanel : MonoBehaviour
         {
             turnController = FindObjectOfType<ChessTurnController>();
         }
+
+        turnManager = TurnManager.Instance != null ? TurnManager.Instance : FindObjectOfType<TurnManager>();
     }
 
     private void OnEnable()
     {
         SubscribeTurnController();
+        SubscribeTurnManager();
         SubscribeCoinData();
         Rebuild();
     }
@@ -46,6 +53,7 @@ public class CoinTurnInfoPanel : MonoBehaviour
     private void OnDisable()
     {
         UnsubscribeTurnController();
+        UnsubscribeTurnManager();
         UnsubscribeCoinData();
         ClearItems();
     }
@@ -67,6 +75,28 @@ public class CoinTurnInfoPanel : MonoBehaviour
         if (turnController != null)
         {
             turnController.CurrentPieceChanged -= OnCurrentPieceChanged;
+        }
+    }
+
+    private void SubscribeTurnManager()
+    {
+        if (turnManager == null)
+        {
+            turnManager = TurnManager.Instance != null ? TurnManager.Instance : FindObjectOfType<TurnManager>();
+        }
+
+        if (turnManager == null)
+            return;
+
+        turnManager.RoundEnded -= OnRoundEnded;
+        turnManager.RoundEnded += OnRoundEnded;
+    }
+
+    private void UnsubscribeTurnManager()
+    {
+        if (turnManager != null)
+        {
+            turnManager.RoundEnded -= OnRoundEnded;
         }
     }
 
@@ -108,7 +138,26 @@ public class CoinTurnInfoPanel : MonoBehaviour
     private void OnCurrentPieceChanged(int currentIndex, ChessPiece currentPiece)
     {
         SubscribeCoinData();
+
+        if (spawnedItems.Count > 0)
+        {
+            RefreshItemPresentation();
+            return;
+        }
+
         Rebuild();
+    }
+
+    private void OnRoundEnded(int roundIndex)
+    {
+        for (int i = 0; i < spawnedItems.Count; i++)
+        {
+            CoinTurnInfoItem item = spawnedItems[i];
+            if (item != null)
+            {
+                item.ClearRoundState();
+            }
+        }
     }
 
     private void OnCoinVisualStateChanged(CoinRuntimeData changedCoinData)
@@ -133,23 +182,12 @@ public class CoinTurnInfoPanel : MonoBehaviour
         int currentIndex = turnController.CurrentIndex;
         IReadOnlyList<ChessPiece> pieces = turnController.Pieces;
 
-        if (!turnController.IsPlayerRoundActive || currentIndex < 0 || currentIndex >= pieces.Count)
-            return;
+        bool hasCurrentPiece = turnController.IsPlayerRoundActive && currentIndex >= 0 && currentIndex < pieces.Count;
 
-        ChessPiece currentPiece = turnController.CurrentPiece;
-        if (currentPiece != null)
+        for (int i = 0; i < pieces.Count; i++)
         {
-            CreateItem(currentPiece, currentRoot, currentItemScale, false);
-        }
-
-        for (int i = currentIndex + 1; i < pieces.Count; i++)
-        {
-            CreateRemainingItem(pieces[i], false);
-        }
-
-        for (int i = 0; i < currentIndex; i++)
-        {
-            CreateRemainingItem(pieces[i], true);
+            ChessPiece piece = pieces[i];
+            CreateItem(piece, GetOrderedRoot(), GetItemScale(i, hasCurrentPiece, currentIndex), IsPieceActed(i, hasCurrentPiece, currentIndex));
         }
 
         if (debugLog)
@@ -160,14 +198,14 @@ public class CoinTurnInfoPanel : MonoBehaviour
 
     private bool CanBuild()
     {
-        if (turnController == null || itemPrefab == null || currentRoot == null || remainingRoot == null)
+        if (turnController == null || itemPrefab == null || GetOrderedRoot() == null)
         {
             if (debugLog)
             {
                 Debug.LogWarning(
                     $"[CoinTurnInfoPanel] 缺少必要引用 | " +
                     $"turnController:{turnController != null} | itemPrefab:{itemPrefab != null} | " +
-                    $"currentRoot:{currentRoot != null} | remainingRoot:{remainingRoot != null}"
+                    $"orderedRoot:{GetOrderedRoot() != null}"
                 );
             }
 
@@ -175,14 +213,6 @@ public class CoinTurnInfoPanel : MonoBehaviour
         }
 
         return true;
-    }
-
-    private void CreateRemainingItem(ChessPiece piece, bool hasActed)
-    {
-        if (piece == null)
-            return;
-
-        CreateItem(piece, remainingRoot, remainingItemScale, hasActed);
     }
 
     private void CreateItem(ChessPiece piece, Transform root, Vector3 scale, bool hasActed)
@@ -196,6 +226,39 @@ public class CoinTurnInfoPanel : MonoBehaviour
 
         spawnedItems.Add(item);
         itemMap[piece] = item;
+    }
+
+    private void RefreshItemPresentation()
+    {
+        if (turnController == null)
+            return;
+
+        IReadOnlyList<ChessPiece> pieces = turnController.Pieces;
+        int currentIndex = turnController.CurrentIndex;
+        bool hasCurrentPiece = turnController.IsPlayerRoundActive && currentIndex >= 0 && currentIndex < pieces.Count;
+
+        for (int i = 0; i < pieces.Count; i++)
+        {
+            ChessPiece piece = pieces[i];
+            if (piece == null)
+                continue;
+
+            if (!itemMap.TryGetValue(piece, out CoinTurnInfoItem item) || item == null)
+                continue;
+
+            item.transform.localScale = GetItemScale(i, hasCurrentPiece, currentIndex);
+            item.Set(piece, IsPieceActed(i, hasCurrentPiece, currentIndex));
+        }
+    }
+
+    private Vector3 GetItemScale(int index, bool hasCurrentPiece, int currentIndex)
+    {
+        return hasCurrentPiece && index == currentIndex ? currentItemScale : remainingItemScale;
+    }
+
+    private bool IsPieceActed(int index, bool hasCurrentPiece, int currentIndex)
+    {
+        return hasCurrentPiece && index < currentIndex;
     }
 
     private void RefreshItem(ChessPiece piece)
@@ -225,6 +288,17 @@ public class CoinTurnInfoPanel : MonoBehaviour
         }
 
         return false;
+    }
+
+    private Transform GetOrderedRoot()
+    {
+        if (orderedRoot != null)
+            return orderedRoot;
+
+        if (remainingRoot != null)
+            return remainingRoot;
+
+        return currentRoot;
     }
 
     private ChessPiece FindPieceByCoinData(CoinRuntimeData coinData)

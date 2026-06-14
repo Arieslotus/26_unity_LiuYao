@@ -1,5 +1,5 @@
 /// <summary>
-/// 实现功能：定义内嵌技能效果“延迟执行结果”，可在指定回合开始或结束执行通用技能结果。
+/// 实现功能：定义内嵌技能效果“延迟执行结果”，可在指定回合开始或结束时执行通用技能结果。
 /// </summary>
 using System;
 using UnityEngine;
@@ -14,9 +14,6 @@ public sealed class ScheduleCoinOutcomeEffectConfig : CollisionSkillEffectConfig
 
     [Header("执行结果")]
     [SerializeField] private CoinSkillOutcomeConfig outcome = new CoinSkillOutcomeConfig();
-
-    [Header("运行时标识")]
-    [SerializeField] private string sourceId;
 
     public override string DisplayName => "延迟执行结果";
 
@@ -34,17 +31,17 @@ public sealed class ScheduleCoinOutcomeEffectConfig : CollisionSkillEffectConfig
             this.config = config;
         }
 
-        public void Execute(CollisionSkillContext context)
+        public CollisionSkillEffectExecutionResult Execute(CollisionSkillContext context)
         {
             if (CoinRoundEffectManager.Instance == null)
             {
                 Debug.LogWarning("[ScheduleCoinOutcomeEffectConfig] 缺少 CoinRoundEffectManager，无法安排延迟结果。");
-                return;
+                return CollisionSkillEffectExecutionResult.Continue;
             }
 
-            string runtimeSourceId = string.IsNullOrWhiteSpace(config.sourceId)
-                ? (context != null && context.skill != null ? context.skill.SkillName : nameof(ScheduleCoinOutcomeEffectConfig))
-                : config.sourceId.Trim();
+            string runtimeSourceId = context != null
+                ? context.GetRuntimeSourceId(nameof(ScheduleCoinOutcomeEffectConfig))
+                : nameof(ScheduleCoinOutcomeEffectConfig);
 
             CoinRoundEffectManager.Instance.ScheduleOutcome(
                 context,
@@ -52,6 +49,8 @@ public sealed class ScheduleCoinOutcomeEffectConfig : CollisionSkillEffectConfig
                 config.delayRounds,
                 config.timing,
                 config.outcome);
+
+            return CollisionSkillEffectExecutionResult.Continue;
         }
     }
 }

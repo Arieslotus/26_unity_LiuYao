@@ -37,7 +37,7 @@ public sealed class DealDamageEffectConfig : CollisionSkillEffectConfig
             this.config = config;
         }
 
-        public void Execute(CollisionSkillContext context)
+        public CollisionSkillEffectExecutionResult Execute(CollisionSkillContext context)
         {
             int damage = CollisionSkillDamageUtility.CalculateDamage(
                 context,
@@ -46,7 +46,7 @@ public sealed class DealDamageEffectConfig : CollisionSkillEffectConfig
                 config.fixedDamage);
 
             if (damage <= 0)
-                return;
+                return CollisionSkillEffectExecutionResult.Continue;
 
             List<EnemyStats> targets = config.targetSelector.Resolve(context);
 
@@ -65,6 +65,7 @@ public sealed class DealDamageEffectConfig : CollisionSkillEffectConfig
             }
 
             SkillEffectVfxPlayer.PlayForEnemies(config.vfx, targets);
+            return CollisionSkillEffectExecutionResult.Continue;
         }
     }
 }
