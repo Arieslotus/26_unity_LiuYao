@@ -1,48 +1,74 @@
 /// <summary>
-/// 实现功能：控制硬币当前可操作提示物体的显示与隐藏，适用于 Plane、模型或 UI 子物体。
+/// 实现功能：控制当前可操作硬币的提示特效，在硬币被激活操作时生成特效预制体，失去操作权时隐藏或销毁。
 /// </summary>
 using UnityEngine;
 
 public class CoinControlHint : MonoBehaviour
 {
-    [Header("提示物体")]
-    [Tooltip("用于提示当前硬币可操作的物体，例如 Plane。")]
-    [SerializeField] private GameObject hintObject;
+    [Header("提示特效")]
+    [Tooltip("当前硬币可操作时生成的提示特效预制体。")]
+    [SerializeField] private GameObject controlEffectPrefab;
 
-    private void Reset()
-    {
-        if (transform.childCount > 0)
-        {
-            hintObject = transform.GetChild(0).gameObject;
-        }
-    }
+    [Tooltip("特效生成父节点。为空时使用当前 CoinControlHint 节点。")]
+    [SerializeField] private Transform effectRoot;
+
+    [Tooltip("特效生成后的本地位置。")]
+    [SerializeField] private Vector3 localPosition = Vector3.zero;
+
+    [Tooltip("特效生成后的本地旋转。")]
+    [SerializeField] private Vector3 localEulerAngles = Vector3.zero;
+
+    [Tooltip("特效生成后的本地缩放。")]
+    [SerializeField] private Vector3 localScale = Vector3.one;
+
+    [Tooltip("隐藏时是否销毁特效实例。关闭时会复用同一个实例，适合循环特效。")]
+    [SerializeField] private bool destroyInstanceOnHide = false;
+
+    private GameObject effectInstance;
 
     private void Awake()
     {
         Hide();
     }
 
+    private void OnDestroy()
+    {
+        if (effectInstance != null)
+        {
+            Destroy(effectInstance);
+            effectInstance = null;
+        }
+    }
+
     public void Show()
     {
-        CacheHintObject();
-
-        if (hintObject == null)
+        if (controlEffectPrefab == null)
         {
-            Debug.LogWarning($"[CoinControlHint] {name} 未绑定提示物体，无法显示当前操作提示。");
+            Debug.LogWarning($"[CoinControlHint] {name} 未绑定操作提示特效预制体，无法显示当前操作提示。");
             return;
         }
 
-        hintObject.SetActive(true);
+        EnsureEffectInstance();
+
+        if (effectInstance == null)
+            return;
+
+        effectInstance.SetActive(true);
     }
 
     public void Hide()
     {
-        CacheHintObject();
-
-        if (hintObject == null)
+        if (effectInstance == null)
             return;
 
-        hintObject.SetActive(false);
+        if (destroyInstanceOnHide)
+        {
+            Destroy(effectInstance);
+            effectInstance = null;
+            return;
+        }
+
+        effectInstance.SetActive(false);
     }
 
     public void SetVisible(bool visible)
@@ -56,14 +82,15 @@ public class CoinControlHint : MonoBehaviour
         Hide();
     }
 
-    private void CacheHintObject()
+    private void EnsureEffectInstance()
     {
-        if (hintObject != null)
+        if (effectInstance != null)
             return;
 
-        if (transform.childCount > 0)
-        {
-            hintObject = transform.GetChild(0).gameObject;
-        }
+        Transform root = effectRoot != null ? effectRoot : transform;
+        effectInstance = Instantiate(controlEffectPrefab, root);
+        effectInstance.transform.localPosition = localPosition;
+        effectInstance.transform.localRotation = Quaternion.Euler(localEulerAngles);
+        effectInstance.transform.localScale = localScale;
     }
 }

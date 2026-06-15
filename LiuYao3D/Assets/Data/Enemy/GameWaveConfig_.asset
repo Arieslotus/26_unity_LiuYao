@@ -19,18 +19,33 @@ MonoBehaviour:
     enemies:
     - enemyDefinition: {fileID: 11400000, guid: 39490ca5bd1f92749853317415a69ac0, type: 2}
       count: 2
-      spawnPointId: 1
+      spawnPointId: 11
+    - enemyDefinition: {fileID: 11400000, guid: 39490ca5bd1f92749853317415a69ac0, type: 2}
+      count: 2
+      spawnPointId: 12
   - waveName: w2
     spawnAtRound: 0
     spawnWhenPreviousWaveCleared: 1
     enemies:
     - enemyDefinition: {fileID: 11400000, guid: af281acf6d74d814d83c1c8eb298dda4, type: 2}
       count: 1
-      spawnPointId: 2
+      spawnPointId: 21
+    - enemyDefinition: {fileID: 11400000, guid: af281acf6d74d814d83c1c8eb298dda4, type: 2}
+      count: 1
+      spawnPointId: 22
+    - enemyDefinition: {fileID: 11400000, guid: af281acf6d74d814d83c1c8eb298dda4, type: 2}
+      count: 1
+      spawnPointId: 23
   - waveName: w3
     spawnAtRound: 0
     spawnWhenPreviousWaveCleared: 1
     enemies:
     - enemyDefinition: {fileID: 11400000, guid: 4602ca3f93dc90e4bb122f27d16ced84, type: 2}
       count: 1
-      spawnPointId: 3
+      spawnPointId: 31
+    - enemyDefinition: {fileID: 11400000, guid: 4602ca3f93dc90e4bb122f27d16ced84, type: 2}
+      count: 1
+      spawnPointId: 32
+    - enemyDefinition: {fileID: 11400000, guid: 4602ca3f93dc90e4bb122f27d16ced84, type: 2}
+      count: 1
+      spawnPointId: 33
