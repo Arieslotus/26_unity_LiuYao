@@ -10,11 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 87626918519eb774ebc5c63acd4c4e1e, type: 3}
-  m_Name: "\u5DFD\u9707"
+  m_Name: "\u5355-\u4E7E"
   m_EditorClassIdentifier: 
-  coinName: "\u5DFD\u9707"
-  frontTrigram: 8
-  backTrigram: 3
-  frontSprite: {fileID: 1348284163, guid: 87c92e4751a209e4a9d750d2da379c20, type: 3}
-  backSprite: {fileID: 1494382362, guid: 87c92e4751a209e4a9d750d2da379c20, type: 3}
-  coinMaterial: {fileID: 2100000, guid: f8657b52c20ca7745a0f6c2e91c401df, type: 2}
+  coinName: "\u4E7E"
+  coinType: 1
+  maxLoss: 5
+  attack: 10
+  frontTrigram: 1
+  backTrigram: 1
+  frontSprite: {fileID: -1472473745, guid: ff0f39d4c1714864fa14de5517df396f, type: 3}
+  backSprite: {fileID: -1472473745, guid: ff0f39d4c1714864fa14de5517df396f, type: 3}
+  coinMaterial: {fileID: 0}

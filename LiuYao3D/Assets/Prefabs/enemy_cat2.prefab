@@ -520,7 +520,7 @@ MonoBehaviour:
   attackVisualizer: {fileID: 2482197889585580137}
   healthBar: {fileID: 6256853092040352585}
   stats: {fileID: 442937982695446080}
-  debugLog: 1
+  debugLog: 0
 --- !u!114 &7183502862984499947
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -540,7 +540,7 @@ MonoBehaviour:
   trigramVisualDatabase: {fileID: 11400000, guid: aa5e006d743655146a8784d45401fdad, type: 2}
   shieldImage: {fileID: 5371242757096320055}
   deactivateShieldImageObjectWhenHidden: 0
-  debugLog: 1
+  debugLog: 0
 --- !u!114 &4083943333236524209
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -567,7 +567,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   definition: {fileID: 11400000, guid: af281acf6d74d814d83c1c8eb298dda4, type: 2}
-  debugLog: 1
+  debugLog: 0
 --- !u!1001 &7834080318899190117
 PrefabInstance:
   m_ObjectHideFlags: 0

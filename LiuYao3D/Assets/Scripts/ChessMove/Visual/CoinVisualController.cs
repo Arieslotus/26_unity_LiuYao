@@ -42,20 +42,13 @@ public class CoinVisualController : MonoBehaviour
     private Coroutine flipCoroutine;
     private Action pendingFlipComplete;
     private CoinDefinition currentDefinition;
+    private bool hasInitializedBaseTransform;
 
     public bool IsFlipAnimating => flipCoroutine != null;
 
     private void Awake()
     {
-        baseScale = transform.localScale;
-        if (baseScale.sqrMagnitude <= 0.0001f)
-        {
-            Debug.LogWarning($"[CoinVisual] {name} 的初始缩放为 0，已自动恢复为 Vector3.one。请检查 Prefab 的 Visual 节点缩放。");
-            baseScale = Vector3.one;
-            transform.localScale = baseScale;
-        }
-
-        baseRotation = transform.localRotation;
+        EnsureBaseTransformInitialized();
 
         RefreshTransformVisual();
         ApplyFaceRotationImmediate();
@@ -65,6 +58,7 @@ public class CoinVisualController : MonoBehaviour
 
     public void SetFaceImmediate(bool isFront, CoinDefinition definition)
     {
+        EnsureBaseTransformInitialized();
         StopFlipAnimationInternal(false);
 
         isFrontSide = isFront;
@@ -77,6 +71,7 @@ public class CoinVisualController : MonoBehaviour
 
     public void PlayFlipToFace(bool isFront, CoinDefinition definition, Action onComplete = null)
     {
+        EnsureBaseTransformInitialized();
         StopFlipAnimationInternal(false);
 
         bool previousFace = isFrontSide;
@@ -92,6 +87,7 @@ public class CoinVisualController : MonoBehaviour
 
     public void CancelFlipAndSetFace(bool isFront, CoinDefinition definition)
     {
+        EnsureBaseTransformInitialized();
         StopFlipAnimationInternal(false);
 
         isFrontSide = isFront;
@@ -161,12 +157,31 @@ public class CoinVisualController : MonoBehaviour
 
     private void RefreshTransformVisual()
     {
+        EnsureBaseTransformInitialized();
         transform.localScale = baseScale;
     }
 
     private void ApplyFaceRotationImmediate()
     {
+        EnsureBaseTransformInitialized();
         transform.localRotation = GetFaceRotation(isFrontSide);
+    }
+
+    private void EnsureBaseTransformInitialized()
+    {
+        if (hasInitializedBaseTransform && baseScale.sqrMagnitude > 0.0001f)
+            return;
+
+        baseScale = transform.localScale;
+        if (baseScale.sqrMagnitude <= 0.0001f)
+        {
+            Debug.LogWarning($"[CoinVisual] {name} 的 Visual 缩放为 0，已自动恢复为 Vector3.one。请检查 Prefab 的 Visual 节点缩放。");
+            baseScale = Vector3.one;
+            transform.localScale = baseScale;
+        }
+
+        baseRotation = transform.localRotation;
+        hasInitializedBaseTransform = true;
     }
 
     private Quaternion GetFaceRotation(bool frontSide)

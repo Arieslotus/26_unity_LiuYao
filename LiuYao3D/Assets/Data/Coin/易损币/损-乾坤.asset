@@ -10,9 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 87626918519eb774ebc5c63acd4c4e1e, type: 3}
-  m_Name: "\u4E7E\u5764"
+  m_Name: "\u635F-\u4E7E\u5764"
   m_EditorClassIdentifier: 
-  coinName: "\u4E7E\u5764"
+  coinName: "\u4E7E\u5764\xB7\u635F"
+  coinType: 2
+  maxLoss: 3
+  attack: 20
   frontTrigram: 1
   backTrigram: 2
   frontSprite: {fileID: -1472473745, guid: ff0f39d4c1714864fa14de5517df396f, type: 3}

@@ -335,10 +335,19 @@ public class GameFlowController : MonoBehaviour
             return;
         }
 
-        if (coins.Count > 0 && aliveCoinCount <= 0)
+        if (coins.Count > 0 && aliveCoinCount <= 0 && !HasRecoverableCoinFromRoster())
         {
             EndGame(false);
         }
+    }
+
+    private bool HasRecoverableCoinFromRoster()
+    {
+        CoinRosterManager rosterManager = CoinRosterManager.Instance != null
+            ? CoinRosterManager.Instance
+            : FindObjectOfType<CoinRosterManager>();
+
+        return rosterManager != null && rosterManager.HasRecoverableCoin();
     }
 
     private int CountAliveEnemies()

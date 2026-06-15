@@ -142,6 +142,12 @@ public class CoinRuntimeData : MonoBehaviour
     {
         coinDefinition = definition;
 
+        CoinStats stats = GetComponent<CoinStats>();
+        if (stats != null)
+        {
+            stats.ApplyCoinDefinition(definition, true);
+        }
+
         if (refreshVisual)
         {
             RefreshVisualImmediate();

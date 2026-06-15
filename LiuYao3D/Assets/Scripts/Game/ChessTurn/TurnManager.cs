@@ -31,10 +31,12 @@ public class TurnManager : MonoBehaviour
 
     private bool isEnemyTurnRunning = false;
     private bool hasStartedGameFlow = false;
+    private int roundAdvancePauseCount;
     private int roundIndex = 0;
 
     public bool IsEnemyTurnRunning => isEnemyTurnRunning;
     public int RoundIndex => roundIndex;
+    public bool IsRoundAdvancePaused => roundAdvancePauseCount > 0;
 
     public event Action<int> RoundStarted;
     public event Action<int> RoundEnded;
@@ -80,6 +82,7 @@ public class TurnManager : MonoBehaviour
 
         hasStartedGameFlow = false;
         isEnemyTurnRunning = false;
+        roundAdvancePauseCount = 0;
         StopAllCoroutines();
 
         if (playerTurnController != null)
@@ -120,6 +123,25 @@ public class TurnManager : MonoBehaviour
         {
             Debug.Log($"[TurnManager] 注销敌人 | enemy:{enemy.name} | total:{enemies.Count}");
         }
+    }
+
+    public void PauseRoundAdvance(string reason)
+    {
+        roundAdvancePauseCount++;
+        Debug.Log($"[TurnManager] 暂停进入下一大回合 | reason:{reason} | count:{roundAdvancePauseCount} | round:{roundIndex}");
+    }
+
+    public void ResumeRoundAdvance(string reason)
+    {
+        if (roundAdvancePauseCount <= 0)
+        {
+            roundAdvancePauseCount = 0;
+            Debug.LogWarning($"[TurnManager] 恢复进入下一大回合被忽略：当前没有暂停请求 | reason:{reason} | round:{roundIndex}");
+            return;
+        }
+
+        roundAdvancePauseCount--;
+        Debug.Log($"[TurnManager] 恢复进入下一大回合 | reason:{reason} | count:{roundAdvancePauseCount} | round:{roundIndex}");
     }
 
     /// <summary>
@@ -253,6 +275,11 @@ public class TurnManager : MonoBehaviour
         if (roundStartDelay > 0f)
         {
             yield return new WaitForSeconds(roundStartDelay);
+        }
+
+        while (IsRoundAdvancePaused)
+        {
+            yield return null;
         }
 
         if (!hasStartedGameFlow)

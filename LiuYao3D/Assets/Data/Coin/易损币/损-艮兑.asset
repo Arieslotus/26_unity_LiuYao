@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 87626918519eb774ebc5c63acd4c4e1e, type: 3}
+  m_Name: "\u635F-\u826E\u5151"
+  m_EditorClassIdentifier: 
+  coinName: "\u826E\u5151\xB7\u635F"
+  coinType: 2
+  maxLoss: 3
+  attack: 20
+  frontTrigram: 4
+  backTrigram: 7
+  frontSprite: {fileID: 867352197, guid: 87c92e4751a209e4a9d750d2da379c20, type: 3}
+  backSprite: {fileID: -1310611075, guid: 87c92e4751a209e4a9d750d2da379c20, type: 3}
+  coinMaterial: {fileID: 2100000, guid: de1ed30d088fc974eb442b66872cc966, type: 2}

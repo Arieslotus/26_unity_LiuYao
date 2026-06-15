@@ -136,6 +136,10 @@ public class ChessTurnController : MonoBehaviour
         if (!piece.CanBeControlledThisTurn)
             return false;
 
+        CoinStats stats = piece.GetComponent<CoinStats>();
+        if (stats != null && stats.IsBroken)
+            return false;
+
         return true;
     }
 

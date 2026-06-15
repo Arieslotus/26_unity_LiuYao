@@ -18,10 +18,10 @@ MonoBehaviour:
     spawnWhenPreviousWaveCleared: 1
     enemies:
     - enemyDefinition: {fileID: 11400000, guid: 39490ca5bd1f92749853317415a69ac0, type: 2}
-      count: 2
+      count: 1
       spawnPointId: 11
     - enemyDefinition: {fileID: 11400000, guid: 39490ca5bd1f92749853317415a69ac0, type: 2}
-      count: 2
+      count: 1
       spawnPointId: 12
   - waveName: w2
     spawnAtRound: 0

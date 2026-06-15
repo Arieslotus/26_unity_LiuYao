@@ -143,6 +143,10 @@ public class EnemyController : MonoBehaviour, IAttackable
             if (behaviour is not IAttackable attackable)
                 continue;
 
+            CoinStats coinStats = behaviour as CoinStats;
+            if (coinStats != null && coinStats.IsBroken)
+                continue;
+
             Transform targetTransform = attackable.GetTransform();
             if (targetTransform == null)
                 continue;

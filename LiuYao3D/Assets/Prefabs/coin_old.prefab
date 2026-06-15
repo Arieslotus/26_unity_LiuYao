@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: -712730972756406772}
   - component: {fileID: 6677214716383227977}
   - component: {fileID: 8310388233813179724}
+  - component: {fileID: 5490282523582284559}
   m_Layer: 0
   m_Name: coin_old
   m_TagString: Untagged
@@ -31,7 +32,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 430063222687883004}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.7071068, z: -0.7071068, w: 0}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0.99324936, y: 0, z: 0.64026874}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
@@ -128,11 +129,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b3f4ce8c13f9c0a4d8cd85b34bf2b25e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  visualRoot: {fileID: 1286252391834853940}
   flipDuration: 0.3
   flipAxis: 0
   flipAngle: 180
-  activeScaleMultiplier: 1.12
+  coinRenderer: {fileID: 0}
 --- !u!114 &6677214716383227977
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -145,8 +145,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0507b52c3fcd2bc48bc79fd268bed063, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  selfCollider: {fileID: 0}
+  selfSphereCollider: {fileID: 0}
   collisionConfig: {fileID: 11400000, guid: 78e29d0bfe33abe41b74588b672c8c88, type: 2}
   skillDatabase: {fileID: 0}
+  debugPhysicsBounceHits: 0
 --- !u!114 &8310388233813179724
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -161,9 +164,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   coinDefinition: {fileID: 0}
   startFrontSide: 1
-  maxHp: 10
-  currentHp: 10
+--- !u!114 &5490282523582284559
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 430063222687883004}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a59011fb96757fa4e864c907c8102385, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxLoss: 10
+  currentLoss: 0
+  operationLoss: 1
+  enemyCollisionLoss: 1
   attack: 1
+  debugLog: 1
 --- !u!1 &2760745976877608814
 GameObject:
   m_ObjectHideFlags: 0

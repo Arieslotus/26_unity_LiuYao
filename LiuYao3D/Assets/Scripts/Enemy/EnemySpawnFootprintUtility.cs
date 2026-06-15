@@ -37,9 +37,7 @@ public static class EnemySpawnFootprintUtility
 
     private static float GetColliderHorizontalRadius(Transform root, Collider collider)
     {
-        Vector3 center = GetWorldCenter(collider);
-        float centerOffset = GetFlatDistanceXZ(root.position, center);
-        return centerOffset + GetColliderHorizontalExtent(collider);
+        return GetColliderHorizontalExtent(collider);
     }
 
     private static Vector3 GetWorldCenter(Collider collider)
