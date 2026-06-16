@@ -37,11 +37,11 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _AlbedoGradientInetsity: 0.307
-    - _Brightness: 0.31
+    - _AlbedoGradientInetsity: 0.576
+    - _Brightness: 0.06
     - _BrushStrength: 0.599
     - _ChannelMask: 4
-    - _Contrast: 1.86
+    - _Contrast: 0.77
     - _DarkAlbedoIntensity: 0.199
     - _DarkGradientIntensity: 0.144
     - _DarkIntensity: 0.689
@@ -53,11 +53,11 @@ Material:
     - _GradientPower: 2.9
     - _GradientType: 0
     - _IsCustomizeDarkColor: 0
-    - _LightAlbedoIntensity: 0.681
+    - _LightAlbedoIntensity: 0.676
     - _LightGradientIntensity: 0.87
     - _LightIntensity: 1
     - _LightLightGradientIntensity: 0.967
-    - _OutlineWidth: 0.0508
+    - _OutlineWidth: 0.0278
     - _RadialStretchX: 0.1
     - _RadialStretchY: 0.1
     - _ScanlineOnOff: 0
