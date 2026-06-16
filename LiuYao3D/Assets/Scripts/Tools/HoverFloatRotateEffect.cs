@@ -1,7 +1,13 @@
 /// <summary>
-/// 实现功能：为 3D 展示物体提供鼠标悬停上浮与旋转表现，可复用于背包、奖励、商店等模型预览。
+/// 实现功能：为 3D 展示物体提供鼠标悬停上浮与旋转表现，可选择按世界坐标或目标自身坐标解释位移方向。
 /// </summary>
 using UnityEngine;
+
+public enum HoverDirectionSpace
+{
+    Local,
+    World
+}
 
 public class HoverFloatRotateEffect : MonoBehaviour
 {
@@ -10,8 +16,11 @@ public class HoverFloatRotateEffect : MonoBehaviour
     [SerializeField] private Transform target;
 
     [Header("悬停位移")]
-    [Tooltip("悬停时位移方向，使用目标本地空间。")]
-    [SerializeField] private Vector3 hoverLocalDirection = Vector3.up;
+    [Tooltip("悬停时位移所使用的方向空间。")]
+    [SerializeField] private HoverDirectionSpace hoverDirectionSpace = HoverDirectionSpace.World;
+
+    [Tooltip("悬停时位移方向。")]
+    [SerializeField] private Vector3 hoverDirection = Vector3.up;
 
     [Tooltip("悬停时沿方向移动的距离。")]
     [Min(0f)]
@@ -78,10 +87,7 @@ public class HoverFloatRotateEffect : MonoBehaviour
 
     private void UpdatePosition()
     {
-        Vector3 direction = hoverLocalDirection.sqrMagnitude > 0.0001f
-            ? hoverLocalDirection.normalized
-            : Vector3.up;
-
+        Vector3 direction = GetHoverDirection();
         Vector3 targetPosition = baseLocalPosition + direction * (hovered ? hoverDistance : 0f);
         target.localPosition = Vector3.Lerp(
             target.localPosition,
@@ -110,5 +116,22 @@ public class HoverFloatRotateEffect : MonoBehaviour
                 Mathf.Clamp01(moveSpeed * Time.deltaTime)
             );
         }
+    }
+
+    private Vector3 GetHoverDirection()
+    {
+        Vector3 direction = hoverDirection.sqrMagnitude > 0.0001f
+            ? hoverDirection.normalized
+            : Vector3.up;
+
+        if (hoverDirectionSpace == HoverDirectionSpace.World)
+        {
+            Transform parent = target != null ? target.parent : null;
+            return parent != null
+                ? parent.InverseTransformDirection(direction).normalized
+                : direction;
+        }
+
+        return direction;
     }
 }

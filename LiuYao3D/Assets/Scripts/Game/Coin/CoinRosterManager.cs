@@ -40,6 +40,7 @@ public class CoinRosterManager : MonoBehaviour
 
     public event Action<IReadOnlyList<ChessPiece>, IReadOnlyList<CoinDefinition>> ReplacementSelectionRequested;
     public event Action<ChessPiece, CoinDefinition> CoinReplaced;
+    public event Action InventoryChanged;
 
     private void Awake()
     {
@@ -186,6 +187,7 @@ public class CoinRosterManager : MonoBehaviour
         }
 
         CoinReplaced?.Invoke(slot, replacement);
+        InventoryChanged?.Invoke();
 
         if (debugLog)
         {
@@ -223,6 +225,8 @@ public class CoinRosterManager : MonoBehaviour
             Debug.Log($"[CoinRosterManager] 销毁破裂槽位 | slot:{slot.name} | pending:{pendingBrokenSlots.Count} | slots:{coinSlots.Count}");
         }
 
+        InventoryChanged?.Invoke();
+
         return true;
     }
 
@@ -232,6 +236,7 @@ public class CoinRosterManager : MonoBehaviour
             return;
 
         inventoryCoins.Add(definition);
+        InventoryChanged?.Invoke();
     }
 
     private void SubscribeTurnManager()

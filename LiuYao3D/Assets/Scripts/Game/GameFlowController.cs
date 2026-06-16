@@ -45,10 +45,12 @@ public class GameFlowController : MonoBehaviour
     private GameFlowState state = GameFlowState.WaitingToStart;
     private bool? lastGameResult;
     private bool hasSubscribedTargets;
+    private int gameplayInputLockCount;
 
     public GameFlowState State => state;
     public bool IsGameplayActive => state == GameFlowState.Playing;
-    public bool CanAcceptGameplayInput => state == GameFlowState.Playing;
+    public bool CanAcceptGameplayInput => state == GameFlowState.Playing && gameplayInputLockCount <= 0;
+    public bool IsGameplayInputLocked => gameplayInputLockCount > 0;
     public bool HasGameEnded => state == GameFlowState.Ended;
     public bool? LastGameResult => lastGameResult;
 
@@ -177,6 +179,46 @@ public class GameFlowController : MonoBehaviour
         if (debugLog)
         {
             Debug.Log($"[GameFlowController] 注册动态敌人 | object:{name} | enemy:{enemy.name} | enemies:{enemies.Count}");
+        }
+    }
+
+    public void LockGameplayInput(string reason)
+    {
+        gameplayInputLockCount++;
+
+        if (debugLog)
+        {
+            Debug.Log($"[GameFlowController] 锁定游戏输入 | object:{name} | reason:{reason} | count:{gameplayInputLockCount}");
+        }
+    }
+
+    public void UnlockGameplayInput(string reason)
+    {
+        if (gameplayInputLockCount <= 0)
+        {
+            gameplayInputLockCount = 0;
+            Debug.LogWarning($"[GameFlowController] 解除游戏输入锁被忽略：当前没有锁定请求 | object:{name} | reason:{reason}");
+            return;
+        }
+
+        gameplayInputLockCount--;
+
+        if (debugLog)
+        {
+            Debug.Log($"[GameFlowController] 解除游戏输入锁 | object:{name} | reason:{reason} | count:{gameplayInputLockCount}");
+        }
+    }
+
+    public void ClearGameplayInputLocks(string reason)
+    {
+        if (gameplayInputLockCount <= 0)
+            return;
+
+        gameplayInputLockCount = 0;
+
+        if (debugLog)
+        {
+            Debug.Log($"[GameFlowController] 清空游戏输入锁 | object:{name} | reason:{reason}");
         }
     }
 

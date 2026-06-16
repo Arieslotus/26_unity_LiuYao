@@ -1,18 +1,18 @@
 /// <summary>
-/// 实现功能：展示一枚可替换硬币的 3D 模型，并处理点击选中与放大反馈。
+/// 实现功能：展示一枚硬币的 3D 模型，并处理选中缩放与 hover 表现。
 /// </summary>
 using UnityEngine;
 
 public class CoinReplacementModelItem : MonoBehaviour
 {
     [Header("显示")]
-    [Tooltip("用于展示硬币材质的 Renderer。为空时会自动查找子物体 Renderer。")]
+    [Tooltip("用于展示硬币材质的 Renderer。为空时自动查找子物体 Renderer。")]
     [SerializeField] private Renderer coinRenderer;
 
     [Tooltip("执行选中缩放的根节点。为空时使用当前物体。")]
     [SerializeField] private Transform scaleRoot;
 
-    [Tooltip("鼠标悬停时的上浮旋转效果。为空时会自动查找子物体。")]
+    [Tooltip("鼠标悬停时的上浮旋转效果。为空时自动查找子物体。")]
     [SerializeField] private HoverFloatRotateEffect hoverEffect;
 
     [Header("选中反馈")]
@@ -22,12 +22,13 @@ public class CoinReplacementModelItem : MonoBehaviour
     [Header("调试")]
     [SerializeField] private bool debugLog;
 
-    private CoinReplacementPanel owner;
     private CoinDefinition definition;
     private bool selected;
+    private Vector3 targetLocalPosition;
 
     public CoinDefinition Definition => definition;
     public bool Selected => selected;
+    public Vector3 TargetLocalPosition => targetLocalPosition;
 
     private void Awake()
     {
@@ -49,18 +50,17 @@ public class CoinReplacementModelItem : MonoBehaviour
         ApplySelectedState(false);
     }
 
-    public void Bind(CoinReplacementPanel ownerPanel, CoinDefinition coinDefinition)
+    public void Bind(CoinDefinition coinDefinition)
     {
-        owner = ownerPanel;
         definition = coinDefinition;
-
+        targetLocalPosition = transform.localPosition;
         ApplyDefinitionVisual();
         ApplySelectedState(false);
 
         if (debugLog)
         {
             Debug.Log(
-                $"[CoinReplacementModelItem] 绑定替换硬币模型 | object:{name} | " +
+                $"[CoinReplacementModelItem] 绑定硬币模型 | object:{name} | " +
                 $"coin:{(definition != null ? definition.coinName : "空")}"
             );
         }
