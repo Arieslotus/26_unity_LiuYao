@@ -148,7 +148,7 @@ public class CoinTurnInfoItem : MonoBehaviour
         if (currentStats != null)
         {
             if (attackText != null)
-            attackText.text = $"攻击:{CoinDamageCalculator.Calculate(currentStats)}";
+                RefreshAttack();
             currentStats.LossChanged -= OnLossChanged;
             currentStats.Broken -= OnBroken;
             currentStats.LossChanged += OnLossChanged;
@@ -178,6 +178,7 @@ public class CoinTurnInfoItem : MonoBehaviour
 
         subscribedRoundEffectManager.DamageModifierStarted += OnDamageModifierChanged;
         subscribedRoundEffectManager.DamageModifierEnded += OnDamageModifierChanged;
+        subscribedRoundEffectManager.RuntimeEffectsChanged += OnRuntimeEffectsChanged;
     }
 
     private void UnsubscribeRoundEffectManager()
@@ -187,6 +188,7 @@ public class CoinTurnInfoItem : MonoBehaviour
 
         subscribedRoundEffectManager.DamageModifierStarted -= OnDamageModifierChanged;
         subscribedRoundEffectManager.DamageModifierEnded -= OnDamageModifierChanged;
+        subscribedRoundEffectManager.RuntimeEffectsChanged -= OnRuntimeEffectsChanged;
         subscribedRoundEffectManager = null;
     }
 
@@ -195,15 +197,22 @@ public class CoinTurnInfoItem : MonoBehaviour
         RefreshAttack();
     }
 
+    private void OnRuntimeEffectsChanged()
+    {
+        RefreshAttack();
+    }
+
     private void OnLossChanged(int currentLoss, int maxLoss)
     {
         RefreshLossDisplay(currentLoss, maxLoss);
+        RefreshAttack();
     }
 
     private void OnBroken()
     {
         isBrokenThisRound = true;
         RefreshBrokenState();
+        RefreshAttack();
     }
 
     public void ClearRoundState()
@@ -231,11 +240,6 @@ public class CoinTurnInfoItem : MonoBehaviour
             return;
 
         attackText.gameObject.SetActive(currentStats != null);
-        if (currentStats != null)
-        {
-            attackText.text = $"攻击:{currentStats.Attack}";
-        }
-
         if (currentStats != null)
         {
             attackText.text = $"攻击:{CoinDamageCalculator.Calculate(currentStats)}";

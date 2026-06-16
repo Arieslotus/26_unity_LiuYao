@@ -1,11 +1,27 @@
 /// <summary>
 /// 实现功能：监听游戏结束事件，显示结算 UI 根物体、设置胜负结果，并自动播放根物体上的 Animator/Animation。
 /// </summary>
+using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class GameEndUIController : MonoBehaviour
 {
+    [Serializable]
+    private sealed class ResultImageEntry
+    {
+        [Tooltip("endUiRoot 下需要根据胜负切换图片的 Image。")]
+        public Image image;
+
+        [Tooltip("胜利时显示的图片。")]
+        public Sprite victorySprite;
+
+        [Tooltip("失败时显示的图片。")]
+        public Sprite defeatSprite;
+    }
+
     [Header("流程引用")]
     [Tooltip("游戏流程控制器。为空时自动使用 GameFlowController.Instance。")]
     [SerializeField] private GameFlowController flowController;
@@ -23,6 +39,9 @@ public class GameEndUIController : MonoBehaviour
     [Tooltip("场景内结算 UI 的结果面板。为空时会尝试从结算 UI 根物体下自动获取。")]
     [SerializeField] private GameEndPopup endPopup;
 
+    [Tooltip("endUiRoot 下需要根据胜负动态替换的 Image。")]
+    [SerializeField] private List<ResultImageEntry> resultImages = new List<ResultImageEntry>();
+
     [Tooltip("可选：没有场景结算 UI 时打开这个结算弹窗。")]
     [SerializeField] private GameEndPopup gameEndPopupPrefab;
 
@@ -38,6 +57,7 @@ public class GameEndUIController : MonoBehaviour
 
     private bool hasSubscribed;
     private Coroutine endCoroutine;
+    private GameEndPopup[] sceneEndPopups = new GameEndPopup[0];
 
     private void Awake()
     {
@@ -116,10 +136,8 @@ public class GameEndUIController : MonoBehaviour
 
         ResolveEndPopupFromSceneUI();
 
-        if (endPopup != null)
-        {
-            endPopup.SetResult(isVictory);
-        }
+        ApplyResultImages(isVictory);
+        ApplyResultToSceneEndPopups(isVictory);
 
         bool hasSceneEndUI = endUiRoot != null;
         bool played = false;
@@ -182,10 +200,57 @@ public class GameEndUIController : MonoBehaviour
 
     private void ResolveEndPopupFromSceneUI()
     {
-        if (endPopup != null || endUiRoot == null)
+        if (endUiRoot == null)
             return;
 
-        endPopup = endUiRoot.GetComponentInChildren<GameEndPopup>(true);
+        sceneEndPopups = endUiRoot.GetComponentsInChildren<GameEndPopup>(true);
+        if (endPopup == null && sceneEndPopups.Length > 0)
+        {
+            endPopup = sceneEndPopups[0];
+        }
+    }
+
+    private void ApplyResultToSceneEndPopups(bool isVictory)
+    {
+        bool appliedAny = false;
+
+        if (sceneEndPopups != null)
+        {
+            for (int i = 0; i < sceneEndPopups.Length; i++)
+            {
+                GameEndPopup popup = sceneEndPopups[i];
+                if (popup == null)
+                    continue;
+
+                popup.SetResult(isVictory);
+                appliedAny = true;
+            }
+        }
+
+        if (!appliedAny && endPopup != null)
+        {
+            endPopup.SetResult(isVictory);
+        }
+    }
+
+    private void ApplyResultImages(bool isVictory)
+    {
+        for (int i = 0; i < resultImages.Count; i++)
+        {
+            ResultImageEntry entry = resultImages[i];
+            if (entry == null || entry.image == null)
+                continue;
+
+            Sprite resultSprite = isVictory ? entry.victorySprite : entry.defeatSprite;
+            if (resultSprite == null)
+            {
+                Debug.LogWarning(
+                    $"[GameEndUIController] 未配置 {(isVictory ? "胜利" : "失败")} 结算图片 | object:{name} | image:{entry.image.name}");
+            }
+
+            entry.image.sprite = resultSprite;
+            entry.image.enabled = resultSprite != null;
+        }
     }
 
     private void ResolveFlowController()

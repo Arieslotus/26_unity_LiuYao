@@ -1,5 +1,5 @@
 /// <summary>
-/// 实现功能：管理单个敌人的属性护盾生成、显示与被技能冲击波破除。
+/// 实现功能：管理单个敌人的属性护盾生成、显示、减伤与破盾值累计。
 /// </summary>
 using System.Collections.Generic;
 using UnityEngine;
@@ -22,6 +22,9 @@ public class EnemyShieldController : MonoBehaviour
     [Tooltip("护盾属性循环列表。每次成功生成护盾时按顺序取下一个属性。")]
     [SerializeField] private List<TrigramType> shieldCycle = new List<TrigramType>();
 
+    [Tooltip("护盾破盾值规则。未配置时使用默认规则：同属性 3 点，其他属性 1 点，累计 3 点破盾。")]
+    [SerializeField] private EnemyShieldBreakConfigSO shieldBreakConfig;
+
     [Header("可视化")]
     [Tooltip("不同卦象对应的通用视觉资源配置。护盾会使用其中的 Sprite。")]
     [SerializeField] private TrigramVisualDatabase trigramVisualDatabase;
@@ -37,6 +40,7 @@ public class EnemyShieldController : MonoBehaviour
 
     private int passedRounds;
     private int nextShieldIndex;
+    private int currentBreakValue;
     private bool hasShield;
     private TrigramType currentShieldType = TrigramType.None;
     private TurnManager subscribedTurnManager;
@@ -44,6 +48,8 @@ public class EnemyShieldController : MonoBehaviour
 
     public bool HasShield => hasShield;
     public TrigramType CurrentShieldType => currentShieldType;
+    public int CurrentBreakValue => currentBreakValue;
+    public int RequiredBreakValue => GetRequiredBreakValue();
     public float DamageReductionPercent => hasShield ? damageReductionPercent : 0f;
 
     public int ModifyIncomingDamage(int rawDamage)
@@ -71,10 +77,40 @@ public class EnemyShieldController : MonoBehaviour
 
     public bool TryBreakShield(TrigramType trigram, string sourceName)
     {
+        return TryApplyShieldBreak(trigram, sourceName);
+    }
+
+    public bool TryApplyShieldBreak(TrigramType trigram, string sourceName)
+    {
         if (!hasShield)
             return false;
 
-        if (trigram == TrigramType.None || trigram != currentShieldType)
+        int addValue = GetBreakValue(trigram);
+        int requiredValue = GetRequiredBreakValue();
+        if (addValue <= 0)
+        {
+            if (debugLog)
+            {
+                Debug.Log(
+                    $"[EnemyShieldController] 破盾值未增加 | enemy:{name} | shield:{currentShieldType} | " +
+                    $"trigger:{trigram} | progress:{currentBreakValue}/{requiredValue} | source:{sourceName}"
+                );
+            }
+
+            return false;
+        }
+
+        currentBreakValue = Mathf.Min(requiredValue, currentBreakValue + addValue);
+
+        if (debugLog)
+        {
+            Debug.Log(
+                $"[EnemyShieldController] 破盾值累计 | enemy:{name} | shield:{currentShieldType} | " +
+                $"trigger:{trigram} | add:{addValue} | progress:{currentBreakValue}/{requiredValue} | source:{sourceName}"
+            );
+        }
+
+        if (currentBreakValue < requiredValue)
             return false;
 
         BreakShield(trigram, sourceName);
@@ -225,6 +261,7 @@ public class EnemyShieldController : MonoBehaviour
 
         hasShield = true;
         currentShieldType = shieldType;
+        currentBreakValue = 0;
         ShowShieldVisual(shieldType);
 
         if (debugLog)
@@ -238,16 +275,14 @@ public class EnemyShieldController : MonoBehaviour
         if (!hasShield)
             return;
 
-        if (waveType != currentShieldType)
-            return;
-
-        BreakShield(waveType, "技能冲击波");
+        TryApplyShieldBreak(waveType, "技能冲击波");
     }
 
     private void BreakShield(TrigramType triggerType, string sourceName)
     {
         hasShield = false;
         currentShieldType = TrigramType.None;
+        currentBreakValue = 0;
         HideShieldVisual();
 
         if (debugLog)
@@ -319,5 +354,21 @@ public class EnemyShieldController : MonoBehaviour
             return;
 
         shieldImage = GetComponentInChildren<Image>(true);
+    }
+
+    private int GetRequiredBreakValue()
+    {
+        return shieldBreakConfig != null ? shieldBreakConfig.RequiredBreakValue : 3;
+    }
+
+    private int GetBreakValue(TrigramType trigram)
+    {
+        if (shieldBreakConfig != null)
+            return shieldBreakConfig.GetBreakValue(currentShieldType, trigram);
+
+        if (currentShieldType == TrigramType.None || trigram == TrigramType.None)
+            return 0;
+
+        return trigram == currentShieldType ? 3 : 1;
     }
 }

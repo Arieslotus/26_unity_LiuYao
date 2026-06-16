@@ -2,6 +2,7 @@
 /// 实现功能：提供战斗技能表现事件，解耦碰撞逻辑、UI、音效与特效等表现系统。
 /// </summary>
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public static class CombatSkillEvents
@@ -32,6 +33,8 @@ public static class CombatVfxEvents
     public static event Action<ChessPiece, EnemyStats, Vector3> CoinEnemyCollisionRequested;
     public static event Action<EnemyStats, int, Vector3> EnemyDamagedRequested;
     public static event Action<CoinStats, int, CoinLossCause, Vector3> CoinDamagedRequested;
+    public static event Action<CoinStats, int, Vector3> CoinHealedRequested;
+    public static event Action<int, IReadOnlyList<CoinStats>, int> DamageModifierAddedRequested;
 
     public static void RequestCoinCollision(ChessPiece activePiece, ChessPiece passivePiece, Vector3 hitPoint)
     {
@@ -63,5 +66,21 @@ public static class CombatVfxEvents
             return;
 
         CoinDamagedRequested?.Invoke(coin, loss, cause, hitPoint);
+    }
+
+    public static void RequestCoinHealed(CoinStats coin, int reduceLoss, Vector3 hitPoint)
+    {
+        if (coin == null || reduceLoss <= 0)
+            return;
+
+        CoinHealedRequested?.Invoke(coin, reduceLoss, hitPoint);
+    }
+
+    public static void RequestDamageModifierAdded(int modifierId, IReadOnlyList<CoinStats> targets, int activateAfterRounds)
+    {
+        if (modifierId <= 0 || targets == null || targets.Count <= 0)
+            return;
+
+        DamageModifierAddedRequested?.Invoke(modifierId, targets, activateAfterRounds);
     }
 }

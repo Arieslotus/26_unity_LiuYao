@@ -683,6 +683,11 @@ public class CoinRoundEffectManager : MonoBehaviour
             );
         }
 
+        CombatVfxEvents.RequestDamageModifierAdded(
+            modifier.id,
+            modifier.targets ?? FindAllActiveCoins(),
+            activateAfterRounds);
+
         NotifyRuntimeEffectsChanged();
         return modifier.id;
     }
@@ -1154,6 +1159,23 @@ public class CoinRoundEffectManager : MonoBehaviour
                 continue;
 
             result.Add(target);
+        }
+
+        return result;
+    }
+
+    private static List<CoinStats> FindAllActiveCoins()
+    {
+        CoinStats[] coins = FindObjectsOfType<CoinStats>();
+        List<CoinStats> result = new List<CoinStats>();
+
+        for (int i = 0; i < coins.Length; i++)
+        {
+            CoinStats coin = coins[i];
+            if (coin == null || coin.IsBroken || result.Contains(coin))
+                continue;
+
+            result.Add(coin);
         }
 
         return result;

@@ -131,7 +131,7 @@ public class CoinRosterManager : MonoBehaviour
         for (int i = 0; i < coinSlots.Count; i++)
         {
             CoinStats stats = GetStats(coinSlots[i]);
-            if (stats != null && !stats.IsBroken)
+            if (stats != null && !stats.IsBroken && !stats.IsPendingBreak)
                 return true;
         }
 
@@ -301,8 +301,6 @@ public class CoinRosterManager : MonoBehaviour
                 Debug.Log($"[CoinRosterManager] 记录破裂槽位 | slot:{slot.name} | pending:{pendingBrokenSlots.Count}");
             }
         }
-
-        TryEndPlayerTurnIfAllCoinsBroken();
     }
 
     private void OnRoundEnded(int roundIndex)
@@ -339,23 +337,6 @@ public class CoinRosterManager : MonoBehaviour
         }
 
         ReplacementSelectionRequested?.Invoke(pendingBrokenSlots, inventoryCoins);
-    }
-
-    private void TryEndPlayerTurnIfAllCoinsBroken()
-    {
-        if (HasAliveCoin())
-            return;
-
-        TurnManager turnManager = TurnManager.Instance;
-        if (turnManager == null || turnManager.currentState != TurnState.PlayerTurn || turnManager.IsEnemyTurnRunning)
-            return;
-
-        if (debugLog)
-        {
-            Debug.Log("[CoinRosterManager] 场上硬币全部破裂，直接结束玩家回合。");
-        }
-
-        turnManager.EndPlayerTurn();
     }
 
     private void RemoveInvalidPendingSlots()

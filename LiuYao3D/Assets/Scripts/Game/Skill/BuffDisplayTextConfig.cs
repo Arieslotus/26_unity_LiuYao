@@ -156,7 +156,7 @@ public sealed class BuffDisplayTextConfig : ScriptableObject
                 if (targets[i] == null)
                     continue;
 
-                names.Add(targets[i].name);
+                names.Add(GetCoinDisplayName(targets[i]));
             }
 
             if (names.Count > 0)
@@ -164,9 +164,65 @@ public sealed class BuffDisplayTextConfig : ScriptableObject
         }
 
         if (fallbackTarget != null)
-            return fallbackTarget.name;
+            return GetCoinDisplayName(fallbackTarget);
 
         return globalTargetText;
+    }
+
+    private string GetCoinDisplayName(UnityObject target)
+    {
+        if (target == null)
+            return globalTargetText;
+
+        CoinDefinition definition = null;
+
+        CoinStats stats = target as CoinStats;
+        if (stats != null)
+        {
+            definition = stats.AppliedDefinition;
+            if (definition == null)
+            {
+                ChessPiece statsPiece = stats.GetComponent<ChessPiece>();
+                definition = statsPiece != null ? statsPiece.CoinDefinition : null;
+            }
+        }
+
+        ChessPiece piece = target as ChessPiece;
+        if (definition == null && piece != null)
+        {
+            definition = piece.CoinDefinition;
+        }
+
+        GameObject gameObject = target as GameObject;
+        if (definition == null && gameObject != null)
+        {
+            ChessPiece gameObjectPiece = gameObject.GetComponent<ChessPiece>();
+            definition = gameObjectPiece != null ? gameObjectPiece.CoinDefinition : null;
+
+            if (definition == null)
+            {
+                CoinStats gameObjectStats = gameObject.GetComponent<CoinStats>();
+                definition = gameObjectStats != null ? gameObjectStats.AppliedDefinition : null;
+            }
+        }
+
+        Component component = target as Component;
+        if (definition == null && component != null)
+        {
+            ChessPiece componentPiece = component.GetComponent<ChessPiece>();
+            definition = componentPiece != null ? componentPiece.CoinDefinition : null;
+
+            if (definition == null)
+            {
+                CoinStats componentStats = component.GetComponent<CoinStats>();
+                definition = componentStats != null ? componentStats.AppliedDefinition : null;
+            }
+        }
+
+        if (definition != null && !string.IsNullOrWhiteSpace(definition.coinName))
+            return definition.coinName;
+
+        return target.name;
     }
 
     private string FormatDuration(int durationRounds)

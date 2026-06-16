@@ -1,5 +1,5 @@
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -14,9 +14,9 @@ public class ChessTurnController : MonoBehaviour
     [SerializeField] private DragChargeInput input;
 
     private int currentIndex = -1;
-    private bool hasFiredCurrent = false;
-    private bool isPlayerRoundActive = false;
-    private bool hasEndedPlayerRound = false;
+    private bool hasFiredCurrent;
+    private bool isPlayerRoundActive;
+    private bool hasEndedPlayerRound;
     private TrigramType currentPieceActionStartTrigram = TrigramType.None;
 
     public ChessPiece CurrentPiece =>
@@ -33,35 +33,28 @@ public class ChessTurnController : MonoBehaviour
     {
         if (pieces.Count == 0)
         {
-            Debug.LogError("[ChessTurnController] 没有配置棋子列表！");
+            Debug.LogError("[ChessTurnController] 没有配置棋子列表。");
         }
     }
 
     private void Update()
     {
-        if (!IsInPlayerTurn())
+        if (!IsInPlayerTurn() || !isPlayerRoundActive)
             return;
 
-        if (!isPlayerRoundActive)
+        if (!hasFiredCurrent || (CurrentPiece != null && CurrentPiece.IsMoving))
             return;
 
-        if (hasFiredCurrent && (CurrentPiece == null || !CurrentPiece.IsMoving))
-        {
-            Debug.Log($"[ChessTurnController] 棋子 {currentIndex} 已完成行动，准备切换。");
-            NotifyPieceActionResolved();
-            AdvanceToNextControllablePiece();
-        }
+        ResolveCurrentPiecePendingBreak();
+
+        Debug.Log($"[ChessTurnController] 棋子 {currentIndex} 已完成行动，准备切换。");
+        NotifyPieceActionResolved();
+        AdvanceToNextControllablePiece();
     }
 
     public void NotifyPieceFired()
     {
-        if (!IsInPlayerTurn())
-            return;
-
-        if (!isPlayerRoundActive)
-            return;
-
-        if (CurrentPiece == null)
+        if (!IsInPlayerTurn() || !isPlayerRoundActive || CurrentPiece == null)
             return;
 
         hasFiredCurrent = true;
@@ -80,7 +73,7 @@ public class ChessTurnController : MonoBehaviour
 
         if (pieces.Count == 0)
         {
-            Debug.LogError("[ChessTurnController] 没有配置棋子列表，无法开始玩家新回合！");
+            Debug.LogError("[ChessTurnController] 没有配置棋子列表，无法开始玩家新回合。");
             return;
         }
 
@@ -103,10 +96,23 @@ public class ChessTurnController : MonoBehaviour
         EnterPieceControl(firstIndex);
     }
 
+    public void ForceStopPlayerRound()
+    {
+        isPlayerRoundActive = false;
+        hasEndedPlayerRound = true;
+        hasFiredCurrent = false;
+
+        ExitCurrentPieceControl();
+        currentIndex = -1;
+        RefreshAllHighlights();
+        NotifyCurrentPieceChanged();
+
+        Debug.Log("[ChessTurnController] 强制停止玩家回合，已清空当前控制棋子。");
+    }
+
     private void AdvanceToNextControllablePiece()
     {
         int nextIndex = FindNextControllablePieceIndex(currentIndex + 1);
-
         if (nextIndex < 0)
         {
             Debug.Log("[ChessTurnController] 所有可操作棋子已完成行动。");
@@ -130,17 +136,27 @@ public class ChessTurnController : MonoBehaviour
 
     private bool IsPieceControllable(ChessPiece piece)
     {
-        if (piece == null)
-            return false;
-
-        if (!piece.CanBeControlledThisTurn)
+        if (piece == null || !piece.CanBeControlledThisTurn)
             return false;
 
         CoinStats stats = piece.GetComponent<CoinStats>();
-        if (stats != null && stats.IsBroken)
+        if (stats != null && (stats.IsBroken || stats.IsPendingBreak))
             return false;
 
         return true;
+    }
+
+    private void ResolveCurrentPiecePendingBreak()
+    {
+        ChessPiece piece = CurrentPiece;
+        if (piece == null)
+            return;
+
+        CoinStats stats = piece.GetComponent<CoinStats>();
+        if (stats == null || !stats.IsPendingBreak)
+            return;
+
+        stats.ResolvePendingBreak();
     }
 
     private void EnterPieceControl(int index)
@@ -175,7 +191,6 @@ public class ChessTurnController : MonoBehaviour
     private void ExitCurrentPieceControl()
     {
         ChessPiece oldPiece = CurrentPiece;
-
         if (oldPiece != null)
         {
             oldPiece.SetTurnHighlight(false);
@@ -226,23 +241,10 @@ public class ChessTurnController : MonoBehaviour
         }
     }
 
-    public void ForceStopPlayerRound()
-    {
-        isPlayerRoundActive = false;
-        hasEndedPlayerRound = true;
-        hasFiredCurrent = false;
-
-        ExitCurrentPieceControl();
-        currentIndex = -1;
-        RefreshAllHighlights();
-        NotifyCurrentPieceChanged();
-
-        Debug.Log("[ChessTurnController] 强制停止玩家回合，已清空当前控制棋子。");
-    }
-
     private bool IsInPlayerTurn()
     {
-        return CanOperateByGameFlow() && (TurnManager.Instance == null || TurnManager.Instance.currentState == TurnState.PlayerTurn);
+        return CanOperateByGameFlow() &&
+               (TurnManager.Instance == null || TurnManager.Instance.currentState == TurnState.PlayerTurn);
     }
 
     private bool CanOperateByGameFlow()

@@ -15,9 +15,6 @@ public sealed class ReduceLossEffectConfig : CollisionSkillEffectConfig
     [Min(0)]
     [SerializeField] private int reduceLoss = 1;
 
-    [Header("可选特效")]
-    [SerializeField] private SkillEffectVfxData vfx;
-
     public override string DisplayName => "恢复损耗";
 
     public override ICollisionSkillEffectController CreateController()
@@ -42,8 +39,6 @@ public sealed class ReduceLossEffectConfig : CollisionSkillEffectConfig
             {
                 targets[i].ReduceLoss(config.reduceLoss);
             }
-
-            SkillEffectVfxPlayer.PlayForCoins(config.vfx, targets);
             return CollisionSkillEffectExecutionResult.Continue;
         }
     }

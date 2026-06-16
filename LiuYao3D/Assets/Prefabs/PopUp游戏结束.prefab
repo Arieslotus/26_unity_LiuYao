@@ -16,7 +16,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &5897167881933925450
 RectTransform:
   m_ObjectHideFlags: 0
@@ -58,6 +58,13 @@ MonoBehaviour:
   resultImage: {fileID: 5768935087651551494}
   victorySprite: {fileID: -932054418, guid: 87c92e4751a209e4a9d750d2da379c20, type: 3}
   defeatSprite: {fileID: 218026338, guid: 87c92e4751a209e4a9d750d2da379c20, type: 3}
+  resultImages:
+  - image: {fileID: 0}
+    victorySprite: {fileID: -1886456608, guid: 5488153b2ff82274fbd8044d5fceff22, type: 3}
+    defeatSprite: {fileID: -817231521, guid: f3b73ce97c0c9fa428cc35b2b18cc418, type: 3}
+  - image: {fileID: 0}
+    victorySprite: {fileID: 194024153, guid: 048e3c4416db5074da1fbfdaade2376f, type: 3}
+    defeatSprite: {fileID: 863063964, guid: 5a77286cdfd141e4e8b7c67b685d508a, type: 3}
 --- !u!1 &7081202816343213838
 GameObject:
   m_ObjectHideFlags: 0

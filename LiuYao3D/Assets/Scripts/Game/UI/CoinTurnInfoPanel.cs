@@ -187,7 +187,7 @@ public class CoinTurnInfoPanel : MonoBehaviour
         for (int i = 0; i < pieces.Count; i++)
         {
             ChessPiece piece = pieces[i];
-            CreateItem(piece, GetOrderedRoot(), GetItemScale(i, hasCurrentPiece, currentIndex), IsPieceActed(i, hasCurrentPiece, currentIndex));
+            CreateItem(piece, GetOrderedRoot(), GetItemScale(i, hasCurrentPiece, currentIndex), false);
         }
 
         if (debugLog)
@@ -247,18 +247,13 @@ public class CoinTurnInfoPanel : MonoBehaviour
                 continue;
 
             item.transform.localScale = GetItemScale(i, hasCurrentPiece, currentIndex);
-            item.Set(piece, IsPieceActed(i, hasCurrentPiece, currentIndex));
+            item.Set(piece, false);
         }
     }
 
     private Vector3 GetItemScale(int index, bool hasCurrentPiece, int currentIndex)
     {
         return hasCurrentPiece && index == currentIndex ? currentItemScale : remainingItemScale;
-    }
-
-    private bool IsPieceActed(int index, bool hasCurrentPiece, int currentIndex)
-    {
-        return hasCurrentPiece && index < currentIndex;
     }
 
     private void RefreshItem(ChessPiece piece)
@@ -269,25 +264,7 @@ public class CoinTurnInfoPanel : MonoBehaviour
         if (!itemMap.TryGetValue(piece, out CoinTurnInfoItem item) || item == null)
             return;
 
-        bool hasActed = IsPieceActed(piece);
-        item.Set(piece, hasActed);
-    }
-
-    private bool IsPieceActed(ChessPiece piece)
-    {
-        if (turnController == null || piece == null)
-            return false;
-
-        IReadOnlyList<ChessPiece> pieces = turnController.Pieces;
-        int currentIndex = turnController.CurrentIndex;
-
-        for (int i = 0; i < pieces.Count; i++)
-        {
-            if (pieces[i] == piece)
-                return currentIndex >= 0 && i < currentIndex;
-        }
-
-        return false;
+        item.Set(piece, false);
     }
 
     private Transform GetOrderedRoot()

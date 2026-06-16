@@ -48,6 +48,13 @@ public class CollisionVfxConfig : ScriptableObject
     [Min(0f)]
     public float damagedLifetime = 2f;
 
+    [Header("通用技能特效")]
+    [Tooltip("硬币恢复损耗时播放。所有通过 CoinStats.ReduceLoss 产生的恢复都会触发。")]
+    public SkillEffectVfxData coinHealedVfx;
+
+    [Tooltip("硬币获得增伤效果时播放。所有通过 CoinRoundEffectManager.AddDamageModifier 产生的增伤都会触发。")]
+    public SkillEffectVfxData damageModifierVfx;
+
     [Header("生成参数")]
     [Tooltip("所有特效生成时追加的世界坐标偏移。")]
     public Vector3 worldOffset = Vector3.zero;

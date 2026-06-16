@@ -781,7 +781,7 @@ Transform:
   m_GameObject: {fileID: 166098169}
   serializedVersion: 2
   m_LocalRotation: {x: 0.5, y: -0.5, z: 0.5, w: 0.5}
-  m_LocalPosition: {x: -0.041, y: 1.966, z: 0.366}
+  m_LocalPosition: {x: -0.041, y: 1.966, z: 0.5}
   m_LocalScale: {x: 0.010000002, y: 6.4700003, z: 0.009999999}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -7102,6 +7102,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 180
       objectReference: {fileID: 0}
+    - target: {fileID: 9168548793434161616, guid: 40cdb938d6ca4d24ca3a4db355427075, type: 3}
+      propertyPath: hoverDistance
+      value: 0.2
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -11081,6 +11085,13 @@ MonoBehaviour:
   endUiRoot: {fileID: 1955783810}
   hideAfterAnimation: 0
   endPopup: {fileID: 0}
+  resultImages:
+  - image: {fileID: 2001737775}
+    victorySprite: {fileID: -1886456608, guid: 5488153b2ff82274fbd8044d5fceff22, type: 3}
+    defeatSprite: {fileID: -817231521, guid: f3b73ce97c0c9fa428cc35b2b18cc418, type: 3}
+  - image: {fileID: 1633539190}
+    victorySprite: {fileID: 194024153, guid: 048e3c4416db5074da1fbfdaade2376f, type: 3}
+    defeatSprite: {fileID: 863063964, guid: 5a77286cdfd141e4e8b7c67b685d508a, type: 3}
   gameEndPopupPrefab: {fileID: 0}
   popupManager: {fileID: 1584458745}
   useUnscaledWait: 1
@@ -15161,13 +15172,17 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1844885097}
     m_Modifications:
+    - target: {fileID: 3134166429239123918, guid: c202086481632af4ba315a2ad6f62d61, type: 3}
+      propertyPath: resultImages.Array.data[0].image
+      value: 
+      objectReference: {fileID: 2001737775}
+    - target: {fileID: 3134166429239123918, guid: c202086481632af4ba315a2ad6f62d61, type: 3}
+      propertyPath: resultImages.Array.data[1].image
+      value: 
+      objectReference: {fileID: 1633539190}
     - target: {fileID: 3944984524291688647, guid: c202086481632af4ba315a2ad6f62d61, type: 3}
       propertyPath: m_Name
       value: "PopUp\u6E38\u620F\u7ED3\u675F"
-      objectReference: {fileID: 0}
-    - target: {fileID: 3944984524291688647, guid: c202086481632af4ba315a2ad6f62d61, type: 3}
-      propertyPath: m_IsActive
-      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5897167881933925450, guid: c202086481632af4ba315a2ad6f62d61, type: 3}
       propertyPath: m_Pivot.x

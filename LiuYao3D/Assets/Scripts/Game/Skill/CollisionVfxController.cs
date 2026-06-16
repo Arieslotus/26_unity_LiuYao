@@ -19,6 +19,8 @@ public class CollisionVfxController : MonoBehaviour
         CombatVfxEvents.CoinEnemyCollisionRequested += OnCoinEnemyCollisionRequested;
         CombatVfxEvents.EnemyDamagedRequested += OnEnemyDamagedRequested;
         CombatVfxEvents.CoinDamagedRequested += OnCoinDamagedRequested;
+        CombatVfxEvents.CoinHealedRequested += OnCoinHealedRequested;
+        CombatVfxEvents.DamageModifierAddedRequested += OnDamageModifierAddedRequested;
     }
 
     private void OnDisable()
@@ -27,6 +29,8 @@ public class CollisionVfxController : MonoBehaviour
         CombatVfxEvents.CoinEnemyCollisionRequested -= OnCoinEnemyCollisionRequested;
         CombatVfxEvents.EnemyDamagedRequested -= OnEnemyDamagedRequested;
         CombatVfxEvents.CoinDamagedRequested -= OnCoinDamagedRequested;
+        CombatVfxEvents.CoinHealedRequested -= OnCoinHealedRequested;
+        CombatVfxEvents.DamageModifierAddedRequested -= OnDamageModifierAddedRequested;
     }
 
     private void OnCoinCollisionRequested(ChessPiece activePiece, ChessPiece passivePiece, Vector3 hitPoint)
@@ -75,6 +79,26 @@ public class CollisionVfxController : MonoBehaviour
         Transform parent = config.parentDamagedVfxToTarget ? coin.transform : null;
         Vector3 position = hitPoint != Vector3.zero ? hitPoint : coin.transform.position;
         Spawn(config.coinDamagedPrefab, position, Quaternion.identity, parent, config.damagedLifetime);
+    }
+
+    private void OnCoinHealedRequested(CoinStats coin, int reduceLoss, Vector3 hitPoint)
+    {
+        if (!ValidateConfig() || coin == null)
+            return;
+
+        SkillEffectVfxPlayer.PlayForCoins(config.coinHealedVfx, new List<CoinStats> { coin });
+    }
+
+    private void OnDamageModifierAddedRequested(int modifierId, IReadOnlyList<CoinStats> targets, int activateAfterRounds)
+    {
+        if (!ValidateConfig())
+            return;
+
+        SkillEffectVfxPlayer.PlayForDamageModifierTargets(
+            config.damageModifierVfx,
+            targets,
+            modifierId,
+            activateAfterRounds);
     }
 
     private IEnumerator PlayShockwaves(Vector3 hitPoint, TrigramType firstTrigram, TrigramType secondTrigram)

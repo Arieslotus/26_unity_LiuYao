@@ -18,9 +18,6 @@ public sealed class AddDamageModifierEffectConfig : CollisionSkillEffectConfig
     [SerializeField] private int activateAfterRounds;
     [SerializeField] private bool stackable = true;
 
-    [Header("可选特效")]
-    [SerializeField] private SkillEffectVfxData vfx;
-
     public override string DisplayName => "添加增伤";
 
     public override ICollisionSkillEffectController CreateController()
@@ -51,7 +48,7 @@ public sealed class AddDamageModifierEffectConfig : CollisionSkillEffectConfig
 
             List<CoinStats> targets = config.targetSelector.Resolve(context);
 
-            int runtimeModifierId = CoinRoundEffectManager.Instance.AddDamageModifier(
+            CoinRoundEffectManager.Instance.AddDamageModifier(
                 sourceId,
                 config.addDamagePercent / 100f,
                 config.durationRounds,
@@ -60,7 +57,6 @@ public sealed class AddDamageModifierEffectConfig : CollisionSkillEffectConfig
                 targets,
                 context != null ? context.skill : null);
 
-            SkillEffectVfxPlayer.PlayForDamageModifierTargets(config.vfx, targets, runtimeModifierId, config.activateAfterRounds);
             return CollisionSkillEffectExecutionResult.Continue;
         }
     }

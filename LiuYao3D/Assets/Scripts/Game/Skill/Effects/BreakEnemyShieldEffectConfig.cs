@@ -45,27 +45,54 @@ public sealed class BreakEnemyShieldEffectConfig : CollisionSkillEffectConfig
                 if (shield == null || !shield.HasShield)
                     continue;
 
-                if (!config.CanBreakShield(context, shield.CurrentShieldType))
-                    continue;
-
-                shield.TryBreakShield(shield.CurrentShieldType, sourceName);
+                config.ApplyBreakValue(context, shield, sourceName);
             }
 
             return CollisionSkillEffectExecutionResult.Continue;
         }
     }
 
-    private bool CanBreakShield(CollisionSkillContext context, TrigramType shieldType)
+    private void ApplyBreakValue(CollisionSkillContext context, EnemyShieldController shield, string sourceName)
     {
-        if (shieldType == TrigramType.None)
-            return false;
+        if (shield == null || !shield.HasShield)
+            return;
 
         if (trigramMode == BreakShieldTrigramMode.SpecifiedTrigrams)
-            return specifiedTrigrams != null && specifiedTrigrams.Contains(shieldType);
+        {
+            ApplySpecifiedTrigrams(shield, sourceName);
+            return;
+        }
 
         if (context == null)
-            return false;
+            return;
 
-        return shieldType == context.activeTrigram || shieldType == context.passiveTrigram;
+        ApplyCollisionParticipantTrigram(shield, context.activeTrigram, sourceName);
+
+        if (context.passiveTrigram != context.activeTrigram)
+        {
+            ApplyCollisionParticipantTrigram(shield, context.passiveTrigram, sourceName);
+        }
+    }
+
+    private void ApplySpecifiedTrigrams(EnemyShieldController shield, string sourceName)
+    {
+        if (specifiedTrigrams == null)
+            return;
+
+        for (int i = 0; i < specifiedTrigrams.Count; i++)
+        {
+            ApplyCollisionParticipantTrigram(shield, specifiedTrigrams[i], sourceName);
+
+            if (shield == null || !shield.HasShield)
+                return;
+        }
+    }
+
+    private void ApplyCollisionParticipantTrigram(EnemyShieldController shield, TrigramType trigram, string sourceName)
+    {
+        if (shield == null || !shield.HasShield || trigram == TrigramType.None)
+            return;
+
+        shield.TryApplyShieldBreak(trigram, sourceName);
     }
 }

@@ -155,12 +155,18 @@ public class CoinStats : MonoBehaviour, IAttackable
         if (value <= 0 || isBroken || pendingBreak)
             return;
 
+        int previousLoss = currentLoss;
         currentLoss = Mathf.Max(currentLoss - value, 0);
+        int reducedValue = previousLoss - currentLoss;
+        if (reducedValue <= 0)
+            return;
+
         NotifyLossChanged();
+        CombatVfxEvents.RequestCoinHealed(this, reducedValue, transform.position);
 
         if (debugLog)
         {
-            Debug.Log($"[CoinStats] 降低损耗 | coin:{name} | value:{value} | loss:{currentLoss}/{maxLoss}");
+            Debug.Log($"[CoinStats] 降低损耗 | coin:{name} | value:{reducedValue} | loss:{currentLoss}/{maxLoss}");
         }
     }
 
