@@ -17,6 +17,12 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 4ac51607dbeeaa649aadfec057aaaccb, type: 2}
   - {fileID: 11400000, guid: d102aea4bcaeff14fa25d815029e8a16, type: 2}
   - {fileID: 11400000, guid: 584ba317a3a35a0469417c47cc6b9d6d, type: 2}
+  - {fileID: 11400000, guid: 584ba317a3a35a0469417c47cc6b9d6d, type: 2}
+  - {fileID: 11400000, guid: 584ba317a3a35a0469417c47cc6b9d6d, type: 2}
+  - {fileID: 11400000, guid: 584ba317a3a35a0469417c47cc6b9d6d, type: 2}
+  - {fileID: 11400000, guid: 584ba317a3a35a0469417c47cc6b9d6d, type: 2}
+  - {fileID: 11400000, guid: 584ba317a3a35a0469417c47cc6b9d6d, type: 2}
+  - {fileID: 11400000, guid: 584ba317a3a35a0469417c47cc6b9d6d, type: 2}
   fixedCoins:
   - coinDefinition: {fileID: 11400000, guid: d102aea4bcaeff14fa25d815029e8a16, type: 2}
     initialSide: 0

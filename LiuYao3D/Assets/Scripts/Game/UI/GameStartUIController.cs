@@ -14,6 +14,9 @@ public class GameStartUIController : MonoBehaviour
     [Tooltip("是否监听鼠标左键触发开始流程。")]
     [SerializeField] private bool startOnLeftMouseClick = true;
 
+    [Tooltip("场景中存在 OpeningFlowController 时，是否停用旧点击开局流程。")]
+    [SerializeField] private bool disableWhenOpeningFlowExists = true;
+
     [Header("开始 UI")]
     [Tooltip("开始 UI 的根物体。Animator 或 Animation 组件应挂在这个根物体上。")]
     [SerializeField] private GameObject startUiRoot;
@@ -29,17 +32,19 @@ public class GameStartUIController : MonoBehaviour
     [SerializeField] private bool debugLog = true;
 
     private bool isStarting;
+    private bool disabledByOpeningFlow;
     private Coroutine startCoroutine;
 
     private void Awake()
     {
         ResolveFlowController();
+        disabledByOpeningFlow = ShouldDisableForOpeningFlow();
         UIAnimationRootPlayer.PrepareWithoutPlaying(startUiRoot);
     }
 
     private void Update()
     {
-        if (!startOnLeftMouseClick || isStarting)
+        if (disabledByOpeningFlow || !startOnLeftMouseClick || isStarting)
             return;
 
         if (flowController == null)
@@ -58,6 +63,18 @@ public class GameStartUIController : MonoBehaviour
 
     public void BeginStartSequence()
     {
+        if (ShouldDisableForOpeningFlow())
+        {
+            disabledByOpeningFlow = true;
+
+            if (debugLog)
+            {
+                Debug.Log($"[GameStartUIController] 检测到 OpeningFlowController，旧开局入口已停用 | object:{name}");
+            }
+
+            return;
+        }
+
         if (isStarting)
             return;
 
@@ -130,6 +147,15 @@ public class GameStartUIController : MonoBehaviour
         {
             flowController = FindObjectOfType<GameFlowController>();
         }
+    }
+
+    private bool ShouldDisableForOpeningFlow()
+    {
+        if (!disableWhenOpeningFlowExists)
+            return false;
+
+        OpeningFlowController openingFlow = FindObjectOfType<OpeningFlowController>();
+        return openingFlow != null;
     }
 
     private static string GetRootName(GameObject root)
