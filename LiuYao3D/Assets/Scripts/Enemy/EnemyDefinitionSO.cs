@@ -22,6 +22,10 @@ public class EnemyDefinitionSO : ScriptableObject
     [Tooltip("敌人攻击力。默认 1。")]
     public int attack = 1;
 
+    [Min(1)]
+    [Tooltip("敌人每次行动最多攻击的目标数量。")]
+    public int maxAttackTargetCount = 2;
+
     [Header("护盾")]
     [Tooltip("该敌人是否允许生成护盾。具体护盾类型建议由运行时规则决定。")]
     public bool allowShield = true;

@@ -21,16 +21,11 @@ public class PauseMenuPopup : UIPopupBase
     [Header("调试")]
     [SerializeField] private bool debugLog = true;
 
-    private bool hasLockedGameplayInput;
+    protected override bool ShouldLockGameplayInputOnOpen => true;
 
     private void Awake()
     {
         BindButtons();
-    }
-
-    private void OnDestroy()
-    {
-        UnlockGameplayInput("PauseMenuPopup.OnDestroy");
     }
 
     private void BindButtons()
@@ -48,16 +43,6 @@ public class PauseMenuPopup : UIPopupBase
         }
     }
 
-    protected override void OnOpen()
-    {
-        LockGameplayInput();
-    }
-
-    protected override void OnClose()
-    {
-        UnlockGameplayInput("PauseMenuPopup.OnClose");
-    }
-
     public void CancelPause()
     {
         Close();
@@ -65,8 +50,6 @@ public class PauseMenuPopup : UIPopupBase
 
     public void ReturnToMainMenu()
     {
-        UnlockGameplayInput("PauseMenuPopup.ReturnToMainMenu");
-
         if (string.IsNullOrEmpty(mainMenuSceneName))
         {
             Debug.LogWarning($"[PauseMenuPopup] 返回主菜单失败：未配置主菜单场景名 | popup:{name}");
@@ -78,46 +61,7 @@ public class PauseMenuPopup : UIPopupBase
             Debug.Log($"[PauseMenuPopup] 返回主菜单 | popup:{name} | scene:{mainMenuSceneName}");
         }
 
+        CloseImmediate();
         SceneManager.LoadScene(mainMenuSceneName);
-    }
-
-    private void LockGameplayInput()
-    {
-        if (hasLockedGameplayInput)
-            return;
-
-        GameFlowController flowController = GameFlowController.Instance;
-        if (flowController == null)
-        {
-            flowController = FindObjectOfType<GameFlowController>();
-        }
-
-        if (flowController == null)
-        {
-            Debug.LogWarning($"[PauseMenuPopup] 打开暂停界面但未找到 GameFlowController，无法锁定游戏输入 | popup:{name}");
-            return;
-        }
-
-        flowController.LockGameplayInput("PauseMenuPopup");
-        hasLockedGameplayInput = true;
-    }
-
-    private void UnlockGameplayInput(string reason)
-    {
-        if (!hasLockedGameplayInput)
-            return;
-
-        GameFlowController flowController = GameFlowController.Instance;
-        if (flowController == null)
-        {
-            flowController = FindObjectOfType<GameFlowController>();
-        }
-
-        if (flowController != null)
-        {
-            flowController.UnlockGameplayInput(reason);
-        }
-
-        hasLockedGameplayInput = false;
     }
 }

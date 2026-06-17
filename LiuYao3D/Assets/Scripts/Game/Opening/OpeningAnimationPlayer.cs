@@ -115,22 +115,42 @@ public class OpeningAnimationPlayer : MonoBehaviour
 
     private IEnumerator WaitAnimatorStateComplete(Animator animator, string label)
     {
-        yield return null;
-
         if (animator == null || !animator.isActiveAndEnabled)
             yield break;
 
-        AnimatorStateInfo firstState = animator.GetCurrentAnimatorStateInfo(0);
-        int firstStateHash = firstState.fullPathHash;
         float elapsed = 0f;
+        bool hasPlayableState = false;
+        int playableStateHash = 0;
 
         while (animator != null && animator.isActiveAndEnabled && elapsed < maxAnimationWait)
         {
             AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
-            bool changedToAnotherState = state.fullPathHash != firstStateHash && !animator.IsInTransition(0);
-            bool completedNonLoopState = !state.loop && !animator.IsInTransition(0) && state.normalizedTime >= 1f;
+            bool canUseState = !animator.IsInTransition(0) && !state.loop && state.normalizedTime < 1f;
 
-            if (changedToAnotherState || completedNonLoopState)
+            if (canUseState)
+            {
+                playableStateHash = state.fullPathHash;
+                hasPlayableState = true;
+                break;
+            }
+
+            elapsed += useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
+            yield return null;
+        }
+
+        if (!hasPlayableState)
+        {
+            Debug.LogWarning($"[OpeningAnimationPlayer] 未检测到可等待的非循环动画状态，继续开局流程 | object:{name} | label:{label} | wait:{elapsed:F2}");
+            yield break;
+        }
+
+        while (animator != null && animator.isActiveAndEnabled && elapsed < maxAnimationWait)
+        {
+            AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
+            bool changedToAnotherStateAfterComplete = state.fullPathHash != playableStateHash && !animator.IsInTransition(0);
+            bool completedNonLoopState = state.fullPathHash == playableStateHash && !state.loop && !animator.IsInTransition(0) && state.normalizedTime >= 1f;
+
+            if (changedToAnotherStateAfterComplete || completedNonLoopState)
             {
                 if (debugLog)
                 {

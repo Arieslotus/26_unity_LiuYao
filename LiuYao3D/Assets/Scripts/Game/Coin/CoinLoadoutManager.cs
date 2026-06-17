@@ -20,6 +20,9 @@ public class CoinLoadoutManager : MonoBehaviour
     [Tooltip("用于接收抽取结果的棋子列表，按顺序分配")]
     [SerializeField] private List<ChessPiece> targetPieces = new List<ChessPiece>();
 
+    [Tooltip("场景存在 OpeningFlowController 时，进入场景先隐藏场上硬币槽，等正式开始游戏分配硬币时再激活。")]
+    [SerializeField] private bool hideTargetPiecesUntilOpeningFinished = true;
+
     [Header("调试")]
     [Tooltip("是否输出抽取与分配日志")]
     [SerializeField] private bool debugLog = true;
@@ -27,6 +30,14 @@ public class CoinLoadoutManager : MonoBehaviour
     private readonly List<CoinDefinition> currentLoadout = new List<CoinDefinition>();
 
     public IReadOnlyList<CoinDefinition> CurrentLoadout => currentLoadout;
+
+    private void Awake()
+    {
+        if (hideTargetPiecesUntilOpeningFinished && FindObjectOfType<OpeningFlowController>() != null)
+        {
+            SetTargetPiecesActive(false);
+        }
+    }
 
     private void Start()
     {
@@ -36,9 +47,13 @@ public class CoinLoadoutManager : MonoBehaviour
             return;
         }
 
-        if (drawConfig.AutoDrawOnStart)
+        if (drawConfig.AutoDrawOnStart && FindObjectOfType<OpeningFlowController>() == null)
         {
             GenerateLoadout();
+        }
+        else if (drawConfig.AutoDrawOnStart && debugLog)
+        {
+            Debug.Log("[CoinLoadoutManager] 检测到 OpeningFlowController，跳过启动时自动抽取，等待开局流程分配硬币。");
         }
     }
 
@@ -80,6 +95,52 @@ public class CoinLoadoutManager : MonoBehaviour
 
         drawConfig = customConfig;
         GenerateLoadout();
+    }
+
+    public bool ApplyFixedLoadout(IReadOnlyList<CoinDefinition> definitions)
+    {
+        if (definitions == null || definitions.Count == 0)
+        {
+            Debug.LogError("[CoinLoadoutManager] 指定硬币列表为空，无法分配到场上。");
+            return false;
+        }
+
+        if (targetPieces == null || targetPieces.Count == 0)
+        {
+            Debug.LogError("[CoinLoadoutManager] 未配置 targetPieces，无法分配指定硬币。");
+            return false;
+        }
+
+        currentLoadout.Clear();
+
+        List<CoinLoadoutEntry> loadout = new List<CoinLoadoutEntry>();
+        for (int i = 0; i < definitions.Count; i++)
+        {
+            CoinDefinition definition = definitions[i];
+            if (definition == null)
+            {
+                Debug.LogWarning($"[CoinLoadoutManager] 指定硬币列表存在空引用，已跳过 | index:{i}");
+                continue;
+            }
+
+            currentLoadout.Add(definition);
+            loadout.Add(CreateLoadoutEntry(definition, CoinInitialSideMode.Random));
+        }
+
+        if (loadout.Count == 0)
+        {
+            Debug.LogError("[CoinLoadoutManager] 指定硬币列表没有有效硬币，无法分配到场上。");
+            return false;
+        }
+
+        ApplyLoadoutToPieces(loadout);
+
+        if (debugLog)
+        {
+            Debug.Log($"[CoinLoadoutManager] 应用开局选择硬币 | 结果:{BuildLoadoutDebugText(loadout)}");
+        }
+
+        return true;
     }
 
     private bool ValidateBeforeDraw()
@@ -394,6 +455,11 @@ public class CoinLoadoutManager : MonoBehaviour
                 continue;
             }
 
+            if (!piece.gameObject.activeSelf)
+            {
+                piece.gameObject.SetActive(true);
+            }
+
             piece.SetCoinDefinition(definition, false);
             piece.SetFace(isFrontSide, false);
 
@@ -410,12 +476,39 @@ public class CoinLoadoutManager : MonoBehaviour
             if (piece == null)
                 continue;
 
-            piece.SetCoinDefinition(null, true);
+            if (hideTargetPiecesUntilOpeningFinished)
+            {
+                piece.gameObject.SetActive(false);
+            }
+            else
+            {
+                piece.SetCoinDefinition(null, true);
+            }
 
             if (debugLog)
             {
                 Debug.Log($"[CoinLoadoutManager] 清空多余棋子位 | slot:{i} | piece:{piece.name}");
             }
+        }
+    }
+
+    private void SetTargetPiecesActive(bool active)
+    {
+        if (targetPieces == null)
+            return;
+
+        for (int i = 0; i < targetPieces.Count; i++)
+        {
+            ChessPiece piece = targetPieces[i];
+            if (piece == null)
+                continue;
+
+            piece.gameObject.SetActive(active);
+        }
+
+        if (debugLog)
+        {
+            Debug.Log($"[CoinLoadoutManager] 设置场上硬币槽显隐 | active:{active} | count:{targetPieces.Count}");
         }
     }
 

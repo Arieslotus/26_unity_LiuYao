@@ -39,6 +39,24 @@ public class GameStartUIController : MonoBehaviour
     {
         ResolveFlowController();
         disabledByOpeningFlow = ShouldDisableForOpeningFlow();
+
+        if (disabledByOpeningFlow)
+        {
+            if (startUiRoot != null)
+            {
+                startUiRoot.SetActive(false);
+            }
+
+            enabled = false;
+
+            if (debugLog)
+            {
+                Debug.Log($"[GameStartUIController] 检测到 OpeningFlowController，旧点击开始入口已禁用 | object:{name}");
+            }
+
+            return;
+        }
+
         UIAnimationRootPlayer.PrepareWithoutPlaying(startUiRoot);
     }
 

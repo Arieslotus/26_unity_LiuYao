@@ -31,7 +31,7 @@ public class CoinReplacementPanel : UIPopupBase
     private bool hasPausedRoundAdvance;
     private bool isPanelVisible;
     private DragChargeInput gameplayInput;
-    private bool hasLockedGameplayInput;
+    private bool hasLockedReplacementInput;
     private bool gameplayInputWasEnabled;
 
     private void Awake()
@@ -461,7 +461,7 @@ public class CoinReplacementPanel : UIPopupBase
 
     private void LockGameplayInput()
     {
-        if (hasLockedGameplayInput)
+        if (hasLockedReplacementInput)
             return;
 
         if (gameplayInput == null)
@@ -475,12 +475,12 @@ public class CoinReplacementPanel : UIPopupBase
         gameplayInputWasEnabled = gameplayInput.enabled;
         gameplayInput.SetControlledPiece(null);
         gameplayInput.enabled = false;
-        hasLockedGameplayInput = true;
+        hasLockedReplacementInput = true;
     }
 
     private void UnlockGameplayInput()
     {
-        if (!hasLockedGameplayInput)
+        if (!hasLockedReplacementInput)
             return;
 
         if (gameplayInput != null)
@@ -488,7 +488,7 @@ public class CoinReplacementPanel : UIPopupBase
             gameplayInput.enabled = gameplayInputWasEnabled;
         }
 
-        hasLockedGameplayInput = false;
+        hasLockedReplacementInput = false;
         gameplayInputWasEnabled = false;
     }
 }

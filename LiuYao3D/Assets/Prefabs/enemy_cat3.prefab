@@ -462,6 +462,7 @@ GameObject:
   - component: {fileID: 7183502862984499947}
   - component: {fileID: 4083943333236524209}
   - component: {fileID: -1337987770646989606}
+  - component: {fileID: 8020959598050975361}
   m_Layer: 0
   m_Name: enemy_cat3
   m_TagString: Untagged
@@ -537,6 +538,7 @@ MonoBehaviour:
   damageReductionPercent: 1
   ignoreFirstRoundStart: 0
   shieldCycle: 0600000005000000
+  shieldBreakConfig: {fileID: 0}
   trigramVisualDatabase: {fileID: 11400000, guid: aa5e006d743655146a8784d45401fdad, type: 2}
   shieldImage: {fileID: 5371242757096320055}
   deactivateShieldImageObjectWhenHidden: 0
@@ -568,6 +570,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   definition: {fileID: 11400000, guid: 4602ca3f93dc90e4bb122f27d16ced84, type: 2}
   debugLog: 0
+--- !u!114 &8020959598050975361
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8016508028542991262}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9db6ae7efd6f14841b72fda12570cca5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  leftPanelPrefab: {fileID: 6454923489208068396, guid: 5989b0b84a60c7d4e91a4874fb9a75e6, type: 3}
+  rightPanelPrefab: {fileID: 4840513873959905594, guid: 82c4039d712f7b14ba81aa4a0b62d407, type: 3}
+  panelRoot: {fileID: 3792727100058084974}
+  targetCamera: {fileID: 0}
+  trigramVisualDatabase: {fileID: 0}
+  stats: {fileID: 442937982695446080}
+  controller: {fileID: 4469890191220512059}
+  shieldController: {fileID: 7183502862984499947}
 --- !u!1001 &7625170680241013057
 PrefabInstance:
   m_ObjectHideFlags: 0

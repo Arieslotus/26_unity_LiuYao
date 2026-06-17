@@ -1,5 +1,5 @@
 /// <summary>
-/// 实现功能：配置八卦类型对应的通用视觉资源，包括 Sprite 与 UI 预制体。
+/// 实现功能：配置八卦类型对应的通用视觉资源，包括 Sprite、图标与 UI 预制体。
 /// </summary>
 using System;
 using System.Collections.Generic;
@@ -13,6 +13,7 @@ public class TrigramVisualDatabase : ScriptableObject
     {
         public TrigramType trigramType = TrigramType.None;
         public Sprite sprite;
+        public Sprite icon;
         public GameObject uiPrefab;
     }
 
@@ -22,6 +23,12 @@ public class TrigramVisualDatabase : ScriptableObject
     {
         TrigramVisualEntry entry = FindEntry(trigramType);
         return entry != null ? entry.sprite : null;
+    }
+
+    public Sprite GetIcon(TrigramType trigramType)
+    {
+        TrigramVisualEntry entry = FindEntry(trigramType);
+        return entry != null ? entry.icon : null;
     }
 
     public GameObject GetUIPrefab(TrigramType trigramType)

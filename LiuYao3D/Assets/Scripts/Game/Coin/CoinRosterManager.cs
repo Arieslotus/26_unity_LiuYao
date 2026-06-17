@@ -239,6 +239,33 @@ public class CoinRosterManager : MonoBehaviour
         InventoryChanged?.Invoke();
     }
 
+    public void SetInventoryCoins(IReadOnlyList<CoinDefinition> definitions, bool clearExisting = true)
+    {
+        if (clearExisting)
+        {
+            inventoryCoins.Clear();
+        }
+
+        if (definitions != null)
+        {
+            for (int i = 0; i < definitions.Count; i++)
+            {
+                CoinDefinition definition = definitions[i];
+                if (definition == null)
+                    continue;
+
+                inventoryCoins.Add(definition);
+            }
+        }
+
+        InventoryChanged?.Invoke();
+
+        if (debugLog)
+        {
+            Debug.Log($"[CoinRosterManager] 设置背包候选硬币 | object:{name} | count:{CountValidInventoryCoins()} | clearExisting:{clearExisting}");
+        }
+    }
+
     private void SubscribeTurnManager()
     {
         if (subscribedTurnManager == TurnManager.Instance)

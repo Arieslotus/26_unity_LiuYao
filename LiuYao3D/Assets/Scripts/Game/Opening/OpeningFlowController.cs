@@ -1,5 +1,5 @@
 /// <summary>
-/// 实现功能：管理开局摇卦流程骨架，以五个大阶段编排开场、抽币、选择、退场、镜头切换和正式游戏开始。
+/// 实现功能：管理开局摇卦流程，以五个大阶段编排开场、抽币、选择、退场、镜头切换和正式游戏开始。
 /// </summary>
 using System.Collections;
 using UnityEngine;
@@ -23,15 +23,27 @@ public class OpeningFlowController : MonoBehaviour
     [Tooltip("摇卦输入控制器，负责鼠标晃动判定和龟壳轻微跟随。")]
     [SerializeField] private OpeningShellShakeInput shellShakeInput;
 
+    [Tooltip("开场硬币表现控制器，负责硬币生成、滑出、落位、选择和隐藏。")]
+    [SerializeField] private OpeningCoinPresentation coinPresentation;
+
+    [Tooltip("开场 UI 控制器，负责跳过、确认和提示文字。")]
+    [SerializeField] private OpeningUIController uiController;
+
+    [Tooltip("局内硬币装载管理器，开场结束时把玩家选择的三枚硬币分配到场上。")]
+    [SerializeField] private CoinLoadoutManager loadoutManager;
+
+    [Tooltip("硬币背包管理器，开场结束时接收剩余六枚候选硬币。")]
+    [SerializeField] private CoinRosterManager rosterManager;
+
     [Header("抽币数据")]
-    [Tooltip("开局抽币使用的币池配置。骨架阶段可以为空，为空时会使用模拟硬币占位。")]
+    [Tooltip("开局抽币使用的币池配置。正式流程需要至少 9 个有效池条目。")]
     [SerializeField] private CoinDrawConfig drawConfig;
 
-    [Tooltip("币池不足或未配置时，是否使用模拟硬币占位跑通 9/3/6 的数据链路。")]
-    [SerializeField] private bool allowPlaceholderCoins = true;
+    [Tooltip("仅用于调试：币池不足或未配置时，是否使用模拟硬币占位跑通 9/3/6 的数据链路。正式流程应关闭。")]
+    [SerializeField] private bool allowPlaceholderCoins;
 
     [Header("骨架模拟")]
-    [Tooltip("是否在 Start 时自动启动开局骨架流程。")]
+    [Tooltip("是否在 Start 时自动启动开局流程。")]
     [SerializeField] private bool autoStartOnStart = true;
 
     [Tooltip("每个骨架步骤之间的模拟等待时间。")]
@@ -65,6 +77,12 @@ public class OpeningFlowController : MonoBehaviour
         ResolveFlowController();
         ResolveModuleReferences();
         RebuildDraftService();
+        BindUIEvents();
+    }
+
+    private void OnDestroy()
+    {
+        UnbindUIEvents();
     }
 
     private void Start()
@@ -75,12 +93,30 @@ public class OpeningFlowController : MonoBehaviour
         }
     }
 
-    [ContextMenu("启动开局骨架流程")]
+    private void Update()
+    {
+        if (!isRunning || isSkipRequested || uiController == null)
+            return;
+
+        if (uiController.ConsumeSkipRequest())
+        {
+            SkipOpening();
+        }
+    }
+
+    [ContextMenu("启动开局流程")]
     public void BeginOpening()
     {
         if (isRunning)
         {
             Debug.LogWarning($"[OpeningFlowController] 开局流程已经在运行，忽略重复启动 | object:{name} | state:{state}");
+            return;
+        }
+
+        RebuildDraftService();
+        if (draftService == null || !draftService.ValidateCanDrawOpeningCoins())
+        {
+            Debug.LogError($"[OpeningFlowController] 开局抽币配置校验失败，流程不会启动 | object:{name}");
             return;
         }
 
@@ -97,22 +133,29 @@ public class OpeningFlowController : MonoBehaviour
             return;
         }
 
-        RebuildDraftService();
         flowVersion++;
         isRunning = true;
         isSkipRequested = false;
         currentRoundIndex = 0;
         SetState(OpeningState.IntroCinematic);
 
+        if (uiController != null)
+        {
+            uiController.ResetRequests();
+            uiController.HideOpeningUI();
+            uiController.SetSkipVisible(false);
+            BindUIEvents();
+        }
+
         if (flowRoutine != null)
         {
             StopCoroutine(flowRoutine);
         }
 
-        flowRoutine = StartCoroutine(RunOpeningSkeleton(flowVersion));
+        flowRoutine = StartCoroutine(RunOpeningFlow(flowVersion));
     }
 
-    [ContextMenu("跳过开局骨架流程")]
+    [ContextMenu("跳过开局流程")]
     public void SkipOpening()
     {
         if (!isRunning || isSkipRequested || state == OpeningState.Finished)
@@ -121,16 +164,21 @@ public class OpeningFlowController : MonoBehaviour
         isSkipRequested = true;
         flowVersion++;
 
+        if (uiController != null)
+        {
+            uiController.SetSkipVisible(false);
+        }
+
         if (flowRoutine != null)
         {
             StopCoroutine(flowRoutine);
             flowRoutine = null;
         }
 
-        flowRoutine = StartCoroutine(RunSkipSkeleton(flowVersion));
+        flowRoutine = StartCoroutine(RunSkipFlow(flowVersion));
     }
 
-    private IEnumerator RunOpeningSkeleton(int version)
+    private IEnumerator RunOpeningFlow(int version)
     {
         yield return RunIntroCinematic(version);
         if (!IsVersionValid(version)) yield break;
@@ -174,6 +222,12 @@ public class OpeningFlowController : MonoBehaviour
         if (!IsVersionValid(version)) yield break;
 
         LogNormal(4, "开场动画1结束，激活龟壳、跳过UI、提示文字");
+        if (uiController != null)
+        {
+            uiController.ShowOpeningUI();
+            uiController.SetSkipVisible(true);
+        }
+
         if (shellPresentation != null)
         {
             yield return shellPresentation.PlayEnter();
@@ -221,13 +275,22 @@ public class OpeningFlowController : MonoBehaviour
 
             if (!IsVersionValid(version)) yield break;
 
-            if (draftService != null)
+            if (draftService == null || !draftService.DrawRound(roundIndex))
             {
-                draftService.DrawRound(roundIndex);
+                AbortOpening("抽币失败");
+                yield break;
             }
 
-            LogNormal(firstLogIndex + 3, $"龟壳动画{roundIndex}-1到达出币点，抽取第{roundIndex}组三枚硬币并滑出 | rolled:{GetRolledCount()}");
-            yield return WaitStep();
+            LogNormal(firstLogIndex + 3, $"第{roundIndex}组三枚硬币滑出 | rolled:{GetRolledCount()}");
+            if (coinPresentation != null)
+            {
+                yield return coinPresentation.RevealRound(Draft, roundIndex);
+            }
+            else
+            {
+                yield return WaitStep();
+            }
+
             if (!IsVersionValid(version)) yield break;
 
             LogNormal(firstLogIndex + 4, $"播放龟壳动画{roundIndex}-2复位");
@@ -252,12 +315,62 @@ public class OpeningFlowController : MonoBehaviour
         yield return WaitStep();
         if (!IsVersionValid(version)) yield break;
 
-        if (draftService != null)
+        if (coinPresentation == null)
         {
-            draftService.AutoSelectFirstCoins();
+            AbortOpening("未绑定 OpeningCoinPresentation，无法进入手动选择");
+            yield break;
         }
 
-        LogNormal(21, $"玩家已选择三枚硬币，点击确认（骨架阶段自动选择前三枚） | selected:{GetSelectedCount()} | inventory:{GetInventoryCount()}");
+        if (uiController == null)
+        {
+            AbortOpening("未绑定 OpeningUIController，无法确认玩家选择");
+            yield break;
+        }
+
+        coinPresentation.SelectionChanged -= OnCoinSelectionChanged;
+        coinPresentation.SelectionChanged += OnCoinSelectionChanged;
+        coinPresentation.SelectionHintRequested -= OnCoinSelectionHintRequested;
+        coinPresentation.SelectionHintRequested += OnCoinSelectionHintRequested;
+        coinPresentation.EnableSelection();
+
+        uiController.ShowSelection(coinPresentation.SelectedCount, coinPresentation.RequiredSelectionCount);
+
+        bool confirmed = false;
+        while (!confirmed)
+        {
+            if (!IsVersionValid(version))
+                yield break;
+
+            if (uiController.ConsumeConfirmRequest())
+            {
+                if (coinPresentation.HasEnoughSelection)
+                {
+                    confirmed = true;
+                }
+                else
+                {
+                    uiController.ShowNotEnoughSelection(coinPresentation.SelectedCount, coinPresentation.RequiredSelectionCount);
+                }
+            }
+
+            yield return null;
+        }
+
+        if (Draft == null || !Draft.ApplySelection(coinPresentation.SelectedSlots))
+        {
+            AbortOpening("玩家选择硬币写入 Draft 失败");
+            yield break;
+        }
+
+        coinPresentation.SelectionChanged -= OnCoinSelectionChanged;
+        coinPresentation.SelectionHintRequested -= OnCoinSelectionHintRequested;
+        coinPresentation.DisableSelection();
+        uiController.HideSelection();
+
+        LogNormal(21, $"玩家已选择三枚硬币并确认 | selected:{GetSelectedCount()} | inventory:{GetInventoryCount()}");
+        yield return coinPresentation.PlayExitFall();
+        if (!IsVersionValid(version)) yield break;
+
         yield return WaitStep();
     }
 
@@ -266,6 +379,11 @@ public class OpeningFlowController : MonoBehaviour
         SetState(OpeningState.OutroCinematic);
 
         LogNormal(22, "关闭开场UI根物体，播放开场动画2");
+        if (uiController != null)
+        {
+            uiController.HideOpeningUI();
+        }
+
         if (animationPlayer != null)
         {
             yield return animationPlayer.PlayOutro();
@@ -310,7 +428,7 @@ public class OpeningFlowController : MonoBehaviour
         CompleteOpening();
     }
 
-    private IEnumerator RunSkipSkeleton(int version)
+    private IEnumerator RunSkipFlow(int version)
     {
         LogSkip(1, "玩家点击跳过开场");
         yield return WaitStep();
@@ -333,12 +451,26 @@ public class OpeningFlowController : MonoBehaviour
             shellShakeInput.ResetPoseImmediate();
         }
 
+        if (coinPresentation != null)
+        {
+            coinPresentation.SelectionChanged -= OnCoinSelectionChanged;
+            coinPresentation.SelectionHintRequested -= OnCoinSelectionHintRequested;
+            coinPresentation.DisableSelection();
+            coinPresentation.KillActiveTween(false);
+        }
+
+        if (uiController != null)
+        {
+            uiController.HideSelection();
+        }
+
         yield return WaitStep();
         if (!IsVersionValid(version)) yield break;
 
-        if (draftService != null)
+        if (draftService == null || !draftService.CompleteMissingRolls())
         {
-            draftService.CompleteMissingRolls();
+            AbortOpening("跳过补齐硬币失败");
+            yield break;
         }
 
         LogSkip(3, $"如果未抽满九枚，自动补齐硬币 | rolled:{GetRolledCount()}");
@@ -355,9 +487,19 @@ public class OpeningFlowController : MonoBehaviour
         if (!IsVersionValid(version)) yield break;
 
         LogSkip(5, "关闭开场UI根物体、隐藏龟壳和硬币");
+        if (uiController != null)
+        {
+            uiController.HideOpeningUI();
+        }
+
         if (shellPresentation != null)
         {
             shellPresentation.HideImmediate();
+        }
+
+        if (coinPresentation != null)
+        {
+            coinPresentation.HideImmediate();
         }
 
         yield return WaitStep();
@@ -429,10 +571,30 @@ public class OpeningFlowController : MonoBehaviour
             ResolveFlowController();
         }
 
+        ApplyDraftToGameplay();
+
         if (flowController != null)
         {
             flowController.CompleteStartSequence();
         }
+    }
+
+    private void AbortOpening(string reason)
+    {
+        flowVersion++;
+        isRunning = false;
+        isSkipRequested = false;
+        currentRoundIndex = 0;
+        flowRoutine = null;
+
+        if (coinPresentation != null)
+        {
+            coinPresentation.SelectionChanged -= OnCoinSelectionChanged;
+            coinPresentation.SelectionHintRequested -= OnCoinSelectionHintRequested;
+            coinPresentation.DisableSelection();
+        }
+
+        Debug.LogError($"[OpeningFlowController] 开局流程中止 | object:{name} | reason:{reason} | state:{state}");
     }
 
     private void RebuildDraftService()
@@ -511,6 +673,133 @@ public class OpeningFlowController : MonoBehaviour
         if (shellShakeInput == null)
         {
             shellShakeInput = FindObjectOfType<OpeningShellShakeInput>();
+        }
+
+        if (coinPresentation == null)
+        {
+            coinPresentation = GetComponent<OpeningCoinPresentation>();
+        }
+
+        if (coinPresentation == null)
+        {
+            coinPresentation = FindObjectOfType<OpeningCoinPresentation>();
+        }
+
+        if (uiController == null)
+        {
+            uiController = GetComponent<OpeningUIController>();
+        }
+
+        if (uiController == null)
+        {
+            uiController = FindObjectOfType<OpeningUIController>();
+        }
+
+        if (loadoutManager == null)
+        {
+            loadoutManager = FindObjectOfType<CoinLoadoutManager>();
+        }
+
+        if (rosterManager == null)
+        {
+            rosterManager = CoinRosterManager.Instance;
+        }
+
+        if (rosterManager == null)
+        {
+            rosterManager = FindObjectOfType<CoinRosterManager>();
+        }
+    }
+
+    private void BindUIEvents()
+    {
+        if (uiController == null)
+            return;
+
+        uiController.SkipButtonClicked -= OnSkipButtonClicked;
+        uiController.SkipButtonClicked += OnSkipButtonClicked;
+    }
+
+    private void UnbindUIEvents()
+    {
+        if (uiController == null)
+            return;
+
+        uiController.SkipButtonClicked -= OnSkipButtonClicked;
+    }
+
+    private void OnSkipButtonClicked()
+    {
+        SkipOpening();
+    }
+
+    private void OnCoinSelectionChanged(int selectedCount, int requiredCount)
+    {
+        if (uiController != null)
+        {
+            uiController.UpdateSelection(selectedCount, requiredCount);
+        }
+    }
+
+    private void OnCoinSelectionHintRequested(string message)
+    {
+        if (uiController == null)
+            return;
+
+        if (string.IsNullOrEmpty(message))
+        {
+            uiController.ShowMaxSelectionHint();
+        }
+        else
+        {
+            uiController.SetHint(message);
+        }
+    }
+
+    private void ApplyDraftToGameplay()
+    {
+        if (Draft == null)
+        {
+            Debug.LogError($"[OpeningFlowController] 开局结果为空，无法应用到正式游戏 | object:{name}");
+            return;
+        }
+
+        if (loadoutManager == null)
+        {
+            loadoutManager = FindObjectOfType<CoinLoadoutManager>();
+        }
+
+        if (rosterManager == null)
+        {
+            rosterManager = CoinRosterManager.Instance != null
+                ? CoinRosterManager.Instance
+                : FindObjectOfType<CoinRosterManager>();
+        }
+
+        if (loadoutManager != null)
+        {
+            loadoutManager.ApplyFixedLoadout(Draft.GetSelectedDefinitions());
+        }
+        else
+        {
+            Debug.LogWarning($"[OpeningFlowController] 未找到 CoinLoadoutManager，无法把开局三枚硬币分配到场上 | object:{name}");
+        }
+
+        if (rosterManager != null)
+        {
+            rosterManager.SetInventoryCoins(Draft.GetInventoryDefinitions(), true);
+        }
+        else
+        {
+            Debug.LogWarning($"[OpeningFlowController] 未找到 CoinRosterManager，无法设置背包候选硬币 | object:{name}");
+        }
+
+        if (debugLog)
+        {
+            Debug.Log(
+                $"[OpeningFlowController] 应用开局硬币结果 | object:{name} | " +
+                $"selected:{Draft.SelectedCount} | inventory:{Draft.InventoryCount}"
+            );
         }
     }
 

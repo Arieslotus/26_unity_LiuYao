@@ -34,18 +34,33 @@ public class CoinModelShelf : MonoBehaviour
     [SerializeField] private bool enableHover = true;
     [SerializeField] private bool enableSelection;
 
+    [Header("说明")]
+    [Tooltip("开启后，鼠标移到硬币上时显示说明面板。")]
+    [SerializeField] private bool enableInfoPanel;
+
     [Header("调试")]
     [SerializeField] private bool debugLog;
 
     private readonly List<CoinReplacementModelItem> spawnedItems = new List<CoinReplacementModelItem>();
     private readonly List<CoinReplacementModelItem> selectedItems = new List<CoinReplacementModelItem>();
     private CoinReplacementModelItem hoveredItem;
+    private CoinInfoPanelController infoPanelController;
 
     public IReadOnlyList<CoinReplacementModelItem> SpawnedItems => spawnedItems;
     public IReadOnlyList<CoinReplacementModelItem> SelectedItems => selectedItems;
     public bool EnableHover => enableHover;
     public bool EnableSelection => enableSelection;
     public event Action<CoinReplacementModelItem> ItemClicked;
+
+    private void Awake()
+    {
+        ResolveInfoPanelController();
+    }
+
+    private void OnEnable()
+    {
+        ResolveInfoPanelController();
+    }
 
     private void Update()
     {
@@ -162,6 +177,7 @@ public class CoinModelShelf : MonoBehaviour
         }
 
         hoveredItem = item;
+        RefreshInfoPanel();
 
         if (hoveredItem != null)
         {
@@ -180,7 +196,11 @@ public class CoinModelShelf : MonoBehaviour
         if (!Physics.Raycast(ray, out hit, selectionRayDistance, selectionLayerMask, QueryTriggerInteraction.Collide))
             return null;
 
-        return hit.collider.GetComponentInParent<CoinReplacementModelItem>();
+        CoinReplacementModelItem item = hit.collider.GetComponentInParent<CoinReplacementModelItem>();
+        if (item == null)
+            return null;
+
+        return spawnedItems.Contains(item) ? item : null;
     }
 
     private void ClearHoveredItem()
@@ -189,6 +209,52 @@ public class CoinModelShelf : MonoBehaviour
         {
             hoveredItem.SetHovered(false);
             hoveredItem = null;
+        }
+
+        RefreshInfoPanel();
+    }
+
+    private void RefreshInfoPanel()
+    {
+        ResolveInfoPanelController();
+
+        if (debugLog)
+        {
+            Debug.Log(
+                $"[CoinModelShelf] 刷新说明面板 | shelf:{name} | object:{gameObject.name} | " +
+                $"enableInfoPanel:{enableInfoPanel} | enableHover:{enableHover} | " +
+                $"controller:{(infoPanelController != null ? infoPanelController.name : "空")} | " +
+                $"hovered:{(hoveredItem != null ? hoveredItem.name : "空")}"
+            );
+        }
+
+        if (!enableInfoPanel || infoPanelController == null)
+            return;
+
+        if (hoveredItem == null || hoveredItem.Definition == null)
+        {
+            infoPanelController.Hide();
+            return;
+        }
+
+        infoPanelController.Show(hoveredItem.Definition);
+    }
+
+    private void ResolveInfoPanelController()
+    {
+        if (infoPanelController == null)
+        {
+            infoPanelController = GetComponent<CoinInfoPanelController>();
+
+            if (debugLog)
+            {
+                CoinInfoPanelController[] controllers = GetComponents<CoinInfoPanelController>();
+                Debug.Log(
+                    $"[CoinModelShelf] 自动查找说明控制器 | shelf:{name} | object:{gameObject.name} | " +
+                    $"foundCount:{controllers.Length} | " +
+                    $"resolved:{(infoPanelController != null ? infoPanelController.name : "空")}"
+                );
+            }
         }
     }
 

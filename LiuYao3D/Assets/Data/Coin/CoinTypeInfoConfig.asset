@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5aa5d1c32c71e164ba3288502d16c154, type: 3}
+  m_Name: CoinTypeInfoConfig
+  m_EditorClassIdentifier: 
+  entries:
+  - coinType: 0
+    displayName: "\u53CC\u9762\u5E01"
+    description: "\u6B63\u53CD\u9762\u4E3A\u76F8\u5BF9\u5366\u8C61\u7684\u786C\u5E01"
+  - coinType: 1
+    displayName: "\u5355\u9762\u5E01"
+    description: "\u4E0D\u53EF\u7FFB\u9762\u7684\u786C\u5E01"
+  - coinType: 2
+    displayName: "\u7834\u635F\u5E01"
+    description: "\u66F4\u635F\u4F46\u66F4\u6709\u653B\u51FB\u6027\u7684\u786C\u5E01"

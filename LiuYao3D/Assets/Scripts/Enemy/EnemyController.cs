@@ -32,6 +32,7 @@ public class EnemyController : MonoBehaviour, IAttackable
     [SerializeField] private bool debugLog = true;
 
     public EnemyStats Stats => stats;
+    public int MaxAttackTargetCount => GetMaxAttackTargetCount();
 
     private void Awake()
     {
@@ -72,7 +73,7 @@ public class EnemyController : MonoBehaviour, IAttackable
     {
         Vector3 startPos = transform.position;
 
-        List<IAttackable> targets = FindTargetsInRange(2);
+        List<IAttackable> targets = FindTargetsInRange(MaxAttackTargetCount);
 
         if (targets.Count == 0)
         {
@@ -267,6 +268,12 @@ public class EnemyController : MonoBehaviour, IAttackable
     private int GetAttackDamage()
     {
         return stats != null ? stats.Attack : attackDamage;
+    }
+
+    private int GetMaxAttackTargetCount()
+    {
+        EnemyDefinitionSO definition = stats != null ? stats.Definition : null;
+        return definition != null ? Mathf.Max(1, definition.maxAttackTargetCount) : 2;
     }
 
     private void UpdateHPUI()

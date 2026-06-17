@@ -1,5 +1,5 @@
 /// <summary>
-/// 实现功能：负责开局抽币数据的模拟生成、补齐、自动选择和背包候选拆分。
+/// 实现功能：负责开局抽币数据生成，保证三轮共九枚硬币来自配置币池且同一池条目不重复，并拆分开局选择与背包候选。
 /// </summary>
 using System.Collections.Generic;
 using UnityEngine;
@@ -34,44 +34,86 @@ public class OpeningCoinDraftService
         RebuildAvailablePool();
     }
 
-    public void DrawRound(int roundIndex)
+    public bool ValidateCanDrawOpeningCoins()
     {
+        if (allowPlaceholderCoins)
+            return true;
+
+        if (drawConfig == null)
+        {
+            Debug.LogError($"[OpeningCoinDraftService] 未绑定 CoinDrawConfig，无法进行开局抽币 | owner:{logOwner}");
+            return false;
+        }
+
+        if (drawConfig.CoinPool == null || drawConfig.CoinPool.Count == 0)
+        {
+            Debug.LogError($"[OpeningCoinDraftService] CoinDrawConfig 币池为空，无法进行开局抽币 | owner:{logOwner}");
+            return false;
+        }
+
+        int availableCount = CountValidPoolEntries(drawConfig.CoinPool);
+        if (availableCount < OpeningCoinDraftRules.TotalRollCount)
+        {
+            Debug.LogError(
+                $"[OpeningCoinDraftService] 开局币池条目不足，无法抽满九枚硬币 | owner:{logOwner} | " +
+                $"available:{availableCount} | need:{OpeningCoinDraftRules.TotalRollCount}"
+            );
+            return false;
+        }
+
+        return true;
+    }
+
+    public bool DrawRound(int roundIndex)
+    {
+        int beforeCount = draft.RolledCount;
+
         for (int i = 0; i < OpeningCoinDraftRules.CoinsPerRound; i++)
         {
-            DrawOneCoin(roundIndex);
+            if (!DrawOneCoin(roundIndex))
+            {
+                Debug.LogError(
+                    $"[OpeningCoinDraftService] 第{roundIndex}轮抽币失败 | owner:{logOwner} | " +
+                    $"before:{beforeCount} | current:{draft.RolledCount}"
+                );
+                return false;
+            }
         }
 
         if (debugLog)
         {
-            Debug.Log($"[OpeningCoinDraftService] 模拟抽取一轮硬币 | owner:{logOwner} | round:{roundIndex} | rolled:{draft.RolledCount}");
+            Debug.Log(
+                $"[OpeningCoinDraftService] 抽取一轮硬币 | owner:{logOwner} | " +
+                $"round:{roundIndex} | rolled:{draft.RolledCount} | coins:{BuildLastRoundDebugText()}"
+            );
         }
+
+        return true;
     }
 
-    public void CompleteMissingRolls()
+    public bool CompleteMissingRolls()
     {
         while (draft.RolledCount < OpeningCoinDraftRules.TotalRollCount)
         {
             int roundIndex = draft.RolledCount / OpeningCoinDraftRules.CoinsPerRound + 1;
-            DrawOneCoin(roundIndex);
+            if (!DrawOneCoin(roundIndex))
+            {
+                Debug.LogError($"[OpeningCoinDraftService] 自动补齐开局硬币失败 | owner:{logOwner} | rolled:{draft.RolledCount}");
+                return false;
+            }
         }
 
         if (debugLog)
         {
             Debug.Log($"[OpeningCoinDraftService] 补齐开局硬币 | owner:{logOwner} | rolled:{draft.RolledCount}");
         }
+
+        return true;
     }
 
     public void AutoSelectFirstCoins()
     {
-        for (int i = 0; i < draft.RolledCoins.Count; i++)
-        {
-            if (draft.SelectedCount >= OpeningCoinDraftRules.SelectedCount)
-                break;
-
-            draft.SelectCoin(draft.RolledCoins[i]);
-        }
-
-        draft.RebuildInventoryFromUnselected();
+        draft.AutoSelectFirstCoins();
 
         if (debugLog)
         {
@@ -82,7 +124,7 @@ public class OpeningCoinDraftService
         }
     }
 
-    private void DrawOneCoin(int roundIndex)
+    private bool DrawOneCoin(int roundIndex)
     {
         CoinDefinition definition = PickDefinition();
         OpeningCoinDraftSlot slot;
@@ -98,11 +140,12 @@ public class OpeningCoinDraftService
         }
         else
         {
-            Debug.LogWarning($"[OpeningCoinDraftService] 抽币失败，且未允许模拟占位 | owner:{logOwner} | round:{roundIndex}");
-            return;
+            Debug.LogError($"[OpeningCoinDraftService] 抽币失败：可用币池已空 | owner:{logOwner} | round:{roundIndex}");
+            return false;
         }
 
         draft.AddRolledCoin(slot);
+        return true;
     }
 
     private CoinDefinition PickDefinition()
@@ -126,18 +169,44 @@ public class OpeningCoinDraftService
         for (int i = 0; i < drawConfig.CoinPool.Count; i++)
         {
             CoinDefinition definition = drawConfig.CoinPool[i];
-            if (definition == null || availablePool.Contains(definition))
+            if (definition == null)
                 continue;
 
             availablePool.Add(definition);
         }
+    }
 
-        if (debugLog && availablePool.Count < OpeningCoinDraftRules.TotalRollCount && !allowPlaceholderCoins)
+    private static int CountValidPoolEntries(List<CoinDefinition> pool)
+    {
+        if (pool == null)
+            return 0;
+
+        int count = 0;
+        for (int i = 0; i < pool.Count; i++)
         {
-            Debug.LogWarning(
-                $"[OpeningCoinDraftService] 币池不足以抽满九枚且未允许占位 | owner:{logOwner} | " +
-                $"pool:{availablePool.Count} | need:{OpeningCoinDraftRules.TotalRollCount}"
-            );
+            if (pool[i] != null)
+            {
+                count++;
+            }
         }
+
+        return count;
+    }
+
+    private string BuildLastRoundDebugText()
+    {
+        if (draft.RolledCount <= 0)
+            return "空";
+
+        int startIndex = Mathf.Max(0, draft.RolledCount - OpeningCoinDraftRules.CoinsPerRound);
+        List<string> names = new List<string>();
+
+        for (int i = startIndex; i < draft.RolledCoins.Count; i++)
+        {
+            OpeningCoinDraftSlot slot = draft.RolledCoins[i];
+            names.Add(slot != null ? slot.DisplayName : "空");
+        }
+
+        return string.Join(" / ", names);
     }
 }

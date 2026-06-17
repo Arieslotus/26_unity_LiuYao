@@ -28,6 +28,9 @@ public class GameFlowController : MonoBehaviour
     [Tooltip("敌人波次管理器。存在有效波次配置时，胜利条件由波次系统判定。")]
     [SerializeField] private EnemyWaveManager enemyWaveManager;
 
+    [Tooltip("游戏内 UI 所在的 Overlay Canvas。等待开场时禁用，正式开始游戏后启用。")]
+    [SerializeField] private Canvas overlayCanvas;
+
     [Header("胜负规则")]
     [Tooltip("启动时自动收集场景中的敌人和硬币数值组件。")]
     [SerializeField] private bool autoFindTargetsOnStart = true;
@@ -68,10 +71,17 @@ public class GameFlowController : MonoBehaviour
 
         Instance = this;
         ResolveReferences();
+
+        if (FindObjectOfType<OpeningFlowController>() != null)
+        {
+            waitForStartSignal = true;
+        }
     }
 
     private void Start()
     {
+        SetOverlayCanvasVisible(!waitForStartSignal);
+
         if (autoFindTargetsOnStart)
         {
             FindTargets();
@@ -81,7 +91,11 @@ public class GameFlowController : MonoBehaviour
 
         if (waitForStartSignal)
         {
-            SetState(GameFlowState.WaitingToStart);
+            if (state != GameFlowState.Starting && state != GameFlowState.Playing)
+            {
+                SetState(GameFlowState.WaitingToStart);
+            }
+
             return;
         }
 
@@ -143,12 +157,31 @@ public class GameFlowController : MonoBehaviour
 
     public void CompleteStartSequence()
     {
+        if (state == GameFlowState.WaitingToStart)
+        {
+            Debug.LogWarning($"[GameFlowController] 完成开始流程时仍处于 WaitingToStart，自动补齐 Starting 状态 | object:{name}");
+            SetState(GameFlowState.Starting);
+        }
+
+        if (state == GameFlowState.Playing)
+        {
+            if (debugLog)
+            {
+                Debug.Log($"[GameFlowController] 游戏已经处于 Playing，忽略重复完成开始流程请求 | object:{name}");
+            }
+
+            return;
+        }
+
         if (state != GameFlowState.Starting)
         {
             Debug.LogWarning($"[GameFlowController] 当前状态不是 Starting，忽略完成开始流程请求 | object:{name} | state:{state}");
             return;
         }
 
+        SetOverlayCanvasVisible(true);
+        ClearGameplayInputLocks("游戏正式开始");
+        RefreshTargetsForGameplayStart();
         SetState(GameFlowState.Playing);
 
         if (turnManager != null)
@@ -258,6 +291,43 @@ public class GameFlowController : MonoBehaviour
         if (enemyWaveManager == null)
         {
             enemyWaveManager = FindObjectOfType<EnemyWaveManager>();
+        }
+
+        if (overlayCanvas == null)
+        {
+            Canvas[] canvases = FindObjectsOfType<Canvas>(true);
+            for (int i = 0; i < canvases.Length; i++)
+            {
+                Canvas canvas = canvases[i];
+                if (canvas != null && canvas.renderMode == RenderMode.ScreenSpaceOverlay)
+                {
+                    overlayCanvas = canvas;
+                    break;
+                }
+            }
+        }
+    }
+
+    private void RefreshTargetsForGameplayStart()
+    {
+        if (!autoFindTargetsOnStart)
+            return;
+
+        UnsubscribeTargets();
+        FindTargets();
+        SubscribeTargets();
+    }
+
+    private void SetOverlayCanvasVisible(bool visible)
+    {
+        if (overlayCanvas == null)
+            return;
+
+        overlayCanvas.gameObject.SetActive(visible);
+
+        if (debugLog)
+        {
+            Debug.Log($"[GameFlowController] 设置游戏内 Overlay Canvas | object:{name} | canvas:{overlayCanvas.name} | active:{visible}");
         }
     }
 

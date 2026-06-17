@@ -8,6 +8,13 @@ using UnityEngine;
 
 public class CoinShelfSequenceAnimator : MonoBehaviour
 {
+    private enum ShelfAnimationState
+    {
+        None,
+        Entering,
+        Exiting
+    }
+
     [Header("引用")]
     [SerializeField] private CoinModelShelf shelf;
 
@@ -59,6 +66,7 @@ public class CoinShelfSequenceAnimator : MonoBehaviour
     private bool originalHoverEnabled = true;
     private bool originalSelectionEnabled;
     private bool hasCachedInteractionState;
+    private ShelfAnimationState animationState;
 
     public bool IsPlaying =>
         (activeSequence != null && activeSequence.IsActive() && activeSequence.IsPlaying()) ||
@@ -74,18 +82,32 @@ public class CoinShelfSequenceAnimator : MonoBehaviour
 
     public void PlayEnter(Action onComplete = null)
     {
+        if (animationState == ShelfAnimationState.Entering)
+        {
+            return;
+        }
+
         KillActiveSequence();
+        animationState = ShelfAnimationState.Entering;
         activeRoutine = StartCoroutine(PlayEnterRoutine(onComplete));
     }
 
     public void PlayExit(Action onComplete = null)
     {
+        if (animationState == ShelfAnimationState.Exiting)
+        {
+            return;
+        }
+
         KillActiveSequence();
+        animationState = ShelfAnimationState.Exiting;
         activeRoutine = StartCoroutine(PlayExitRoutine(onComplete));
     }
 
     public void KillActiveSequence()
     {
+        animationState = ShelfAnimationState.None;
+
         if (activeRoutine != null)
         {
             StopCoroutine(activeRoutine);
@@ -117,6 +139,7 @@ public class CoinShelfSequenceAnimator : MonoBehaviour
     {
         if (shelf == null)
         {
+            animationState = ShelfAnimationState.None;
             activeRoutine = null;
             onComplete?.Invoke();
             yield break;
@@ -135,6 +158,7 @@ public class CoinShelfSequenceAnimator : MonoBehaviour
         if (items.Count == 0)
         {
             RestoreInteraction();
+            animationState = ShelfAnimationState.None;
             activeRoutine = null;
             onComplete?.Invoke();
             yield break;
@@ -148,6 +172,8 @@ public class CoinShelfSequenceAnimator : MonoBehaviour
             CoinReplacementModelItem item = items[i];
             if (item == null)
                 continue;
+
+            //Debug.Log($"[CoinShelfSequenceAnimator] Exit item | index:{i} | item:{item.name}");
 
             Transform itemTransform = item.transform;
             Vector3 targetPosition = item.TargetLocalPosition;
@@ -173,6 +199,7 @@ public class CoinShelfSequenceAnimator : MonoBehaviour
 
         activeSequence = null;
         RestoreInteraction();
+        animationState = ShelfAnimationState.None;
         activeRoutine = null;
 
         if (debugLog)
@@ -187,6 +214,7 @@ public class CoinShelfSequenceAnimator : MonoBehaviour
     {
         if (shelf == null)
         {
+            animationState = ShelfAnimationState.None;
             activeRoutine = null;
             onComplete?.Invoke();
             yield break;
@@ -239,6 +267,7 @@ public class CoinShelfSequenceAnimator : MonoBehaviour
         }
 
         RestoreInteraction();
+        animationState = ShelfAnimationState.None;
         activeRoutine = null;
 
         if (debugLog)

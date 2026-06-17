@@ -34,15 +34,42 @@ public class OpeningCoinDraft
         rolledCoins.Add(slot);
     }
 
-    public void SelectCoin(OpeningCoinDraftSlot slot)
+    public bool ApplySelection(IReadOnlyList<OpeningCoinDraftSlot> slots)
     {
-        if (slot == null || selectedCoins.Contains(slot))
-            return;
+        selectedCoins.Clear();
 
-        if (selectedCoins.Count >= OpeningCoinDraftRules.SelectedCount)
-            return;
+        if (slots == null)
+            return false;
 
-        selectedCoins.Add(slot);
+        for (int i = 0; i < slots.Count; i++)
+        {
+            OpeningCoinDraftSlot slot = slots[i];
+            if (slot == null || !rolledCoins.Contains(slot) || selectedCoins.Contains(slot))
+                continue;
+
+            selectedCoins.Add(slot);
+
+            if (selectedCoins.Count >= OpeningCoinDraftRules.SelectedCount)
+                break;
+        }
+
+        RebuildInventoryFromUnselected();
+        return selectedCoins.Count == OpeningCoinDraftRules.SelectedCount;
+    }
+
+    public void AutoSelectFirstCoins()
+    {
+        selectedCoins.Clear();
+
+        for (int i = 0; i < rolledCoins.Count; i++)
+        {
+            if (selectedCoins.Count >= OpeningCoinDraftRules.SelectedCount)
+                break;
+
+            selectedCoins.Add(rolledCoins[i]);
+        }
+
+        RebuildInventoryFromUnselected();
     }
 
     public void RebuildInventoryFromUnselected()
