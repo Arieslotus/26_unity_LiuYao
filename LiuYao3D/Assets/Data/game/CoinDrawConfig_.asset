@@ -17,14 +17,24 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 4ac51607dbeeaa649aadfec057aaaccb, type: 2}
   - {fileID: 11400000, guid: d102aea4bcaeff14fa25d815029e8a16, type: 2}
   - {fileID: 11400000, guid: 584ba317a3a35a0469417c47cc6b9d6d, type: 2}
-  - {fileID: 11400000, guid: 584ba317a3a35a0469417c47cc6b9d6d, type: 2}
-  - {fileID: 11400000, guid: 584ba317a3a35a0469417c47cc6b9d6d, type: 2}
-  - {fileID: 11400000, guid: 584ba317a3a35a0469417c47cc6b9d6d, type: 2}
-  - {fileID: 11400000, guid: 584ba317a3a35a0469417c47cc6b9d6d, type: 2}
-  - {fileID: 11400000, guid: 584ba317a3a35a0469417c47cc6b9d6d, type: 2}
-  - {fileID: 11400000, guid: 584ba317a3a35a0469417c47cc6b9d6d, type: 2}
+  - {fileID: 11400000, guid: 576f7c28e4ec87342b421cd3b2c50c5d, type: 2}
+  - {fileID: 11400000, guid: 2327ff871fb88614b97f45f290d94a6b, type: 2}
+  - {fileID: 11400000, guid: 49b7a47e3b733eb4a910c0c236bc3873, type: 2}
+  - {fileID: 11400000, guid: 41ea148ab82eb2245b6e97a3b7b5d9eb, type: 2}
+  - {fileID: 11400000, guid: 82a9d8700d4cba6428379923ff52f7fc, type: 2}
+  - {fileID: 11400000, guid: 16c57c15123f95648a47a61da7d57a30, type: 2}
+  - {fileID: 11400000, guid: 81a2278f20a3dce4bb747c0d195040d2, type: 2}
+  - {fileID: 11400000, guid: 5528a322eae14b64dafaed6e90a85538, type: 2}
+  - {fileID: 11400000, guid: 4256a6eb8bd411d489b3d76f7ac15259, type: 2}
+  - {fileID: 11400000, guid: f90adf60b02cab1469caf2288ac3f69f, type: 2}
+  - {fileID: 11400000, guid: d4e9f6797123b46449d3713d9e4dd0aa, type: 2}
+  - {fileID: 11400000, guid: 4c203d05e3c91414bb656b6c9096a08f, type: 2}
   fixedCoins:
   - coinDefinition: {fileID: 11400000, guid: d102aea4bcaeff14fa25d815029e8a16, type: 2}
+    initialSide: 0
+  - coinDefinition: {fileID: 11400000, guid: 576f7c28e4ec87342b421cd3b2c50c5d, type: 2}
+    initialSide: 0
+  - coinDefinition: {fileID: 11400000, guid: d4e9f6797123b46449d3713d9e4dd0aa, type: 2}
     initialSide: 0
   drawCount: 3
   allowDuplicate: 0

@@ -68,6 +68,21 @@ public class CoinRuntimeData : MonoBehaviour
 
     public void PlayChargeFlip(Action onComplete = null)
     {
+        if (IsSingleSidedCoin())
+        {
+            if (visualController != null)
+            {
+                visualController.SetFaceImmediate(true, coinDefinition);
+            }
+
+            isFrontSide = true;
+            NotifyVisualStateChanged();
+            onComplete?.Invoke();
+
+            Debug.Log($"[CoinRuntimeData] 单面币忽略蓄力翻面 | 物体:{name}");
+            return;
+        }
+
         isFrontSide = !isFrontSide;
 
         Action notifyAndComplete = () =>
@@ -93,7 +108,7 @@ public class CoinRuntimeData : MonoBehaviour
 
     public void RestoreFaceImmediate(bool targetFrontSide)
     {
-        isFrontSide = targetFrontSide;
+        isFrontSide = IsSingleSidedCoin() ? true : targetFrontSide;
 
         if (visualController != null)
         {
@@ -111,7 +126,7 @@ public class CoinRuntimeData : MonoBehaviour
     public void SetFace(bool frontSide, bool playAnimation)
     {
         TrigramType oldTrigram = CurrentTrigram;
-        isFrontSide = frontSide;
+        isFrontSide = IsSingleSidedCoin() ? true : frontSide;
 
         if (visualController == null)
         {
@@ -168,6 +183,11 @@ public class CoinRuntimeData : MonoBehaviour
         {
             visualController.SetFaceImmediate(isFrontSide, coinDefinition);
         }
+    }
+
+    private bool IsSingleSidedCoin()
+    {
+        return coinDefinition != null && coinDefinition.coinType == CoinType.SingleSided;
     }
 
     private void NotifyVisualStateChanged()

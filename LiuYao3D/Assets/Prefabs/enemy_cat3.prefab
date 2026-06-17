@@ -515,7 +515,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   attackDamage: 2
-  moveSpeed: 2
+  moveSpeed: 5
   attackDistance: 1.2
   maxChaseDistance: 5
   attackVisualizer: {fileID: 2482197889585580137}

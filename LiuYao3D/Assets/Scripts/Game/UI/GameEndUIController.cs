@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class GameEndUIController : MonoBehaviour
@@ -52,12 +53,21 @@ public class GameEndUIController : MonoBehaviour
     [Tooltip("等待动画时是否使用不受 Time.timeScale 影响的时间。")]
     [SerializeField] private bool useUnscaledWait = true;
 
+    [Header("返回主界面")]
+    [Tooltip("游戏结束 UI 显示完成后，是否允许点击鼠标左键返回主界面。")]
+    [SerializeField] private bool clickToReturnMainMenu = true;
+
+    [Tooltip("点击后加载的主界面场景名。")]
+    [SerializeField] private string mainMenuSceneName = "MainMenu";
+
     [Header("调试")]
     [SerializeField] private bool debugLog = true;
 
     private bool hasSubscribed;
     private Coroutine endCoroutine;
     private GameEndPopup[] sceneEndPopups = new GameEndPopup[0];
+    private bool canReturnToMainMenu;
+    private bool isLoadingMainMenu;
 
     private void Awake()
     {
@@ -84,6 +94,17 @@ public class GameEndUIController : MonoBehaviour
     private void OnDestroy()
     {
         UnsubscribeFlow();
+    }
+
+    private void Update()
+    {
+        if (!clickToReturnMainMenu || !canReturnToMainMenu || isLoadingMainMenu)
+            return;
+
+        if (!Input.GetMouseButtonDown(0))
+            return;
+
+        ReturnToMainMenu();
     }
 
     private void SubscribeFlow()
@@ -124,6 +145,7 @@ public class GameEndUIController : MonoBehaviour
             StopCoroutine(endCoroutine);
         }
 
+        canReturnToMainMenu = false;
         endCoroutine = StartCoroutine(ShowEndUICoroutine(isVictory));
     }
 
@@ -166,7 +188,28 @@ public class GameEndUIController : MonoBehaviour
             endUiRoot.SetActive(false);
         }
 
+        canReturnToMainMenu = true;
         endCoroutine = null;
+    }
+
+    private void ReturnToMainMenu()
+    {
+        if (string.IsNullOrEmpty(mainMenuSceneName))
+        {
+            Debug.LogWarning($"[GameEndUIController] 返回主界面失败：未配置主界面场景名 | object:{name}");
+            return;
+        }
+
+        isLoadingMainMenu = true;
+        canReturnToMainMenu = false;
+        Time.timeScale = 1f;
+
+        if (debugLog)
+        {
+            Debug.Log($"[GameEndUIController] 游戏结束后点击返回主界面 | object:{name} | scene:{mainMenuSceneName}");
+        }
+
+        SceneManager.LoadScene(mainMenuSceneName);
     }
 
     private void HideEndUIImmediate()

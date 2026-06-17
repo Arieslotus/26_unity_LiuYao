@@ -250,12 +250,19 @@ public class EnemyShieldController : MonoBehaviour
             return;
         }
 
-        TrigramType shieldType = shieldCycle[nextShieldIndex % shieldCycle.Count];
-        nextShieldIndex++;
-
-        if (shieldType == TrigramType.None)
+        HashSet<TrigramType> availableShieldTypes = CollectAvailableShieldTypes();
+        if (availableShieldTypes.Count == 0)
         {
-            Debug.LogWarning($"[EnemyShieldController] 护盾属性不能为 None，已跳过 | enemy:{name} | round:{roundIndex}");
+            Debug.LogWarning($"[EnemyShieldController] 未找到场上或背包硬币的有效正反面属性，无法生成护盾 | enemy:{name} | round:{roundIndex}");
+            return;
+        }
+
+        if (!TryGetNextAvailableShieldType(availableShieldTypes, out TrigramType shieldType))
+        {
+            Debug.LogWarning(
+                $"[EnemyShieldController] 护盾属性列表中没有匹配当前硬币正反面的属性，无法生成护盾 | " +
+                $"enemy:{name} | round:{roundIndex} | available:{FormatTrigramSet(availableShieldTypes)}"
+            );
             return;
         }
 
@@ -268,6 +275,111 @@ public class EnemyShieldController : MonoBehaviour
         {
             Debug.Log($"[EnemyShieldController] 生成护盾 | enemy:{name} | shield:{currentShieldType} | round:{roundIndex}");
         }
+    }
+
+    private bool TryGetNextAvailableShieldType(HashSet<TrigramType> availableShieldTypes, out TrigramType shieldType)
+    {
+        shieldType = TrigramType.None;
+
+        if (shieldCycle == null || shieldCycle.Count == 0 || availableShieldTypes == null || availableShieldTypes.Count == 0)
+            return false;
+
+        int startIndex = nextShieldIndex;
+        int checkedCount = 0;
+
+        while (checkedCount < shieldCycle.Count)
+        {
+            int index = nextShieldIndex % shieldCycle.Count;
+            nextShieldIndex++;
+            checkedCount++;
+
+            TrigramType candidate = shieldCycle[index];
+            if (candidate == TrigramType.None)
+                continue;
+
+            if (!availableShieldTypes.Contains(candidate))
+                continue;
+
+            shieldType = candidate;
+            return true;
+        }
+
+        nextShieldIndex = startIndex;
+        return false;
+    }
+
+    private HashSet<TrigramType> CollectAvailableShieldTypes()
+    {
+        HashSet<TrigramType> result = new HashSet<TrigramType>();
+
+        CoinRosterManager roster = CoinRosterManager.Instance;
+        if (roster != null)
+        {
+            IReadOnlyList<ChessPiece> slots = roster.CoinSlots;
+            for (int i = 0; i < slots.Count; i++)
+            {
+                AddFieldCoinTrigrams(result, slots[i]);
+            }
+
+            IReadOnlyList<CoinDefinition> inventory = roster.InventoryCoins;
+            for (int i = 0; i < inventory.Count; i++)
+            {
+                AddDefinitionTrigrams(result, inventory[i]);
+            }
+
+            return result;
+        }
+
+        ChessPiece[] pieces = FindObjectsOfType<ChessPiece>();
+        for (int i = 0; i < pieces.Length; i++)
+        {
+            AddFieldCoinTrigrams(result, pieces[i]);
+        }
+
+        return result;
+    }
+
+    private static void AddFieldCoinTrigrams(HashSet<TrigramType> result, ChessPiece piece)
+    {
+        if (result == null || piece == null)
+            return;
+
+        CoinStats stats = piece.GetComponent<CoinStats>();
+        if (stats != null && (stats.IsBroken || stats.IsPendingBreak))
+            return;
+
+        CoinDefinition definition = piece.CoinDefinition;
+        if (definition == null && stats != null)
+        {
+            definition = stats.AppliedDefinition;
+        }
+
+        AddDefinitionTrigrams(result, definition);
+    }
+
+    private static void AddDefinitionTrigrams(HashSet<TrigramType> result, CoinDefinition definition)
+    {
+        if (result == null || definition == null)
+            return;
+
+        AddTrigram(result, definition.frontTrigram);
+        AddTrigram(result, definition.backTrigram);
+    }
+
+    private static void AddTrigram(HashSet<TrigramType> result, TrigramType trigram)
+    {
+        if (result == null || trigram == TrigramType.None)
+            return;
+
+        result.Add(trigram);
+    }
+
+    private static string FormatTrigramSet(HashSet<TrigramType> trigrams)
+    {
+        if (trigrams == null || trigrams.Count == 0)
+            return "空";
+
+        return string.Join(",", trigrams);
     }
 
     private void OnSkillImpactWaveRequested(TrigramType waveType)

@@ -77,11 +77,14 @@ public class CoinReplacementPanel : UIPopupBase
 
     private void OnDisable()
     {
+        ReleaseReplacementLocks();
         UnsubscribeRosterManager();
     }
 
     private void Show(IReadOnlyList<ChessPiece> brokenSlots, IReadOnlyList<CoinDefinition> inventoryCoins)
     {
+        PauseRoundAdvance();
+
         if (inGameShelfController != null)
         {
             inGameShelfController.PlayExit(() => ShowReplacementContent(brokenSlots, inventoryCoins));
@@ -152,8 +155,7 @@ public class CoinReplacementPanel : UIPopupBase
     private void CloseReplacementPanel()
     {
         isPanelVisible = false;
-        RestoreCoinControls();
-        ResumeRoundAdvance();
+        ReleaseReplacementLocks();
         HidePanelImmediate();
     }
 
@@ -185,18 +187,17 @@ public class CoinReplacementPanel : UIPopupBase
 
         if (pendingSlots.Count <= 0)
         {
-            HidePanelImmediate();
+            CloseReplacementPanel();
             return;
         }
 
         if (requiredSelectionCount <= 0)
         {
             DestroyUnfilledBrokenSlots(0);
-            HidePanelImmediate();
+            CloseReplacementPanel();
             return;
         }
 
-        PauseRoundAdvance();
         DisableCoinControls();
 
         isPanelVisible = true;
@@ -388,6 +389,12 @@ public class CoinReplacementPanel : UIPopupBase
     protected override void OnClose()
     {
         CloseReplacementPanel();
+    }
+
+    private void ReleaseReplacementLocks()
+    {
+        RestoreCoinControls();
+        ResumeRoundAdvance();
     }
 
     private void PauseRoundAdvance()

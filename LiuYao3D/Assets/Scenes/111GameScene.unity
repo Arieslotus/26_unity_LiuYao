@@ -610,6 +610,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1333438785}
     m_Modifications:
+    - target: {fileID: 684239048828943967, guid: f1d0769890a14a64d9ff14a43b3f10ef, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 70e47951c3b48d045802a9f480f9fa73, type: 2}
     - target: {fileID: 1848568583470563752, guid: f1d0769890a14a64d9ff14a43b3f10ef, type: 3}
       propertyPath: m_Name
       value: COIN_inBag
@@ -632,31 +636,31 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3700100116146138585, guid: f1d0769890a14a64d9ff14a43b3f10ef, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.8660254
+      value: 0.6178332
       objectReference: {fileID: 0}
     - target: {fileID: 3700100116146138585, guid: f1d0769890a14a64d9ff14a43b3f10ef, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: 0.35037225
       objectReference: {fileID: 0}
     - target: {fileID: 3700100116146138585, guid: f1d0769890a14a64d9ff14a43b3f10ef, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0.5
+      value: 0.356706
       objectReference: {fileID: 0}
     - target: {fileID: 3700100116146138585, guid: f1d0769890a14a64d9ff14a43b3f10ef, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0.6068627
       objectReference: {fileID: 0}
     - target: {fileID: 3700100116146138585, guid: f1d0769890a14a64d9ff14a43b3f10ef, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
+      value: 59.984
       objectReference: {fileID: 0}
     - target: {fileID: 3700100116146138585, guid: f1d0769890a14a64d9ff14a43b3f10ef, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 60
+      value: 1.777
       objectReference: {fileID: 0}
     - target: {fileID: 3700100116146138585, guid: f1d0769890a14a64d9ff14a43b3f10ef, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
+      value: -87.948
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -14842,6 +14846,8 @@ MonoBehaviour:
   gameEndPopupPrefab: {fileID: 0}
   popupManager: {fileID: 1584458745}
   useUnscaledWait: 1
+  clickToReturnMainMenu: 1
+  mainMenuSceneName: 111GameScene
   debugLog: 1
 --- !u!114 &1584458747
 MonoBehaviour:

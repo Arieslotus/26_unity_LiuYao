@@ -53,7 +53,7 @@ public class CoinVisualController : MonoBehaviour
         RefreshTransformVisual();
         ApplyFaceRotationImmediate();
 
-        Debug.Log($"[CoinVisual] 初始化 | 物体:{name} | baseScale:{baseScale} | baseRotation:{baseRotation.eulerAngles}");
+        //Debug.Log($"[CoinVisual] 初始化 | 物体:{name} | baseScale:{baseScale} | baseRotation:{baseRotation.eulerAngles}");
     }
 
     public void SetFaceImmediate(bool isFront, CoinDefinition definition)
