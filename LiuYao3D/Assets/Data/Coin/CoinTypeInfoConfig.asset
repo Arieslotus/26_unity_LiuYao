@@ -21,4 +21,4 @@ MonoBehaviour:
     description: "\u4E0D\u53EF\u7FFB\u9762\u7684\u786C\u5E01"
   - coinType: 2
     displayName: "\u7834\u635F\u5E01"
-    description: "\u66F4\u635F\u4F46\u66F4\u6709\u653B\u51FB\u6027\u7684\u786C\u5E01"
+    description: "\u6613\u635F\u4F46\u66F4\u6709\u653B\u51FB\u6027\u7684\u786C\u5E01"

@@ -372,6 +372,7 @@ public class EnemyWaveManager : MonoBehaviour
             spawnPoint.TriggerInteraction
         );
 
+
         for (int i = 0; i < count; i++)
         {
             Collider hit = overlapBuffer[i];
@@ -385,10 +386,37 @@ public class EnemyWaveManager : MonoBehaviour
             if (IsMovingRoot(hitRoot))
                 continue;
 
+            Debug.LogWarning(
+    $"[EnemyWaveManager] 出生点中心阻挡物 | point:{spawnPoint.SpawnPointId} | " +
+    $"collider:{hit.name} | object:{hit.gameObject.name} | path:{GetTransformPath(hit.transform)} | " +
+    $"parent:{(hit.transform.parent != null ? hit.transform.parent.name : "无")} | " +
+    $"root:{hit.transform.root.name} | layer:{LayerMask.LayerToName(hit.gameObject.layer)} | " +
+    $"tag:{hit.tag} | isTrigger:{hit.isTrigger} | enabled:{hit.enabled} | " +
+    $"boundsCenter:{hit.bounds.center} | boundsSize:{hit.bounds.size} | " +
+    $"rigidbody:{(hit.attachedRigidbody != null ? hit.attachedRigidbody.name : "无")}"
+);
+
             return true;
         }
 
         return false;
+    }
+
+    private string GetTransformPath(Transform target)
+    {
+        if (target == null)
+            return "空";
+
+        string path = target.name;
+        Transform current = target.parent;
+
+        while (current != null)
+        {
+            path = current.name + "/" + path;
+            current = current.parent;
+        }
+
+        return path;
     }
 
     private void BuildUnitPlacements()

@@ -12,10 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5e5ebfaa9f478664395142cea9449796, type: 3}
   m_Name: CollisionConfig
   m_EditorClassIdentifier: 
-  obstacleBounceMultiplier: 0.8
-  enemyBounceMultiplier: 0.3
-  coinBounceMultiplier: 0.6
+  obstacleBounceMultiplier: 0.7
+  enemyBounceMultiplier: 0.2
+  coinBounceMultiplier: 0.5
   coinTransferDistanceRatio: 0.2
-  coinTransferSpeedRatio: 1
+  coinTransferSpeedRatio: 0.8
   coinCollisionCooldown: 0.1
+  debugCoinCollisionResolve: 0
   fullChargeThreshold: 0.999

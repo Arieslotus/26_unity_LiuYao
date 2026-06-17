@@ -33,6 +33,11 @@ public class MovementController : MonoBehaviour
     private bool hasResolvedFirstCollision;
     private bool firstCollisionWasEnemy;
     private bool hasAppliedEnemyCollisionLoss;
+    private float lastCoinCoinSfxTime = -999f;
+    private float lastCoinEnemySfxTime = -999f;
+
+    private const float CoinCoinSfxCooldown = 0.06f;
+    private const float CoinEnemySfxCooldown = 0.06f;
 
     public bool IsMoving => isMoving;
     public float RemainingDistance => remainingDistance;
@@ -256,6 +261,7 @@ public class MovementController : MonoBehaviour
 
         TryTriggerTrigramSkill(result);
         RequestCoinImpactFeedback(result);
+        PlayCollisionSFX(result);
 
         if (result.triggerOtherCoinMove && result.otherCoin != null)
         {
@@ -275,6 +281,35 @@ public class MovementController : MonoBehaviour
         }
 
         //Debug.Log($"[BounceDebug] 物体:{name} | dir:{direction} | remainingDistance:{remainingDistance:F4}");
+    }
+
+    private void PlayCollisionSFX(CollisionResult result)
+    {
+        if (AudioManager.Instance == null || result.collider == null)
+            return;
+
+        CollisionTarget target = result.collider.GetComponentInParent<CollisionTarget>();
+        if (target == null)
+            return;
+
+        switch (target.type)
+        {
+            case CollisionType.PlayerCoin:
+                if (Time.time < lastCoinCoinSfxTime + CoinCoinSfxCooldown)
+                    return;
+
+                lastCoinCoinSfxTime = Time.time;
+                AudioManager.Instance.PlaySFX(SFXType.Game_CoinCoinCollide);
+                break;
+
+            case CollisionType.Enemy:
+                if (!result.triggerHitTarget || Time.time < lastCoinEnemySfxTime + CoinEnemySfxCooldown)
+                    return;
+
+                lastCoinEnemySfxTime = Time.time;
+                AudioManager.Instance.PlaySFX(SFXType.Game_CoinEnemyCollide);
+                break;
+        }
     }
 
     private void TryRequestPreImpactFeedback(float collisionRadius)

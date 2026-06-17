@@ -4,6 +4,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public class EnemyShieldController : MonoBehaviour
 {
@@ -19,11 +22,8 @@ public class EnemyShieldController : MonoBehaviour
     [Tooltip("是否忽略游戏开始时的第一轮 RoundStarted。开启后，护盾只会在敌人行动完成后的新回合开始时计数。")]
     [SerializeField] private bool ignoreFirstRoundStart = true;
 
-    [Tooltip("护盾属性循环列表。每次成功生成护盾时按顺序取下一个属性。")]
-    [SerializeField] private List<TrigramType> shieldCycle = new List<TrigramType>();
-
-    [Tooltip("护盾破盾值规则。未配置时使用默认规则：同属性 3 点，其他属性 1 点，累计 3 点破盾。")]
-    [SerializeField] private EnemyShieldBreakConfigSO shieldBreakConfig;
+    [Tooltip("特殊敌人可单独覆盖破盾规则。一般敌人留空，优先使用 EnemyShieldSystemConfig 的全局配置。")]
+    [SerializeField] private EnemyShieldBreakConfigSO shieldBreakConfigOverride;
 
     [Header("可视化")]
     [Tooltip("不同卦象对应的通用视觉资源配置。护盾会使用其中的 Sprite。")]
@@ -39,12 +39,13 @@ public class EnemyShieldController : MonoBehaviour
     [SerializeField] private bool debugLog = true;
 
     private int passedRounds;
-    private int nextShieldIndex;
     private int currentBreakValue;
     private bool hasShield;
     private TrigramType currentShieldType = TrigramType.None;
     private TurnManager subscribedTurnManager;
     private bool hasLoggedMissingTurnManager;
+    private bool hasLoggedMissingBreakConfig;
+    private static EnemyShieldBreakConfigSO cachedAutoBreakConfig;
 
     public bool HasShield => hasShield;
     public TrigramType CurrentShieldType => currentShieldType;
@@ -244,12 +245,6 @@ public class EnemyShieldController : MonoBehaviour
 
     private void GenerateNextShield(int roundIndex)
     {
-        if (shieldCycle == null || shieldCycle.Count == 0)
-        {
-            Debug.LogWarning($"[EnemyShieldController] 护盾属性列表为空，无法生成护盾 | enemy:{name} | round:{roundIndex}");
-            return;
-        }
-
         HashSet<TrigramType> availableShieldTypes = CollectAvailableShieldTypes();
         if (availableShieldTypes.Count == 0)
         {
@@ -257,10 +252,10 @@ public class EnemyShieldController : MonoBehaviour
             return;
         }
 
-        if (!TryGetNextAvailableShieldType(availableShieldTypes, out TrigramType shieldType))
+        if (!TryGetRandomAvailableShieldType(availableShieldTypes, out TrigramType shieldType))
         {
             Debug.LogWarning(
-                $"[EnemyShieldController] 护盾属性列表中没有匹配当前硬币正反面的属性，无法生成护盾 | " +
+                $"[EnemyShieldController] 当前可用硬币属性集合为空，无法随机生成护盾 | " +
                 $"enemy:{name} | round:{roundIndex} | available:{FormatTrigramSet(availableShieldTypes)}"
             );
             return;
@@ -273,38 +268,33 @@ public class EnemyShieldController : MonoBehaviour
 
         if (debugLog)
         {
-            Debug.Log($"[EnemyShieldController] 生成护盾 | enemy:{name} | shield:{currentShieldType} | round:{roundIndex}");
+            Debug.Log(
+                $"[EnemyShieldController] 随机生成护盾 | enemy:{name} | shield:{currentShieldType} | " +
+                $"available:{FormatTrigramSet(availableShieldTypes)} | round:{roundIndex}"
+            );
         }
     }
 
-    private bool TryGetNextAvailableShieldType(HashSet<TrigramType> availableShieldTypes, out TrigramType shieldType)
+    private bool TryGetRandomAvailableShieldType(HashSet<TrigramType> availableShieldTypes, out TrigramType shieldType)
     {
         shieldType = TrigramType.None;
 
-        if (shieldCycle == null || shieldCycle.Count == 0 || availableShieldTypes == null || availableShieldTypes.Count == 0)
+        if (availableShieldTypes == null || availableShieldTypes.Count == 0)
             return false;
 
-        int startIndex = nextShieldIndex;
-        int checkedCount = 0;
-
-        while (checkedCount < shieldCycle.Count)
+        int randomIndex = Random.Range(0, availableShieldTypes.Count);
+        int index = 0;
+        foreach (TrigramType candidate in availableShieldTypes)
         {
-            int index = nextShieldIndex % shieldCycle.Count;
-            nextShieldIndex++;
-            checkedCount++;
+            if (index == randomIndex)
+            {
+                shieldType = candidate;
+                return shieldType != TrigramType.None;
+            }
 
-            TrigramType candidate = shieldCycle[index];
-            if (candidate == TrigramType.None)
-                continue;
-
-            if (!availableShieldTypes.Contains(candidate))
-                continue;
-
-            shieldType = candidate;
-            return true;
+            index++;
         }
 
-        nextShieldIndex = startIndex;
         return false;
     }
 
@@ -470,17 +460,79 @@ public class EnemyShieldController : MonoBehaviour
 
     private int GetRequiredBreakValue()
     {
-        return shieldBreakConfig != null ? shieldBreakConfig.RequiredBreakValue : 3;
+        EnemyShieldBreakConfigSO config = ResolveShieldBreakConfig();
+        return config != null ? config.RequiredBreakValue : 3;
     }
 
     private int GetBreakValue(TrigramType trigram)
     {
-        if (shieldBreakConfig != null)
-            return shieldBreakConfig.GetBreakValue(currentShieldType, trigram);
+        EnemyShieldBreakConfigSO config = ResolveShieldBreakConfig();
+        if (config != null)
+            return config.GetBreakValue(currentShieldType, trigram);
 
         if (currentShieldType == TrigramType.None || trigram == TrigramType.None)
             return 0;
 
         return trigram == currentShieldType ? 3 : 1;
+    }
+
+    private EnemyShieldBreakConfigSO ResolveShieldBreakConfig()
+    {
+        if (shieldBreakConfigOverride != null)
+            return shieldBreakConfigOverride;
+
+        if (EnemyShieldSystemConfig.Instance != null && EnemyShieldSystemConfig.Instance.ShieldBreakConfig != null)
+            return EnemyShieldSystemConfig.Instance.ShieldBreakConfig;
+
+        EnemyShieldBreakConfigSO autoConfig = FindAutoBreakConfig();
+        if (autoConfig != null)
+            return autoConfig;
+
+        if (!hasLoggedMissingBreakConfig)
+        {
+            hasLoggedMissingBreakConfig = true;
+            Debug.LogWarning(
+                $"[EnemyShieldController] 未找到 EnemyShieldBreakConfigSO，将使用代码默认破盾规则 | " +
+                $"enemy:{name} | required:3 | same:3 | different:1"
+            );
+        }
+
+        return null;
+    }
+
+    private static EnemyShieldBreakConfigSO FindAutoBreakConfig()
+    {
+        if (cachedAutoBreakConfig != null)
+            return cachedAutoBreakConfig;
+
+        EnemyShieldBreakConfigSO[] resourceConfigs = Resources.LoadAll<EnemyShieldBreakConfigSO>(string.Empty);
+        if (resourceConfigs != null && resourceConfigs.Length > 0)
+        {
+            cachedAutoBreakConfig = resourceConfigs[0];
+            if (resourceConfigs.Length > 1)
+            {
+                Debug.LogWarning("[EnemyShieldController] Resources 中找到多个 EnemyShieldBreakConfigSO，默认使用第一个。");
+            }
+
+            return cachedAutoBreakConfig;
+        }
+
+#if UNITY_EDITOR
+        string[] guids = AssetDatabase.FindAssets("t:EnemyShieldBreakConfigSO");
+        if (guids != null && guids.Length > 0)
+        {
+            string assetPath = AssetDatabase.GUIDToAssetPath(guids[0]);
+            cachedAutoBreakConfig = AssetDatabase.LoadAssetAtPath<EnemyShieldBreakConfigSO>(assetPath);
+
+            if (guids.Length > 1)
+            {
+                Debug.LogWarning($"[EnemyShieldController] 项目中找到多个 EnemyShieldBreakConfigSO，默认使用第一个 | path:{assetPath}");
+            }
+
+            return cachedAutoBreakConfig;
+        }
+#endif
+
+        return null;
     }
 }

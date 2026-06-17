@@ -16,5 +16,5 @@ MonoBehaviour:
   enemyPrefab: {fileID: 8016508028542991262, guid: 78f9748c8c9717b4491067971e1707b0, type: 3}
   maxHP: 300
   attack: 2
-  maxAttackTargetCount: 2
+  maxAttackTargetCount: 1
   allowShield: 1

@@ -1,5 +1,5 @@
-/// <summary>
-/// 实现功能：负责开局摇卦输入判定，根据鼠标有效晃动累计时间，并驱动龟壳轻微跟随鼠标。
+﻿/// <summary>
+/// 实现功能：负责开场摇龟壳输入判定，根据鼠标有效晃动累计时间，并驱动龟壳轻微跟随鼠标。
 /// </summary>
 using System.Collections;
 using UnityEngine;
@@ -38,6 +38,14 @@ public class OpeningShellShakeInput : MonoBehaviour
     [Min(0.01f)]
     [SerializeField] private float returnSpeed = 14f;
 
+    [Header("音效")]
+    [Tooltip("有效摇动时播放的循环音效。停止有效摇动后会渐停。")]
+    [SerializeField] private SFXType shakeLoopSfx = SFXType.Opening_ShellShakeLoop;
+
+    [Tooltip("停止摇动后的音效渐停时间。")]
+    [Min(0f)]
+    [SerializeField] private float shakeLoopFadeTime = 0.25f;
+
     [Header("时间")]
     [Tooltip("是否使用不受 Time.timeScale 影响的时间。")]
     [SerializeField] private bool useUnscaledTime = true;
@@ -52,6 +60,7 @@ public class OpeningShellShakeInput : MonoBehaviour
     private float shakeProgress;
     private bool isShaking;
     private bool stopRequested;
+    private bool isShakeLoopPlaying;
 
     public float ShakeProgress => shakeProgress;
     public float Progress01 => requiredShakeDuration > 0f ? Mathf.Clamp01(shakeProgress / requiredShakeDuration) : 1f;
@@ -81,6 +90,7 @@ public class OpeningShellShakeInput : MonoBehaviour
         shakeProgress = 0f;
         stopRequested = false;
         isShaking = true;
+        isShakeLoopPlaying = false;
 
         if (debugLog)
         {
@@ -98,10 +108,16 @@ public class OpeningShellShakeInput : MonoBehaviour
             if (validShake)
             {
                 shakeProgress += deltaTime;
+                PlayShakeLoopSFX();
             }
-            else if (idleDecayPerSecond > 0f)
+            else
             {
-                shakeProgress = Mathf.Max(0f, shakeProgress - idleDecayPerSecond * deltaTime);
+                StopShakeLoopSFX();
+
+                if (idleDecayPerSecond > 0f)
+                {
+                    shakeProgress = Mathf.Max(0f, shakeProgress - idleDecayPerSecond * deltaTime);
+                }
             }
 
             UpdateShakePose(mouseDelta, validShake, deltaTime);
@@ -110,6 +126,7 @@ public class OpeningShellShakeInput : MonoBehaviour
 
         bool success = !stopRequested && shakeProgress >= requiredShakeDuration;
         isShaking = false;
+        StopShakeLoopSFX();
 
         yield return ReturnToBasePose();
 
@@ -123,6 +140,7 @@ public class OpeningShellShakeInput : MonoBehaviour
     {
         stopRequested = true;
         isShaking = false;
+        StopShakeLoopSFX();
     }
 
     public void ResetPoseImmediate()
@@ -199,6 +217,24 @@ public class OpeningShellShakeInput : MonoBehaviour
         }
 
         ResetPoseImmediate();
+    }
+
+    private void PlayShakeLoopSFX()
+    {
+        if (isShakeLoopPlaying || AudioManager.Instance == null)
+            return;
+
+        isShakeLoopPlaying = true;
+        AudioManager.Instance.PlayLoopSFX(shakeLoopSfx);
+    }
+
+    private void StopShakeLoopSFX()
+    {
+        if (!isShakeLoopPlaying || AudioManager.Instance == null)
+            return;
+
+        isShakeLoopPlaying = false;
+        AudioManager.Instance.StopLoopSFX(shakeLoopFadeTime);
     }
 
     private float GetDeltaTime()

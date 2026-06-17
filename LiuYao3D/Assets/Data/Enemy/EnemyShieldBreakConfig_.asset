@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0730af026a0ecda44b2dc9c83e270bb5, type: 3}
   m_Name: EnemyShieldBreakConfig_
   m_EditorClassIdentifier: 
-  requiredBreakValue: 3
-  sameTrigramBreakValue: 3
+  requiredBreakValue: 5
+  sameTrigramBreakValue: 5
   differentTrigramBreakValue: 1
   shieldRules: []

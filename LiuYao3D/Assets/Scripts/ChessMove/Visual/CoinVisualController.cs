@@ -81,6 +81,7 @@ public class CoinVisualController : MonoBehaviour
         pendingFlipComplete = onComplete;
 
         ApplyDefinitionVisual();
+        PlayFlipSFX(previousFace, isFrontSide);
 
         flipCoroutine = StartCoroutine(CoPlayFlip(previousFace, isFrontSide));
     }
@@ -220,6 +221,14 @@ public class CoinVisualController : MonoBehaviour
         }
 
         coinRenderer.sharedMaterial = currentDefinition.coinMaterial;
+    }
+
+    private void PlayFlipSFX(bool previousFace, bool nextFace)
+    {
+        if (previousFace == nextFace || AudioManager.Instance == null)
+            return;
+
+        AudioManager.Instance.PlaySFX(SFXType.Game_CoinFlip);
     }
 
 }

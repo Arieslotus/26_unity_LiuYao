@@ -9,18 +9,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: 5b00c2c020c4a054ba71a24b5f467874, type: 3}
   m_Name: BuffDisplayTextConfig
-  m_EditorClassIdentifier: Assembly-CSharp::BuffDisplayTextConfig
+  m_EditorClassIdentifier: 
   damageModifierTemplate: "\u653B\u51FB\u529B\u589E\u52A0 {AddDamagePercent}%\uFF0C\u5269\u4F59
     {RemainingRounds} \u56DE\u5408\uFF0C\u5C42\u6570 {StackCount}"
   enemyShieldGenerationBlockTemplate: "\u505C\u6B62\u654C\u65B9\u62A4\u76FE\u751F\u6210\uFF0C\u5269\u4F59
     {RemainingRounds} \u56DE\u5408"
   pendingCoinLossTemplate: "{RemainingRounds} \u56DE\u5408\u540E\uFF0C{Target} \u589E\u52A0
     {Loss} \u70B9\u635F\u8017"
-  flipConditionNoFlipTemplate: "\u82E5 {Target} \u5728 {RemainingRounds} \u56DE\u5408\u5185\u672A\u7FFB\u9762\uFF0C\u5219\u83B7\u5F97\uFF1A{SuccessOutcome}"
-  flipConditionFlipTemplate: "\u82E5 {Target} \u5728 {RemainingRounds} \u56DE\u5408\u5185\u7FFB\u9762\uFF0C\u5219\u83B7\u5F97\uFF1A{SuccessOutcome}"
-  untilFlipDamageStackTemplate: "{Target} \u672A\u7FFB\u9762\u671F\u95F4\uFF0C\u6BCF\u56DE\u5408\u653B\u51FB\u529B\u589E\u52A0
+  flipConditionNoFlipTemplate: "\u63A7\u5236 {Target} {RemainingRounds} \u56DE\u5408\u4E0D\u7FFB\u9762\u540E\u83B7\u5F97\uFF1A{SuccessOutcome}"
+  flipConditionFlipTemplate: "\u63A7\u5236 {Target} {RemainingRounds} \u56DE\u5408\u7FFB\u9762\u540E\u83B7\u5F97\uFF1A{SuccessOutcome}"
+  untilFlipDamageStackTemplate: "\u63A7\u5236 {Target} \u4E0D\u7FFB\u9762\uFF0C\u6BCF\u56DE\u5408\u653B\u51FB\u529B\u589E\u52A0
     {AddDamagePercent}%\uFF0C\u5269\u4F59\u53EF\u53E0 {RemainingRounds} \u6B21\uFF0C\u5F53\u524D
     {StackCount} \u5C42"
   scheduledOutcomeTemplate: "\u5EF6\u8FDF\u6267\u884C\uFF1A{OutcomeText}\uFF0C\u5269\u4F59
@@ -34,4 +34,4 @@ MonoBehaviour:
   globalTargetText: "\u5168\u5C40"
   targetSeparator: "\u3001"
   permanentDurationText: "\u6C38\u4E45"
-  roundSuffix: "\u56DE\u5408"
+  roundSuffix: " \u56DE\u5408"

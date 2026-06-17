@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   coinName: "\u826E\u5151"
   coinType: 0
-  maxLoss: 1
+  maxLoss: 5
   attack: 10
   frontTrigram: 4
   backTrigram: 7

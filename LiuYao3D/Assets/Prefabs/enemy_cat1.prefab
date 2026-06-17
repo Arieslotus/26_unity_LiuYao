@@ -537,8 +537,7 @@ MonoBehaviour:
   shieldIntervalRounds: 1
   damageReductionPercent: 1
   ignoreFirstRoundStart: 0
-  shieldCycle: 0600000005000000
-  shieldBreakConfig: {fileID: 0}
+  shieldBreakConfigOverride: {fileID: 11400000, guid: 6822182ba275b0543943b1e5f89454ef, type: 2}
   trigramVisualDatabase: {fileID: 11400000, guid: aa5e006d743655146a8784d45401fdad, type: 2}
   shieldImage: {fileID: 5371242757096320055}
   deactivateShieldImageObjectWhenHidden: 0
