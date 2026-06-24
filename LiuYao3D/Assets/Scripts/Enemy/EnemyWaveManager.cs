@@ -23,6 +23,10 @@ public class EnemyWaveManager : MonoBehaviour
     [Min(0f)]
     [SerializeField] private float placementPadding = 0.02f;
 
+    [Tooltip("重排候选范围倍率。只影响单位让位搜索，不改变出生点中心。")]
+    [Min(1f)]
+    [SerializeField] private float relocationRadiusMultiplier = 1.75f;
+
     [Header("调试")]
     [SerializeField] private bool debugLog = true;
 
@@ -37,6 +41,7 @@ public class EnemyWaveManager : MonoBehaviour
 
     private List<EnemyStats>[] waveEnemies;
     private bool[] spawnedWaves;
+    private int[][] spawnedEntryCounts;
     private int pendingClearedWaveIndex = -1;
     private bool hasCompletedAllWaves;
     private Coroutine waitCoinsStoppedCoroutine;
@@ -107,10 +112,15 @@ public class EnemyWaveManager : MonoBehaviour
         int waveCount = IsWaveModeActive ? waveConfig.waves.Count : 0;
         spawnedWaves = new bool[waveCount];
         waveEnemies = new List<EnemyStats>[waveCount];
+        spawnedEntryCounts = new int[waveCount][];
 
         for (int i = 0; i < waveCount; i++)
         {
             waveEnemies[i] = new List<EnemyStats>();
+
+            WaveDefinition wave = waveConfig.waves[i];
+            int entryCount = wave != null && wave.enemies != null ? wave.enemies.Count : 0;
+            spawnedEntryCounts[i] = new int[entryCount];
         }
     }
 
@@ -164,6 +174,10 @@ public class EnemyWaveManager : MonoBehaviour
             {
                 SpawnWave(i, $"指定回合生成 | round:{roundIndex}");
             }
+            else if (wave.spawnWhenPreviousWaveCleared && IsPreviousWaveCleared(i))
+            {
+                SpawnWave(i, $"上一波已清空后补偿生成 | round:{roundIndex}");
+            }
         }
 
         CheckAllWavesCompleted();
@@ -190,52 +204,73 @@ public class EnemyWaveManager : MonoBehaviour
         if (wave == null)
             return;
 
-        spawnedWaves[waveIndex] = true;
-
         if (debugLog)
         {
             Debug.Log($"[EnemyWaveManager] 生成波次 | index:{waveIndex} | name:{wave.waveName} | reason:{reason}");
         }
 
         if (wave.enemies == null)
+        {
+            spawnedWaves[waveIndex] = true;
             return;
+        }
 
+        bool allSpawned = true;
         for (int i = 0; i < wave.enemies.Count; i++)
         {
             EnemySpawnEntry entry = wave.enemies[i];
-            SpawnEntry(waveIndex, entry);
+            if (!SpawnEntry(waveIndex, i, entry))
+            {
+                allSpawned = false;
+            }
+        }
+
+        spawnedWaves[waveIndex] = allSpawned && IsWaveFullySpawned(waveIndex, wave);
+        if (!spawnedWaves[waveIndex])
+        {
+            Debug.LogWarning(
+                $"[EnemyWaveManager] 波次尚未完全生成，将在后续回合继续尝试未成功的敌人 | " +
+                $"wave:{waveIndex} | name:{wave.waveName} | progress:{GetWaveSpawnProgress(waveIndex, wave)}");
         }
     }
 
-    private void SpawnEntry(int waveIndex, EnemySpawnEntry entry)
+    private bool SpawnEntry(int waveIndex, int entryIndex, EnemySpawnEntry entry)
     {
         if (entry == null || entry.enemyDefinition == null)
         {
             Debug.LogWarning($"[EnemyWaveManager] 波次敌人配置为空，已跳过 | wave:{waveIndex}");
-            return;
+            return true;
         }
 
         EnemyDefinitionSO definition = entry.enemyDefinition;
         if (definition.enemyPrefab == null)
         {
             Debug.LogWarning($"[EnemyWaveManager] 敌人预制体为空，已跳过 | wave:{waveIndex} | enemy:{definition.enemyName}");
-            return;
+            return true;
         }
 
         if (!spawnPoints.TryGetValue(entry.spawnPointId, out EnemySpawnPoint spawnPoint) || spawnPoint == null)
         {
             Debug.LogWarning($"[EnemyWaveManager] 未找到出生点，已跳过 | wave:{waveIndex} | enemy:{definition.enemyName} | spawnPointId:{entry.spawnPointId}");
-            return;
+            return true;
         }
 
         int count = Mathf.Max(1, entry.count);
-        for (int i = 0; i < count; i++)
+        int spawnedCount = GetSpawnedEntryCount(waveIndex, entryIndex);
+        for (int i = spawnedCount; i < count; i++)
         {
-            TrySpawnEnemyAtPoint(waveIndex, definition, spawnPoint, i);
+            if (!TrySpawnEnemyAtPoint(waveIndex, definition, spawnPoint, i))
+            {
+                return false;
+            }
+
+            spawnedEntryCounts[waveIndex][entryIndex]++;
         }
+
+        return true;
     }
 
-    private void TrySpawnEnemyAtPoint(int waveIndex, EnemyDefinitionSO definition, EnemySpawnPoint spawnPoint, int entryIndex)
+    private bool TrySpawnEnemyAtPoint(int waveIndex, EnemyDefinitionSO definition, EnemySpawnPoint spawnPoint, int entryIndex)
     {
         float enemyRadius = EnemySpawnFootprintUtility.GetHorizontalRadius(definition.enemyPrefab.transform);
         Vector3 center = spawnPoint.Center;
@@ -243,13 +278,17 @@ public class EnemyWaveManager : MonoBehaviour
         if (!spawnPoint.IsCircleOnGround(center, enemyRadius))
         {
             Debug.LogWarning($"[EnemyWaveManager] 出生点中心不在有效地面内，无法生成 | wave:{waveIndex} | enemy:{definition.enemyName} | point:{spawnPoint.SpawnPointId} | radius:{enemyRadius:F2}");
-            return;
+            return false;
         }
 
         if (!TryResolveCenterConflicts(spawnPoint, center, enemyRadius, out string failure))
         {
-            Debug.LogWarning($"[EnemyWaveManager] 生成失败：无法为出生点中心让位 | wave:{waveIndex} | enemy:{definition.enemyName} | point:{spawnPoint.SpawnPointId} | reason:{failure}");
-            return;
+            Debug.LogWarning(
+                $"[EnemyWaveManager] 生成失败：无法为出生点中心让位 | " +
+                $"wave:{waveIndex} | enemy:{definition.enemyName} | point:{spawnPoint.SpawnPointId} | " +
+                $"enemyRadius:{enemyRadius:F2} | relocationRadius:{spawnPoint.GetSpawnRadius(relocationRadiusMultiplier):F2} | " +
+                $"reason:{failure}");
+            return false;
         }
 
         ApplyRelocations();
@@ -301,6 +340,8 @@ public class EnemyWaveManager : MonoBehaviour
         {
             Debug.Log($"[EnemyWaveManager] 敌人生成完成 | wave:{waveIndex} | index:{entryIndex} | enemy:{enemyObject.name} | point:{spawnPoint.SpawnPointId} | pos:{center}");
         }
+
+        return true;
     }
 
     private bool TryResolveCenterConflicts(EnemySpawnPoint spawnPoint, Vector3 center, float enemyRadius, out string failure)
@@ -344,13 +385,13 @@ public class EnemyWaveManager : MonoBehaviour
             }
         }
 
-        IReadOnlyList<SpawnCandidate> candidates = spawnPoint.GetCandidates(false);
+        IReadOnlyList<SpawnCandidate> candidates = spawnPoint.GetCandidates(false, relocationRadiusMultiplier);
         for (int i = 0; i < movers.Count; i++)
         {
             UnitPlacement mover = movers[i];
             if (!TryFindRelocation(spawnPoint, candidates, mover, out Vector3 target))
             {
-                failure = $"没有足够空间重排单位 | unit:{mover.Root.name} | radius:{mover.Radius:F2}";
+                failure = $"没有足够空间重排单位 | unit:{mover.Root.name} | radius:{mover.Radius:F2} | candidates:{candidates.Count} | relocationRadius:{spawnPoint.GetSpawnRadius(relocationRadiusMultiplier):F2}";
                 pendingRelocations.Clear();
                 return false;
             }
@@ -643,6 +684,79 @@ public class EnemyWaveManager : MonoBehaviour
         }
 
         return true;
+    }
+
+    private bool IsPreviousWaveCleared(int waveIndex)
+    {
+        if (waveIndex <= 0)
+            return true;
+
+        int previousWaveIndex = waveIndex - 1;
+        return previousWaveIndex < spawnedWaves.Length &&
+               spawnedWaves[previousWaveIndex] &&
+               IsWaveCleared(previousWaveIndex);
+    }
+
+    private int GetSpawnedEntryCount(int waveIndex, int entryIndex)
+    {
+        if (spawnedEntryCounts == null ||
+            waveIndex < 0 ||
+            waveIndex >= spawnedEntryCounts.Length ||
+            spawnedEntryCounts[waveIndex] == null ||
+            entryIndex < 0 ||
+            entryIndex >= spawnedEntryCounts[waveIndex].Length)
+        {
+            return 0;
+        }
+
+        return spawnedEntryCounts[waveIndex][entryIndex];
+    }
+
+    private bool IsWaveFullySpawned(int waveIndex, WaveDefinition wave)
+    {
+        if (wave == null || wave.enemies == null)
+            return true;
+
+        for (int i = 0; i < wave.enemies.Count; i++)
+        {
+            EnemySpawnEntry entry = wave.enemies[i];
+            int targetCount = GetEntryTargetSpawnCount(entry);
+            if (GetSpawnedEntryCount(waveIndex, i) < targetCount)
+                return false;
+        }
+
+        return true;
+    }
+
+    private string GetWaveSpawnProgress(int waveIndex, WaveDefinition wave)
+    {
+        if (wave == null || wave.enemies == null)
+            return "0/0";
+
+        int spawnedCount = 0;
+        int targetCount = 0;
+        for (int i = 0; i < wave.enemies.Count; i++)
+        {
+            EnemySpawnEntry entry = wave.enemies[i];
+            int entryTargetCount = GetEntryTargetSpawnCount(entry);
+            spawnedCount += Mathf.Min(GetSpawnedEntryCount(waveIndex, i), entryTargetCount);
+            targetCount += entryTargetCount;
+        }
+
+        return $"{spawnedCount}/{targetCount}";
+    }
+
+    private int GetEntryTargetSpawnCount(EnemySpawnEntry entry)
+    {
+        if (entry == null ||
+            entry.enemyDefinition == null ||
+            entry.enemyDefinition.enemyPrefab == null ||
+            !spawnPoints.ContainsKey(entry.spawnPointId))
+        {
+            return 0;
+        }
+
+        return Mathf.Max(1, entry.count);
     }
 
     private void CheckAllWavesCompleted()

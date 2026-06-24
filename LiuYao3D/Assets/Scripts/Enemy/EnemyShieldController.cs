@@ -1,6 +1,7 @@
 /// <summary>
-/// 实现功能：管理单个敌人的属性护盾生成、显示、减伤与破盾值累计。
+/// 实现功能：管理单个敌人的属性护盾生成、显示、减伤、破盾值累计与破裂动画播放。
 /// </summary>
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -11,17 +12,6 @@ using UnityEditor;
 public class EnemyShieldController : MonoBehaviour
 {
     [Header("生成规则")]
-    [Tooltip("每经过多少个大回合尝试生成一次护盾。已有护盾时不会生成新护盾。")]
-    [Min(1)]
-    [SerializeField] private int shieldIntervalRounds = 2;
-
-    [Tooltip("持有护盾时受到的伤害减免比例。0 表示不减伤，1 表示完全免伤。")]
-    [Range(0f, 1f)]
-    [SerializeField] private float damageReductionPercent = 0.5f;
-
-    [Tooltip("是否忽略游戏开始时的第一轮 RoundStarted。开启后，护盾只会在敌人行动完成后的新回合开始时计数。")]
-    [SerializeField] private bool ignoreFirstRoundStart = true;
-
     [Tooltip("特殊敌人可单独覆盖破盾规则。一般敌人留空，优先使用 EnemyShieldSystemConfig 的全局配置。")]
     [SerializeField] private EnemyShieldBreakConfigSO shieldBreakConfigOverride;
 
@@ -32,8 +22,8 @@ public class EnemyShieldController : MonoBehaviour
     [Tooltip("敌人身上用于显示护盾的 Image 组件。")]
     [SerializeField] private Image shieldImage;
 
-    [Tooltip("隐藏护盾时是否禁用 Image 所在物体。关闭则只禁用 Image 组件。")]
-    [SerializeField] private bool deactivateShieldImageObjectWhenHidden = false;
+    [Tooltip("护盾破裂 Animator，建议挂在 ShieldRoot 上。留空时会从护盾 Image 的父级自动查找。")]
+    [SerializeField] private Animator shieldBreakAnimator;
 
     [Header("调试")]
     [SerializeField] private bool debugLog = true;
@@ -43,6 +33,13 @@ public class EnemyShieldController : MonoBehaviour
     private bool hasShield;
     private TrigramType currentShieldType = TrigramType.None;
     private TurnManager subscribedTurnManager;
+    private Coroutine shieldBreakRoutine;
+    private Coroutine pendingShieldGenerationRoutine;
+    private bool hasCachedShieldVisualState;
+    private Vector3 initialShieldLocalPosition;
+    private Quaternion initialShieldLocalRotation;
+    private Vector3 initialShieldLocalScale;
+    private Color initialShieldImageColor;
     private bool hasLoggedMissingTurnManager;
     private bool hasLoggedMissingBreakConfig;
     private static EnemyShieldBreakConfigSO cachedAutoBreakConfig;
@@ -51,7 +48,7 @@ public class EnemyShieldController : MonoBehaviour
     public TrigramType CurrentShieldType => currentShieldType;
     public int CurrentBreakValue => currentBreakValue;
     public int RequiredBreakValue => GetRequiredBreakValue();
-    public float DamageReductionPercent => hasShield ? damageReductionPercent : 0f;
+    public float DamageReductionPercent => hasShield ? GetDamageReductionPercent() : 0f;
 
     public int ModifyIncomingDamage(int rawDamage)
     {
@@ -61,7 +58,7 @@ public class EnemyShieldController : MonoBehaviour
         if (!hasShield)
             return rawDamage;
 
-        float reduction = Mathf.Clamp01(damageReductionPercent);
+        float reduction = GetDamageReductionPercent();
         int finalDamage = Mathf.CeilToInt(rawDamage * (1f - reduction));
         finalDamage = Mathf.Max(0, finalDamage);
 
@@ -123,12 +120,17 @@ public class EnemyShieldController : MonoBehaviour
         if (!isActiveAndEnabled || hasShield)
             return;
 
-        GenerateNextShield(TurnManager.Instance != null ? TurnManager.Instance.RoundIndex : 0);
+        int roundIndex = TurnManager.Instance != null ? TurnManager.Instance.RoundIndex : 0;
+        if (!TryGenerateNextShield(roundIndex, true))
+        {
+            ScheduleShieldGenerationRetry(roundIndex);
+        }
     }
 
     private void Start()
     {
         CacheShieldImage();
+        CacheInitialShieldVisualState();
         SubscribeEvents();
         RefreshShieldVisual();
     }
@@ -136,12 +138,15 @@ public class EnemyShieldController : MonoBehaviour
     private void OnEnable()
     {
         CacheShieldImage();
+        CacheInitialShieldVisualState();
         SubscribeEvents();
         RefreshShieldVisual();
     }
 
     private void OnDisable()
     {
+        StopShieldBreakAnimation();
+        StopShieldGenerationRetry();
         UnsubscribeEvents();
     }
 
@@ -198,14 +203,12 @@ public class EnemyShieldController : MonoBehaviour
     {
         if (debugLog)
         {
+            int intervalRounds = GetShieldIntervalRounds();
             Debug.Log(
                 $"[EnemyShieldController] 收到新回合事件 | enemy:{name} | round:{roundIndex} | " +
-                $"hasShield:{hasShield} | passedRounds:{passedRounds}/{shieldIntervalRounds}"
+                $"hasShield:{hasShield} | passedRounds:{passedRounds}/{intervalRounds}"
             );
         }
-
-        if (ignoreFirstRoundStart && roundIndex <= 1)
-            return;
 
         if (hasShield)
         {
@@ -227,8 +230,19 @@ public class EnemyShieldController : MonoBehaviour
             return;
         }
 
+        if (ShouldGenerateShieldOnFirstRound() && roundIndex <= 1)
+        {
+            passedRounds = 0;
+            if (!TryGenerateNextShield(roundIndex, true))
+            {
+                ScheduleShieldGenerationRetry(roundIndex);
+            }
+            return;
+        }
+
         passedRounds++;
 
+        int shieldIntervalRounds = GetShieldIntervalRounds();
         if (passedRounds < shieldIntervalRounds)
         {
             if (debugLog)
@@ -240,30 +254,41 @@ public class EnemyShieldController : MonoBehaviour
         }
 
         passedRounds = 0;
-        GenerateNextShield(roundIndex);
+        if (!TryGenerateNextShield(roundIndex, true))
+        {
+            ScheduleShieldGenerationRetry(roundIndex);
+        }
     }
 
-    private void GenerateNextShield(int roundIndex)
+    private bool TryGenerateNextShield(int roundIndex, bool logWarnings)
     {
         HashSet<TrigramType> availableShieldTypes = CollectAvailableShieldTypes();
         if (availableShieldTypes.Count == 0)
         {
-            Debug.LogWarning($"[EnemyShieldController] 未找到场上或背包硬币的有效正反面属性，无法生成护盾 | enemy:{name} | round:{roundIndex}");
-            return;
+            if (logWarnings)
+            {
+                Debug.LogWarning($"[EnemyShieldController] 未找到场上或背包硬币的有效正反面属性，无法生成护盾 | enemy:{name} | round:{roundIndex}");
+            }
+            return false;
         }
 
         if (!TryGetRandomAvailableShieldType(availableShieldTypes, out TrigramType shieldType))
         {
-            Debug.LogWarning(
-                $"[EnemyShieldController] 当前可用硬币属性集合为空，无法随机生成护盾 | " +
-                $"enemy:{name} | round:{roundIndex} | available:{FormatTrigramSet(availableShieldTypes)}"
-            );
-            return;
+            if (logWarnings)
+            {
+                Debug.LogWarning(
+                    $"[EnemyShieldController] 当前可用硬币属性集合为空，无法随机生成护盾 | " +
+                    $"enemy:{name} | round:{roundIndex} | available:{FormatTrigramSet(availableShieldTypes)}"
+                );
+            }
+            return false;
         }
 
         hasShield = true;
         currentShieldType = shieldType;
         currentBreakValue = 0;
+        StopShieldBreakAnimation();
+        ResetShieldVisualState();
         ShowShieldVisual(shieldType);
 
         if (debugLog)
@@ -273,6 +298,8 @@ public class EnemyShieldController : MonoBehaviour
                 $"available:{FormatTrigramSet(availableShieldTypes)} | round:{roundIndex}"
             );
         }
+
+        return true;
     }
 
     private bool TryGetRandomAvailableShieldType(HashSet<TrigramType> availableShieldTypes, out TrigramType shieldType)
@@ -317,7 +344,15 @@ public class EnemyShieldController : MonoBehaviour
                 AddDefinitionTrigrams(result, inventory[i]);
             }
 
-            return result;
+            if (result.Count > 0)
+            {
+                return result;
+            }
+
+            if (debugLog)
+            {
+                Debug.LogWarning($"[EnemyShieldController] CoinRosterManager 暂无可用硬币属性，改用场景 ChessPiece 回退收集 | enemy:{name}");
+            }
         }
 
         ChessPiece[] pieces = FindObjectsOfType<ChessPiece>();
@@ -382,15 +417,53 @@ public class EnemyShieldController : MonoBehaviour
 
     private void BreakShield(TrigramType triggerType, string sourceName)
     {
+        TrigramType brokenShieldType = currentShieldType;
         hasShield = false;
         currentShieldType = TrigramType.None;
         currentBreakValue = 0;
-        HideShieldVisual();
+        PlayShieldBreakAnimationOrHide(brokenShieldType);
 
         if (debugLog)
         {
-            Debug.Log($"[EnemyShieldController] 护盾破除 | enemy:{name} | trigger:{triggerType} | source:{sourceName}");
+            Debug.Log($"[EnemyShieldController] 护盾破除 | enemy:{name} | shield:{brokenShieldType} | trigger:{triggerType} | source:{sourceName}");
         }
+    }
+
+    private void ScheduleShieldGenerationRetry(int roundIndex)
+    {
+        if (!isActiveAndEnabled || hasShield || pendingShieldGenerationRoutine != null)
+            return;
+
+        pendingShieldGenerationRoutine = StartCoroutine(RetryShieldGenerationRoutine(roundIndex));
+    }
+
+    private IEnumerator RetryShieldGenerationRoutine(int roundIndex)
+    {
+        const int maxRetryFrames = 5;
+
+        for (int i = 0; i < maxRetryFrames; i++)
+        {
+            yield return null;
+
+            if (!isActiveAndEnabled || hasShield)
+                break;
+
+            if (TryGenerateNextShield(roundIndex, i == maxRetryFrames - 1))
+            {
+                break;
+            }
+        }
+
+        pendingShieldGenerationRoutine = null;
+    }
+
+    private void StopShieldGenerationRetry()
+    {
+        if (pendingShieldGenerationRoutine == null)
+            return;
+
+        StopCoroutine(pendingShieldGenerationRoutine);
+        pendingShieldGenerationRoutine = null;
     }
 
     private void ShowShieldVisual(TrigramType shieldType)
@@ -402,6 +475,9 @@ public class EnemyShieldController : MonoBehaviour
             Debug.LogWarning($"[EnemyShieldController] 未配置护盾 Image，无法显示护盾 | enemy:{name} | shield:{shieldType}");
             return;
         }
+
+        shieldImage.gameObject.SetActive(true);
+        SetShieldAnimatorEnabled(false);
 
         Sprite shieldSprite = trigramVisualDatabase != null
             ? trigramVisualDatabase.GetSprite(shieldType)
@@ -416,12 +492,8 @@ public class EnemyShieldController : MonoBehaviour
             shieldImage.sprite = shieldSprite;
         }
 
+        ResetShieldVisualState();
         shieldImage.enabled = true;
-
-        if (deactivateShieldImageObjectWhenHidden)
-        {
-            shieldImage.gameObject.SetActive(true);
-        }
     }
 
     private void HideShieldVisual()
@@ -432,10 +504,158 @@ public class EnemyShieldController : MonoBehaviour
             return;
 
         shieldImage.enabled = false;
+        SetShieldAnimatorEnabled(false);
+    }
 
-        if (deactivateShieldImageObjectWhenHidden)
+    private void PlayShieldBreakAnimationOrHide(TrigramType shieldType)
+    {
+        string triggerName = GetShieldBreakTriggerName(shieldType);
+
+        CacheShieldAnimator();
+
+        if (string.IsNullOrEmpty(triggerName) || shieldBreakAnimator == null)
         {
-            shieldImage.gameObject.SetActive(false);
+            HideShieldVisual();
+            return;
+        }
+
+        StopShieldBreakAnimation();
+        shieldBreakRoutine = StartCoroutine(PlayShieldBreakAnimationRoutine(shieldType, triggerName));
+    }
+
+    private IEnumerator PlayShieldBreakAnimationRoutine(TrigramType shieldType, string triggerName)
+    {
+        CacheShieldImage();
+        CacheShieldAnimator();
+
+        if (shieldImage == null || shieldBreakAnimator == null || string.IsNullOrEmpty(triggerName))
+        {
+            HideShieldVisual();
+            yield break;
+        }
+
+        shieldImage.gameObject.SetActive(true);
+
+        shieldImage.enabled = true;
+
+        if (shieldBreakAnimator != null && !shieldBreakAnimator.gameObject.activeSelf)
+        {
+            shieldBreakAnimator.gameObject.SetActive(true);
+        }
+
+        SetShieldAnimatorEnabled(true);
+
+        if (shieldBreakAnimator.isActiveAndEnabled && shieldBreakAnimator.gameObject.activeInHierarchy)
+        {
+            shieldBreakAnimator.Rebind();
+            shieldBreakAnimator.Update(0f);
+        }
+
+        int previousStateHash = 0;
+        if (shieldBreakAnimator.isActiveAndEnabled && shieldBreakAnimator.gameObject.activeInHierarchy)
+        {
+            previousStateHash = shieldBreakAnimator.GetCurrentAnimatorStateInfo(0).fullPathHash;
+        }
+
+        shieldBreakAnimator.SetTrigger(triggerName);
+
+        if (debugLog)
+        {
+            Debug.Log($"[EnemyShieldController] 播放护盾破裂动画 | enemy:{name} | shield:{shieldType} | trigger:{triggerName}");
+        }
+
+        yield return WaitShieldBreakAnimatorComplete(previousStateHash);
+
+        HideShieldVisual();
+        shieldBreakRoutine = null;
+    }
+
+    private void StopShieldBreakAnimation()
+    {
+        if (shieldBreakRoutine != null)
+        {
+            StopCoroutine(shieldBreakRoutine);
+            shieldBreakRoutine = null;
+        }
+
+        CacheShieldAnimator();
+
+        if (shieldBreakAnimator != null &&
+            shieldBreakAnimator.isActiveAndEnabled &&
+            shieldBreakAnimator.gameObject.activeInHierarchy)
+        {
+            shieldBreakAnimator.Rebind();
+            shieldBreakAnimator.Update(0f);
+        }
+
+        SetShieldAnimatorEnabled(false);
+    }
+
+    private IEnumerator WaitShieldBreakAnimatorComplete(int previousStateHash)
+    {
+        if (shieldBreakAnimator == null)
+            yield break;
+
+        bool enteredBreakState = false;
+        float elapsed = 0f;
+        const float maxWaitSeconds = 5f;
+
+        while (shieldBreakAnimator != null &&
+               shieldBreakAnimator.isActiveAndEnabled &&
+               shieldBreakAnimator.gameObject.activeInHierarchy)
+        {
+            AnimatorStateInfo state = shieldBreakAnimator.GetCurrentAnimatorStateInfo(0);
+            bool inTransition = shieldBreakAnimator.IsInTransition(0);
+
+            if (!enteredBreakState)
+            {
+                enteredBreakState = inTransition || state.fullPathHash != previousStateHash;
+            }
+            else if (!inTransition)
+            {
+                bool returnedToPreviousState = previousStateHash != 0 && state.fullPathHash == previousStateHash;
+                bool completedNonLoopState = !state.loop && state.normalizedTime >= 1f;
+                if (returnedToPreviousState || completedNonLoopState)
+                    yield break;
+            }
+
+            elapsed += Time.deltaTime;
+            if (elapsed >= maxWaitSeconds)
+            {
+                if (debugLog)
+                {
+                    Debug.LogWarning($"[EnemyShieldController] 等待护盾破裂 Animator 结束超时，将隐藏护盾 | enemy:{name}");
+                }
+
+                yield break;
+            }
+
+            yield return null;
+        }
+    }
+
+    private static string GetShieldBreakTriggerName(TrigramType shieldType)
+    {
+        switch (shieldType)
+        {
+            case TrigramType.Qian:
+                return "tian";
+            case TrigramType.Kun:
+                return "di";
+            case TrigramType.Xun:
+                return "feng";
+            case TrigramType.Zhen:
+                return "lei";
+            case TrigramType.Kan:
+                return "shui";
+            case TrigramType.Li:
+                return "huo";
+            case TrigramType.Gen:
+                return "shan";
+            case TrigramType.Dui:
+                return "ze";
+            default:
+                return null;
         }
     }
 
@@ -458,10 +678,100 @@ public class EnemyShieldController : MonoBehaviour
         shieldImage = GetComponentInChildren<Image>(true);
     }
 
+    private void CacheInitialShieldVisualState()
+    {
+        if (hasCachedShieldVisualState)
+            return;
+
+        CacheShieldImage();
+        CacheShieldAnimator();
+
+        Transform target = shieldBreakAnimator != null
+            ? shieldBreakAnimator.transform
+            : (shieldImage != null ? shieldImage.transform : null);
+
+        if (target == null)
+            return;
+
+        initialShieldLocalPosition = target.localPosition;
+        initialShieldLocalRotation = target.localRotation;
+        initialShieldLocalScale = target.localScale;
+        initialShieldImageColor = shieldImage != null ? shieldImage.color : Color.white;
+        hasCachedShieldVisualState = true;
+    }
+
+    private void ResetShieldVisualState()
+    {
+        CacheInitialShieldVisualState();
+
+        if (!hasCachedShieldVisualState)
+            return;
+
+        Transform target = shieldBreakAnimator != null
+            ? shieldBreakAnimator.transform
+            : (shieldImage != null ? shieldImage.transform : null);
+
+        if (target != null)
+        {
+            target.localPosition = initialShieldLocalPosition;
+            target.localRotation = initialShieldLocalRotation;
+            target.localScale = initialShieldLocalScale;
+        }
+
+        if (shieldImage != null)
+        {
+            shieldImage.color = initialShieldImageColor;
+        }
+    }
+
+    private void CacheShieldAnimator()
+    {
+        if (shieldBreakAnimator != null)
+            return;
+
+        if (shieldImage != null)
+        {
+            shieldBreakAnimator = shieldImage.GetComponentInParent<Animator>(true);
+        }
+
+        if (shieldBreakAnimator == null)
+        {
+            shieldBreakAnimator = GetComponentInChildren<Animator>(true);
+        }
+    }
+
+    private void SetShieldAnimatorEnabled(bool enabled)
+    {
+        CacheShieldAnimator();
+
+        if (shieldBreakAnimator == null || shieldBreakAnimator.enabled == enabled)
+            return;
+
+        shieldBreakAnimator.enabled = enabled;
+    }
+
     private int GetRequiredBreakValue()
     {
         EnemyShieldBreakConfigSO config = ResolveShieldBreakConfig();
         return config != null ? config.RequiredBreakValue : 3;
+    }
+
+    private int GetShieldIntervalRounds()
+    {
+        EnemyShieldBreakConfigSO config = ResolveShieldBreakConfig();
+        return config != null ? config.ShieldIntervalRounds : 2;
+    }
+
+    private float GetDamageReductionPercent()
+    {
+        EnemyShieldBreakConfigSO config = ResolveShieldBreakConfig();
+        return config != null ? config.DamageReductionPercent : 0.5f;
+    }
+
+    private bool ShouldGenerateShieldOnFirstRound()
+    {
+        EnemyShieldBreakConfigSO config = ResolveShieldBreakConfig();
+        return config != null ? config.GenerateShieldOnFirstRound : true;
     }
 
     private int GetBreakValue(TrigramType trigram)
@@ -492,8 +802,8 @@ public class EnemyShieldController : MonoBehaviour
         {
             hasLoggedMissingBreakConfig = true;
             Debug.LogWarning(
-                $"[EnemyShieldController] 未找到 EnemyShieldBreakConfigSO，将使用代码默认破盾规则 | " +
-                $"enemy:{name} | required:3 | same:3 | different:1"
+                $"[EnemyShieldController] 未找到 EnemyShieldBreakConfigSO，将使用代码默认护盾规则 | " +
+                $"enemy:{name} | interval:2 | reduction:50% | generateFirstRound:true | required:3 | same:3 | different:1"
             );
         }
 

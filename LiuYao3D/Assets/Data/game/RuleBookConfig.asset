@@ -13,7 +13,11 @@ MonoBehaviour:
   m_Name: RuleBookConfig
   m_EditorClassIdentifier: 
   pageSprites:
+  - {fileID: 21300000, guid: 0148bc248ff11b042863cc387fe1d6ae, type: 3}
+  - {fileID: 21300000, guid: c643337242fbfc742b3f542eb1343bff, type: 3}
   - {fileID: 21300000, guid: 701d218a4171ab941b2f77d23b8e13be, type: 3}
+  - {fileID: 21300000, guid: 3571feda63a31364a85388630a3ad17a, type: 3}
+  - {fileID: 21300000, guid: fcd5961d18c92204e8bbbbac56c4754c, type: 3}
   - {fileID: 21300000, guid: 6f82c4a2652e8684bbc2375f47e3a7f6, type: 3}
   - {fileID: 21300000, guid: bfccb8c418a0b594cb5475e06da9aa52, type: 3}
   - {fileID: 21300000, guid: b6dd671980848f34aa399de5d2e53468, type: 3}

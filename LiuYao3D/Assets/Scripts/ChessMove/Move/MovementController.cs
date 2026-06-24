@@ -2,6 +2,7 @@
 /// 实现功能：负责棋子的路径主导移动、碰撞结算应用，并支持己方硬币互撞后的带动启动。
 /// 挂在每个棋子（硬币）上
 /// </summary>
+using System.Collections.Generic;
 using UnityEngine;
 
 public class MovementController : MonoBehaviour
@@ -38,6 +39,8 @@ public class MovementController : MonoBehaviour
 
     private const float CoinCoinSfxCooldown = 0.06f;
     private const float CoinEnemySfxCooldown = 0.06f;
+    private const float CoinPairSkillDefaultCooldown = 0.12f;
+    private static readonly Dictionary<long, float> lastCoinPairSkillTriggerTimes = new Dictionary<long, float>();
 
     public bool IsMoving => isMoving;
     public float RemainingDistance => remainingDistance;
@@ -534,6 +537,9 @@ public class MovementController : MonoBehaviour
             return;
         }
 
+        if (IsCoinPairSkillOnCooldown(result.otherCoin, skill, activeCoin, passiveCoin))
+            return;
+
         Debug.Log(
             $"[卦象技能] 触发技能:{skill.SkillName} | " +
             $"主动币:{activeCoin.name} | 主动卦:{activeCoin.CurrentTrigram} | " +
@@ -563,6 +569,79 @@ public class MovementController : MonoBehaviour
 
     }
 
+    private bool IsCoinPairSkillOnCooldown(
+        ChessPiece passivePiece,
+        TrigramCollisionSkillSO skill,
+        CoinRuntimeData activeCoin,
+        CoinRuntimeData passiveCoin)
+    {
+        if (chessPiece == null || passivePiece == null)
+            return false;
+
+        long pairKey = BuildCoinPairKey(chessPiece.GetInstanceID(), passivePiece.GetInstanceID());
+        float cooldown = collisionConfig != null
+            ? Mathf.Max(collisionConfig.coinCollisionCooldown, CoinPairSkillDefaultCooldown)
+            : CoinPairSkillDefaultCooldown;
+
+        float lastTriggerTime;
+        if (lastCoinPairSkillTriggerTimes.TryGetValue(pairKey, out lastTriggerTime))
+        {
+            float elapsed = Time.time - lastTriggerTime;
+            if (elapsed >= 0f && elapsed < cooldown)
+            {
+                Debug.Log(
+                    $"[卦象技能] 跳过重复触发 | skill:{skill.SkillName} | " +
+                    $"主动币:{activeCoin.name} | 被动币:{passiveCoin.name} | " +
+                    $"frame:{Time.frameCount} | elapsed:{elapsed:F3}s | cooldown:{cooldown:F3}s"
+                );
+                return true;
+            }
+        }
+
+        lastCoinPairSkillTriggerTimes[pairKey] = Time.time;
+        CleanupCoinPairSkillCooldowns(cooldown);
+        return false;
+    }
+
+    private static long BuildCoinPairKey(int firstId, int secondId)
+    {
+        int min = Mathf.Min(firstId, secondId);
+        int max = Mathf.Max(firstId, secondId);
+
+        unchecked
+        {
+            return ((long)(uint)min << 32) | (uint)max;
+        }
+    }
+
+    private static void CleanupCoinPairSkillCooldowns(float cooldown)
+    {
+        if (lastCoinPairSkillTriggerTimes.Count <= 64)
+            return;
+
+        float expireBefore = Time.time - Mathf.Max(cooldown, CoinPairSkillDefaultCooldown) * 4f;
+        List<long> expiredKeys = null;
+
+        foreach (KeyValuePair<long, float> pair in lastCoinPairSkillTriggerTimes)
+        {
+            if (pair.Value >= expireBefore)
+                continue;
+
+            if (expiredKeys == null)
+                expiredKeys = new List<long>();
+
+            expiredKeys.Add(pair.Key);
+        }
+
+        if (expiredKeys == null)
+            return;
+
+        for (int i = 0; i < expiredKeys.Count; i++)
+        {
+            lastCoinPairSkillTriggerTimes.Remove(expiredKeys[i]);
+        }
+    }
+
     private void ApplyHitTarget(CollisionResult result)
     {
         if (result.collider == null)
@@ -579,13 +658,15 @@ public class MovementController : MonoBehaviour
         IDamageable damageable = result.collider.GetComponentInParent<IDamageable>();
         int damage = CoinDamageCalculator.Calculate(attackerStats);
 
-        EnemyShieldController shieldController = result.collider.GetComponentInParent<EnemyShieldController>();
+        EnemyStats enemyStats = result.collider.GetComponentInParent<EnemyStats>();
+        EnemyShieldController shieldController = enemyStats != null
+            ? enemyStats.GetComponentInChildren<EnemyShieldController>(true)
+            : result.collider.GetComponentInParent<EnemyShieldController>();
+
         if (shieldController != null && attackerPiece != null)
         {
             shieldController.TryBreakShield(attackerPiece.CurrentTrigram, attackerPiece.name);
         }
-
-        EnemyStats enemyStats = result.collider.GetComponentInParent<EnemyStats>();
 
         if (damageable != null && damage > 0)
         {

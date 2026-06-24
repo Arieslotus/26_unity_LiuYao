@@ -210,6 +210,11 @@ public class CoinVisualController : MonoBehaviour
 
         if (currentDefinition == null)
         {
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+                return;
+#endif
+
             Debug.LogWarning($"[CoinVisual] {name} 当前 CoinDefinition 为空，跳过材质设置。");
             return;
         }

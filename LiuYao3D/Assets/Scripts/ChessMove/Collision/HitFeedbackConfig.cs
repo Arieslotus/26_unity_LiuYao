@@ -55,6 +55,29 @@ public class HitFeedbackConfig : ScriptableObject
     [Range(0.01f, 1f)]
     public float coinPreImpactTimeScale = 0.5f;
 
+    [Header("碰撞镜头反馈")]
+    [Tooltip("是否启用碰撞预慢动作期间的镜头反馈")]
+    public bool enableImpactCameraFeedback = true;
+
+    [Tooltip("碰撞镜头反馈是否启用位移")]
+    public bool enableImpactCameraOffset = true;
+
+    [Tooltip("碰撞镜头反馈的最大放大倍率")]
+    [Min(1f)]
+    public float impactCameraMaxZoomMultiplier = 1.7f;
+
+    [Tooltip("碰撞镜头反馈的最大位移距离")]
+    [Min(0f)]
+    public float impactCameraMaxOffsetDistance = 2.5f;
+
+    [Tooltip("碰撞镜头跟随目标的速度，数值越大越快靠近目标")]
+    [Min(0f)]
+    public float impactCameraFollowSpeed = 2f;
+
+    [Tooltip("碰撞镜头反馈结束后恢复默认状态的持续时间")]
+    [Min(0.001f)]
+    public float impactCameraReturnDuration = 0.18f;
+
     [Tooltip("是否启用普通己方互撞命中停顿")]
     public bool enableCoinHitPause = true;
 

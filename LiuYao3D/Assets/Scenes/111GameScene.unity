@@ -588,12 +588,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   virtualCamera: {fileID: 1441070134}
   renderCamera: {fileID: 0}
-  enableImpactFeedback: 1
-  enableImpactOffset: 1
-  impactMaxZoomMultiplier: 1.7
-  impactMaxOffsetDistance: 2.5
-  impactFollowSpeed: 2
-  impactReturnDuration: 0.18
   enableChargeFeedback: 1
   enableChargeOffset: 1
   chargeMaxZoomMultiplier: 1.4
@@ -601,7 +595,7 @@ MonoBehaviour:
   chargeZoomSpeed: 2
   chargeOffsetSpeed: 2
   chargeReturnDuration: 0.2
-  debugLog: 0
+  debugLog: 1
 --- !u!1001 &85747085
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -11860,6 +11854,7 @@ MonoBehaviour:
   enemyRoot: {fileID: 1670966931}
   syncTransformsBeforeSpawn: 1
   placementPadding: 0.02
+  relocationRadiusMultiplier: 1.75
   debugLog: 1
 --- !u!114 &1315108708
 MonoBehaviour:
@@ -16632,7 +16627,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: -90}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 13.7, y: -2.97}
+  m_AnchoredPosition: {x: -11, y: -2.97}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1001 &1758180012
@@ -19688,7 +19683,7 @@ MonoBehaviour:
   minMouseDelta: 6
   idleDecayPerSecond: 0.35
   maxLocalOffset: {x: 0.2, y: 0, z: 0.2}
-  maxLocalEuler: {x: 30, y: 30, z: 30}
+  maxLocalEuler: {x: 30, y: 60, z: 30}
   followSpeed: 12
   returnSpeed: 14
   shakeLoopSfx: 20

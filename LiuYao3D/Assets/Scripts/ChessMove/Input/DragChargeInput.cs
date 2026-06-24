@@ -59,9 +59,9 @@ public class DragChargeInput : MonoBehaviour
             mainCamera = Camera.main;
         }
 
-        if (piece == null)
+        if (piece == null && debugLog)
         {
-            Debug.LogError("[DragChargeInput] 未绑定 ChessPiece。");
+            Debug.Log("[DragChargeInput] 启动时未绑定 ChessPiece，将等待回合系统动态指定当前棋子。");
         }
 
         if (mainCamera == null)

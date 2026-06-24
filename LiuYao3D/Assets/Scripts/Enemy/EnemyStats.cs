@@ -34,7 +34,7 @@ public class EnemyStats : MonoBehaviour, IDamageable
 
     private void Awake()
     {
-        shieldController = GetComponent<EnemyShieldController>();
+        shieldController = GetComponentInChildren<EnemyShieldController>(true);
         ApplyDefinition();
         currentHP = startWithFullHP ? maxHP : Mathf.Clamp(currentHP, 0, maxHP);
         NotifyHealthChanged();
@@ -57,6 +57,8 @@ public class EnemyStats : MonoBehaviour, IDamageable
     {
         if (damage <= 0 || IsDead)
             return;
+
+        ResolveShieldController();
 
         int finalDamage = shieldController != null
             ? shieldController.ModifyIncomingDamage(damage)
@@ -105,5 +107,13 @@ public class EnemyStats : MonoBehaviour, IDamageable
     private void NotifyHealthChanged()
     {
         HealthChanged?.Invoke(currentHP, maxHP);
+    }
+
+    private void ResolveShieldController()
+    {
+        if (shieldController != null)
+            return;
+
+        shieldController = GetComponentInChildren<EnemyShieldController>(true);
     }
 }

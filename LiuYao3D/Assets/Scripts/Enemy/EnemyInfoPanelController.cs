@@ -84,6 +84,11 @@ public class EnemyInfoPanelController : MonoBehaviour
 
         if (shieldController == null)
         {
+            shieldController = GetComponentInChildren<EnemyShieldController>(true);
+        }
+
+        if (shieldController == null)
+        {
             shieldController = GetComponentInParent<EnemyShieldController>();
         }
 

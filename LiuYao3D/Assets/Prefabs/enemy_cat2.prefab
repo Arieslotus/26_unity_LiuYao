@@ -384,6 +384,8 @@ GameObject:
   - component: {fileID: 2517904082126379264}
   - component: {fileID: 3936941991281086400}
   - component: {fileID: 5371242757096320055}
+  - component: {fileID: 7467998296573409854}
+  - component: {fileID: 8941385133602052748}
   m_Layer: 0
   m_Name: Shield
   m_TagString: Untagged
@@ -400,14 +402,14 @@ RectTransform:
   m_GameObject: {fileID: 7957638065275325309}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: -0}
-  m_LocalScale: {x: 0.01, y: 0.01, z: 0.01}
+  m_LocalScale: {x: 0.012, y: 0.012, z: 0.012}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 3792727100058084974}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.06, y: 0.34}
+  m_AnchoredPosition: {x: -0.06, y: 0.45}
   m_SizeDelta: {x: 243, y: 243}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3936941991281086400
@@ -425,7 +427,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7957638065275325309}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
@@ -438,7 +440,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -1316449032, guid: f5afdb54c0e7a2842a387ccc3cdec2cb, type: 3}
+  m_Sprite: {fileID: -1356754988, guid: 51b282299926c484091f5b1e9349df13, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -448,6 +450,46 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &7467998296573409854
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7957638065275325309}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 355d4a2d7ddb5f34db6c9e18d8f7d3ce, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  shieldBreakConfigOverride: {fileID: 11400000, guid: 6822182ba275b0543943b1e5f89454ef, type: 2}
+  trigramVisualDatabase: {fileID: 11400000, guid: aa5e006d743655146a8784d45401fdad, type: 2}
+  shieldImage: {fileID: 5371242757096320055}
+  shieldBreakAnimator: {fileID: 8941385133602052748}
+  shieldBreakOverrideClipName: ShieldBreak_Default
+  shieldBreakTriggerName: Break
+  debugLog: 1
+--- !u!95 &8941385133602052748
+Animator:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7957638065275325309}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: b4060e7f8fddcf547b69f65438aa73b0, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &8016508028542991262
 GameObject:
   m_ObjectHideFlags: 0
@@ -459,7 +501,6 @@ GameObject:
   - component: {fileID: 4754336010874517391}
   - component: {fileID: 442937982695446080}
   - component: {fileID: 4469890191220512059}
-  - component: {fileID: 7183502862984499947}
   - component: {fileID: 4083943333236524209}
   - component: {fileID: -8120744830280034567}
   - component: {fileID: 2811298875788034207}
@@ -522,26 +563,6 @@ MonoBehaviour:
   healthBar: {fileID: 6256853092040352585}
   stats: {fileID: 442937982695446080}
   debugLog: 0
---- !u!114 &7183502862984499947
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8016508028542991262}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 355d4a2d7ddb5f34db6c9e18d8f7d3ce, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  shieldIntervalRounds: 1
-  damageReductionPercent: 1
-  ignoreFirstRoundStart: 0
-  shieldBreakConfigOverride: {fileID: 11400000, guid: 6822182ba275b0543943b1e5f89454ef, type: 2}
-  trigramVisualDatabase: {fileID: 11400000, guid: aa5e006d743655146a8784d45401fdad, type: 2}
-  shieldImage: {fileID: 5371242757096320055}
-  deactivateShieldImageObjectWhenHidden: 0
-  debugLog: 0
 --- !u!114 &4083943333236524209
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -588,7 +609,7 @@ MonoBehaviour:
   trigramVisualDatabase: {fileID: 11400000, guid: aa5e006d743655146a8784d45401fdad, type: 2}
   stats: {fileID: 442937982695446080}
   controller: {fileID: 4469890191220512059}
-  shieldController: {fileID: 7183502862984499947}
+  shieldController: {fileID: 7467998296573409854}
 --- !u!1001 &7834080318899190117
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -23,6 +23,11 @@ public class TurnManager : MonoBehaviour
     [Tooltip("所有敌人行动结束后，等待多少秒再广播新大回合开始并进入玩家回合。")]
     [SerializeField] private float roundStartDelay = 0.5f;
 
+    [Header("敌人回合设置")]
+    [Tooltip("玩家回合结束后，等待慢镜头结束并额外延迟多少真实秒再开始敌人行动。")]
+    [Min(0f)]
+    [SerializeField] private float enemyTurnStartDelay = 0.5f;
+
     [Header("敌人列表")]
     [SerializeField] private List<EnemyController> enemies = new List<EnemyController>();
 
@@ -33,6 +38,7 @@ public class TurnManager : MonoBehaviour
     private bool hasStartedGameFlow = false;
     private int roundAdvancePauseCount;
     private int roundIndex = 0;
+    private Coroutine beginEnemyTurnCoroutine;
 
     public bool IsEnemyTurnRunning => isEnemyTurnRunning;
     public int RoundIndex => roundIndex;
@@ -83,6 +89,7 @@ public class TurnManager : MonoBehaviour
         hasStartedGameFlow = false;
         isEnemyTurnRunning = false;
         roundAdvancePauseCount = 0;
+        beginEnemyTurnCoroutine = null;
         StopAllCoroutines();
 
         if (playerTurnController != null)
@@ -196,7 +203,32 @@ public class TurnManager : MonoBehaviour
             return;
         }
 
-        //BeginPlayerTurn();
+        if (beginEnemyTurnCoroutine != null)
+        {
+            Debug.LogWarning("[TurnManager] 敌人回合启动等待已在执行中，忽略重复 EndPlayerTurn。");
+            return;
+        }
+
+        beginEnemyTurnCoroutine = StartCoroutine(BeginEnemyTurnAfterDelay());
+    }
+
+    private IEnumerator BeginEnemyTurnAfterDelay()
+    {
+        while (HitFeedbackController.Instance != null && HitFeedbackController.Instance.IsFeedbackActive)
+        {
+            yield return null;
+        }
+
+        if (enemyTurnStartDelay > 0f)
+        {
+            yield return new WaitForSecondsRealtime(enemyTurnStartDelay);
+        }
+
+        beginEnemyTurnCoroutine = null;
+
+        if (!hasStartedGameFlow || currentState != TurnState.PlayerTurn || isEnemyTurnRunning)
+            yield break;
+
         BeginEnemyTurn();
     }
 
@@ -208,6 +240,7 @@ public class TurnManager : MonoBehaviour
         if (!hasStartedGameFlow)
             return;
 
+        beginEnemyTurnCoroutine = null;
         currentState = TurnState.EnemyTurn;
         isEnemyTurnRunning = true;
 

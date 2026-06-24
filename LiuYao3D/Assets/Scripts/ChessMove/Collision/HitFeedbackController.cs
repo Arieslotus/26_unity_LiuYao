@@ -27,6 +27,11 @@ public class HitFeedbackController : MonoBehaviour
     private float pauseTimer = 0f;
     private float currentPauseTimeScale = 1f;
     private bool isPaused = false;
+    private CoinRosterManager subscribedRosterManager;
+    private float nextRefreshRetryTime;
+    private const float RefreshRetryInterval = 0.25f;
+
+    public bool IsFeedbackActive => isPaused;
 
     private void Awake()
     {
@@ -47,7 +52,8 @@ public class HitFeedbackController : MonoBehaviour
             return;
         }
 
-        RegisterAllPieces();
+        SubscribeRosterManager();
+        RefreshPieceSubscriptions("Start");
     }
 
     private void OnDestroy()
@@ -57,6 +63,7 @@ public class HitFeedbackController : MonoBehaviour
             Instance = null;
         }
 
+        UnsubscribeRosterManager();
         UnregisterAllPieces();
         RestoreTimeScale();
     }
@@ -121,6 +128,17 @@ public class HitFeedbackController : MonoBehaviour
 
     private void Update()
     {
+        if (subscribedRosterManager == null)
+        {
+            SubscribeRosterManager();
+        }
+
+        if (config != null && pieces.Count == 0 && Time.unscaledTime >= nextRefreshRetryTime)
+        {
+            nextRefreshRetryTime = Time.unscaledTime + RefreshRetryInterval;
+            RefreshPieceSubscriptions("Retry");
+        }
+
         if (config != null && !config.enableHitPause)
         {
             if (isPaused)
@@ -141,7 +159,7 @@ public class HitFeedbackController : MonoBehaviour
         }
     }
 
-    private void RegisterAllPieces()
+    private void RefreshPieceSubscriptions(string reason)
     {
         HashSet<ChessPiece> set = new HashSet<ChessPiece>();
 
@@ -153,10 +171,32 @@ public class HitFeedbackController : MonoBehaviour
 
         if (autoFindPiecesOnStart)
         {
+            ChessTurnController turnController = FindObjectOfType<ChessTurnController>();
+            if (turnController != null && turnController.Pieces != null)
+            {
+                IReadOnlyList<ChessPiece> turnPieces = turnController.Pieces;
+                for (int i = 0; i < turnPieces.Count; i++)
+                {
+                    if (turnPieces[i] != null)
+                        set.Add(turnPieces[i]);
+                }
+            }
+
+            CoinRosterManager rosterManager = CoinRosterManager.Instance;
+            if (rosterManager != null && rosterManager.CoinSlots != null)
+            {
+                IReadOnlyList<ChessPiece> rosterPieces = rosterManager.CoinSlots;
+                for (int i = 0; i < rosterPieces.Count; i++)
+                {
+                    if (rosterPieces[i] != null)
+                        set.Add(rosterPieces[i]);
+                }
+            }
+
 #if UNITY_2023_1_OR_NEWER
-            ChessPiece[] foundPieces = FindObjectsByType<ChessPiece>(FindObjectsSortMode.None);
+            ChessPiece[] foundPieces = FindObjectsByType<ChessPiece>(FindObjectsInactive.Include, FindObjectsSortMode.None);
 #else
-            ChessPiece[] foundPieces = FindObjectsOfType<ChessPiece>();
+            ChessPiece[] foundPieces = FindObjectsOfType<ChessPiece>(true);
 #endif
             for (int i = 0; i < foundPieces.Length; i++)
             {
@@ -165,6 +205,7 @@ public class HitFeedbackController : MonoBehaviour
             }
         }
 
+        int previousCount = pieces.Count;
         pieces.Clear();
         pieces.AddRange(set);
 
@@ -181,8 +222,38 @@ public class HitFeedbackController : MonoBehaviour
 
         if (debugLog)
         {
-            Debug.Log($"[HitFeedbackController] 完成订阅 | 棋子数量:{pieces.Count}");
+            Debug.Log($"[HitFeedbackController] 刷新订阅 | reason:{reason} | previous:{previousCount} | total:{pieces.Count}");
         }
+    }
+
+    private void SubscribeRosterManager()
+    {
+        CoinRosterManager rosterManager = CoinRosterManager.Instance;
+        if (subscribedRosterManager == rosterManager)
+            return;
+
+        UnsubscribeRosterManager();
+        subscribedRosterManager = rosterManager;
+
+        if (subscribedRosterManager != null)
+        {
+            subscribedRosterManager.CoinReplaced -= OnCoinReplaced;
+            subscribedRosterManager.CoinReplaced += OnCoinReplaced;
+        }
+    }
+
+    private void UnsubscribeRosterManager()
+    {
+        if (subscribedRosterManager == null)
+            return;
+
+        subscribedRosterManager.CoinReplaced -= OnCoinReplaced;
+        subscribedRosterManager = null;
+    }
+
+    private void OnCoinReplaced(ChessPiece piece, CoinDefinition definition)
+    {
+        RefreshPieceSubscriptions("CoinReplaced");
     }
 
     private void UnregisterAllPieces()
@@ -214,7 +285,7 @@ public class HitFeedbackController : MonoBehaviour
 
                 float enemyDuration = GetPreImpactFeedbackDuration(CollisionType.Enemy);
                 TriggerHitPause(config.enemyPreImpactTimeScale, enemyDuration);
-                CameraFeedbackController.Instance?.PlayImpactFocus(hitPoint, enemyDuration);
+                CameraFeedbackController.Instance?.PlayImpactFocus(hitPoint, enemyDuration, config);
 
                 if (debugLog)
                 {
@@ -231,7 +302,7 @@ public class HitFeedbackController : MonoBehaviour
 
                 float coinDuration = GetPreImpactFeedbackDuration(CollisionType.PlayerCoin);
                 TriggerHitPause(config.coinPreImpactTimeScale, coinDuration);
-                CameraFeedbackController.Instance?.PlayImpactFocus(hitPoint, coinDuration);
+                CameraFeedbackController.Instance?.PlayImpactFocus(hitPoint, coinDuration, config);
 
                 if (debugLog)
                 {

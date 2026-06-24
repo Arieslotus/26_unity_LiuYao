@@ -14,34 +14,42 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   entries:
   - trigramType: 1
-    sprite: {fileID: -1300852243, guid: 4ba3364136e1bc245a7102837fcbd4aa, type: 3}
+    sprite: {fileID: -981417768, guid: 8b230fe35fe47bf48870523951fd1401, type: 3}
     icon: {fileID: -1472473745, guid: ff0f39d4c1714864fa14de5517df396f, type: 3}
     uiPrefab: {fileID: 149261007776183480, guid: bbff944b7e9291c449176cc5fb64e8bb, type: 3}
+    shieldBreakClip: {fileID: 7400000, guid: 8ee716ac54ab5f641ac32651f7230e5b, type: 2}
   - trigramType: 2
-    sprite: {fileID: -2147012017, guid: 3740407fae5939148b561b3e9a5c247d, type: 3}
+    sprite: {fileID: 1520075424, guid: 5c38409213e3a4346a112a9577e5722d, type: 3}
     icon: {fileID: 1891008659, guid: ff0f39d4c1714864fa14de5517df396f, type: 3}
     uiPrefab: {fileID: 1067350822997779263, guid: 035bb088459ef644284f31ad0ed3429b, type: 3}
+    shieldBreakClip: {fileID: 7400000, guid: 9c9bf0b427360c24195027d73197fcc8, type: 2}
   - trigramType: 3
-    sprite: {fileID: -276585823, guid: b7685e033e932cb4a87edb5ce8e29add, type: 3}
+    sprite: {fileID: -1191511387, guid: f0c46057ffab60744b2829468f74eabe, type: 3}
     icon: {fileID: 101230669, guid: ff0f39d4c1714864fa14de5517df396f, type: 3}
     uiPrefab: {fileID: 3695446001618028429, guid: 90c7d4be82e65654bb35b57eff603f03, type: 3}
+    shieldBreakClip: {fileID: 7400000, guid: 73239060d41c91448ae40e7b12052454, type: 2}
   - trigramType: 8
-    sprite: {fileID: 520815131, guid: b2158bd1b58b34f4ca15e0ef593098be, type: 3}
+    sprite: {fileID: 2080028083, guid: cf38e7b04fe6cf74bacef66759bdd3c0, type: 3}
     icon: {fileID: 446885250, guid: ff0f39d4c1714864fa14de5517df396f, type: 3}
     uiPrefab: {fileID: 5315675857710289322, guid: 1f7054a1e6b056a4e9e6a91dc52b7da8, type: 3}
+    shieldBreakClip: {fileID: 7400000, guid: 79e319873aaa6154cbcb8aa337af11e0, type: 2}
   - trigramType: 6
-    sprite: {fileID: 238856171, guid: c036840678328e347a56681dbeb7e762, type: 3}
+    sprite: {fileID: -459671337, guid: d98497628122054439665d0503cd1eb8, type: 3}
     icon: {fileID: 1874645564, guid: ff0f39d4c1714864fa14de5517df396f, type: 3}
     uiPrefab: {fileID: 5873423548463964733, guid: c2f19b11af918424d849cfd9a3194583, type: 3}
+    shieldBreakClip: {fileID: 7400000, guid: ea7cf3ac8a8d4e7478a889dd39713cda, type: 2}
   - trigramType: 5
-    sprite: {fileID: -1316449032, guid: f5afdb54c0e7a2842a387ccc3cdec2cb, type: 3}
+    sprite: {fileID: 1378644220, guid: 4db2ce0ec77a46246a80ee363e0bfa17, type: 3}
     icon: {fileID: -1361597334, guid: ff0f39d4c1714864fa14de5517df396f, type: 3}
     uiPrefab: {fileID: 3218904375701765661, guid: 037acef659b62b14eb6b3f943f2eaadf, type: 3}
+    shieldBreakClip: {fileID: 7400000, guid: 2fa79b21ba75a5e49baffdd937d700c9, type: 2}
   - trigramType: 4
-    sprite: {fileID: 670522206, guid: f745f8c9edf49074e819a3db57f7c0bc, type: 3}
+    sprite: {fileID: -1356754988, guid: 51b282299926c484091f5b1e9349df13, type: 3}
     icon: {fileID: 1953709966, guid: ff0f39d4c1714864fa14de5517df396f, type: 3}
     uiPrefab: {fileID: 6653659570522252808, guid: 77837d803a1d4354997906ffe920facc, type: 3}
+    shieldBreakClip: {fileID: 7400000, guid: ccd2cfb3b35a0e94485333d2e54654d8, type: 2}
   - trigramType: 7
-    sprite: {fileID: 591933766, guid: 047e02a14e632834aa23239818ec165a, type: 3}
+    sprite: {fileID: 2052978488, guid: 41da2b6771a06fe4299497d4434529e9, type: 3}
     icon: {fileID: 45833206, guid: ff0f39d4c1714864fa14de5517df396f, type: 3}
     uiPrefab: {fileID: 7201904043864836403, guid: fe7779f123b894d4cbaf0d5b8dd71db7, type: 3}
+    shieldBreakClip: {fileID: 7400000, guid: 1282d99401ff13a419f81cfe3e17e512, type: 2}

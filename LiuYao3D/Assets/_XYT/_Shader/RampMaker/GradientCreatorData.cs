@@ -18,7 +18,7 @@ public class GradientCreatorData : ScriptableObject
     }
 
     public WidthSize _GradientWidth = WidthSize._128;//每一条渐变的宽度
-    private int _GradientHeight = 2;//每一条渐变的高度
+    //private int _GradientHeight = 2;//每一条渐变的高度
     
     public List<Gradient> _Gradient = new List<Gradient>();
     public enum Format

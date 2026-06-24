@@ -15,7 +15,7 @@ public class OpeningShellShakeInput : MonoBehaviour
     [Min(0.01f)]
     [SerializeField] private float requiredShakeDuration = 1.2f;
 
-    [Tooltip("单帧鼠标移动距离超过该值时，才计入有效摇动。")]
+    [Tooltip("摇动灵敏度基准。会按 60FPS 换算为鼠标移动速度，避免不同帧率下单帧位移差异导致判定过严。")]
     [Min(0f)]
     [SerializeField] private float minMouseDelta = 6f;
 
@@ -104,10 +104,11 @@ public class OpeningShellShakeInput : MonoBehaviour
             Vector3 mouseDelta = mousePosition - previousMousePosition;
             previousMousePosition = mousePosition;
 
-            bool validShake = mouseDelta.magnitude >= minMouseDelta;
+            float progressGain = CalculateShakeProgressGain(mouseDelta, deltaTime);
+            bool validShake = progressGain > 0f;
             if (validShake)
             {
-                shakeProgress += deltaTime;
+                shakeProgress = Mathf.Min(requiredShakeDuration, shakeProgress + progressGain);
                 PlayShakeLoopSFX();
             }
             else
@@ -191,6 +192,21 @@ public class OpeningShellShakeInput : MonoBehaviour
         float lerp = Mathf.Clamp01(followSpeed * deltaTime);
         shakeTarget.localPosition = Vector3.Lerp(shakeTarget.localPosition, baseLocalPosition + targetOffset, lerp);
         shakeTarget.localRotation = Quaternion.Slerp(shakeTarget.localRotation, baseLocalRotation * Quaternion.Euler(targetEuler), lerp);
+    }
+
+    private float CalculateShakeProgressGain(Vector3 mouseDelta, float deltaTime)
+    {
+        if (deltaTime <= 0f)
+            return 0f;
+
+        float mouseDistance = mouseDelta.magnitude;
+        const float noiseDeadZonePixels = 0.5f;
+        if (mouseDistance < noiseDeadZonePixels)
+            return 0f;
+
+        float targetPixelsPerSecond = Mathf.Max(1f, minMouseDelta * 60f);
+        float progressGain = mouseDistance / targetPixelsPerSecond;
+        return Mathf.Min(progressGain, deltaTime * 2f);
     }
 
     private IEnumerator ReturnToBasePose()

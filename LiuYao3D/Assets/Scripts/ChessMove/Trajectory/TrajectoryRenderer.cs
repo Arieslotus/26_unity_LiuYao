@@ -28,9 +28,9 @@ public class TrajectoryRenderer : MonoBehaviour
     [Range(0f, 1f)]
     [SerializeField] private float overflowSegmentPercent = 0.35f;
 
-    [SerializeField] private int cornerVertices = 6;
-    [SerializeField] private int capVertices = 4;
-    [SerializeField] private LineAlignment lineAlignment = LineAlignment.View;
+    //[SerializeField] private int cornerVertices = 6;
+    //[SerializeField] private int capVertices = 4;
+    //[SerializeField] private LineAlignment lineAlignment = LineAlignment.View;
 
     private LineRenderer line;
 

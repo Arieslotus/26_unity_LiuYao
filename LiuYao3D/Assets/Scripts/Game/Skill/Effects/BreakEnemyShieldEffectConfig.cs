@@ -41,8 +41,18 @@ public sealed class BreakEnemyShieldEffectConfig : CollisionSkillEffectConfig
 
             for (int i = 0; i < targets.Count; i++)
             {
-                EnemyShieldController shield = targets[i].GetComponent<EnemyShieldController>();
-                if (shield == null || !shield.HasShield)
+                EnemyStats target = targets[i];
+                if (target == null)
+                    continue;
+
+                EnemyShieldController shield = target.GetComponentInChildren<EnemyShieldController>(true);
+                if (shield == null)
+                {
+                    Debug.LogWarning($"[BreakEnemyShieldEffectConfig] 技能目标未找到护盾控制器 | skill:{sourceName} | enemy:{target.name}");
+                    continue;
+                }
+
+                if (!shield.HasShield)
                     continue;
 
                 config.ApplyBreakValue(context, shield, sourceName);

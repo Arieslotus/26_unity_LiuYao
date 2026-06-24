@@ -1,5 +1,5 @@
 /// <summary>
-/// 实现功能：配置敌人护盾被不同卦象硬币命中或技能影响时累计的破盾值。
+/// 实现功能：配置敌人护盾生成、减伤，以及被不同卦象硬币命中或技能影响时累计的破盾值。
 /// </summary>
 using System;
 using System.Collections.Generic;
@@ -49,7 +49,19 @@ public class EnemyShieldBreakConfigSO : ScriptableObject
         }
     }
 
-    [Header("默认规则")]
+    [Header("生成与减伤")]
+    [Min(1)]
+    [Tooltip("每经过多少个大回合尝试生成一次护盾。已有护盾时不会生成新护盾。")]
+    [SerializeField] private int shieldIntervalRounds = 2;
+
+    [Range(0f, 1f)]
+    [Tooltip("持有护盾时受到的伤害减免比例。0 表示不减伤，1 表示完全免伤。")]
+    [SerializeField] private float damageReductionPercent = 0.5f;
+
+    [Tooltip("第一回合开始时是否立即生成一次护盾。之后再按护盾生成间隔计数。")]
+    [SerializeField] private bool generateShieldOnFirstRound = true;
+
+    [Header("默认破盾规则")]
     [Min(1)]
     [SerializeField] private int requiredBreakValue = 3;
 
@@ -62,6 +74,9 @@ public class EnemyShieldBreakConfigSO : ScriptableObject
     [Header("特殊规则")]
     [SerializeField] private List<ShieldBreakRule> shieldRules = new List<ShieldBreakRule>();
 
+    public int ShieldIntervalRounds => Mathf.Max(1, shieldIntervalRounds);
+    public float DamageReductionPercent => Mathf.Clamp01(damageReductionPercent);
+    public bool GenerateShieldOnFirstRound => generateShieldOnFirstRound;
     public int RequiredBreakValue => Mathf.Max(1, requiredBreakValue);
 
     public int GetBreakValue(TrigramType shieldType, TrigramType triggerTrigram)

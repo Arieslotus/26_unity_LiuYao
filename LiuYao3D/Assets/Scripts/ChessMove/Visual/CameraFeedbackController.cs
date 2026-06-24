@@ -15,29 +15,6 @@ public class CameraFeedbackController : MonoBehaviour
     [Tooltip("用于计算屏幕位置的真实相机。为空时自动使用 Camera.main")]
     [SerializeField] private Camera renderCamera;
 
-    [Header("碰撞镜头反馈")]
-    [Tooltip("是否启用碰撞预慢动作期间的镜头反馈")]
-    [SerializeField] private bool enableImpactFeedback = true;
-
-    [Tooltip("碰撞镜头反馈是否启用位移")]
-    [SerializeField] private bool enableImpactOffset = true;
-
-    [Tooltip("碰撞镜头反馈的最大放大倍率")]
-    [Min(1f)]
-    [SerializeField] private float impactMaxZoomMultiplier = 1.12f;
-
-    [Tooltip("碰撞镜头反馈的最大位移距离")]
-    [Min(0f)]
-    [SerializeField] private float impactMaxOffsetDistance = 1.2f;
-
-    [Tooltip("碰撞镜头跟随目标的速度，数值越大越快靠近目标")]
-    [Min(0f)]
-    [SerializeField] private float impactFollowSpeed = 8f;
-
-    [Tooltip("碰撞镜头反馈结束后恢复默认状态的持续时间")]
-    [Min(0.001f)]
-    [SerializeField] private float impactReturnDuration = 0.18f;
-
     [Header("蓄力镜头反馈")]
     [Tooltip("是否启用蓄力阶段镜头反馈")]
     [SerializeField] private bool enableChargeFeedback = true;
@@ -80,6 +57,8 @@ public class CameraFeedbackController : MonoBehaviour
 
     private Vector3 impactTargetOffset;
     private float impactTargetZoomMultiplier = 1f;
+    private float impactFollowSpeed = 8f;
+    private float impactReturnDuration = 0.18f;
     private float impactTimer;
     private float impactDuration;
     private bool isImpactFeedbackActive;
@@ -126,18 +105,20 @@ public class CameraFeedbackController : MonoBehaviour
         ApplyFeedbackState();
     }
 
-    public void PlayImpactFocus(Vector3 worldPoint, float duration)
+    public void PlayImpactFocus(Vector3 worldPoint, float duration, HitFeedbackConfig config)
     {
-        if (!enableImpactFeedback || cameraTransform == null)
+        if (config == null || !config.enableImpactCameraFeedback || cameraTransform == null)
             return;
 
         impactDuration = Mathf.Max(0.001f, duration);
         impactTimer = impactDuration;
         isImpactFeedbackActive = impactTimer > 0f;
         isReturningFromImpact = false;
-        impactTargetZoomMultiplier = impactMaxZoomMultiplier;
-        impactTargetOffset = enableImpactOffset
-            ? CalculateScreenCenteringOffset(worldPoint, impactMaxOffsetDistance)
+        impactTargetZoomMultiplier = Mathf.Max(1f, config.impactCameraMaxZoomMultiplier);
+        impactFollowSpeed = Mathf.Max(0f, config.impactCameraFollowSpeed);
+        impactReturnDuration = Mathf.Max(0.001f, config.impactCameraReturnDuration);
+        impactTargetOffset = config.enableImpactCameraOffset
+            ? CalculateScreenCenteringOffset(worldPoint, config.impactCameraMaxOffsetDistance)
             : Vector3.zero;
 
         if (debugLog)

@@ -39,6 +39,34 @@ public class EnemySpawnPoint : MonoBehaviour
         return result;
     }
 
+    public IReadOnlyList<SpawnCandidate> GetCandidates(bool includeCenter, float radiusMultiplier)
+    {
+        if (radiusMultiplier <= 1f)
+            return GetCandidates(includeCenter);
+
+        List<SpawnCandidate> result = new List<SpawnCandidate>();
+        BuildCandidates(result, Mathf.Max(1f, radiusMultiplier));
+
+        if (includeCenter)
+            return result;
+
+        for (int i = result.Count - 1; i >= 0; i--)
+        {
+            if (result[i].RingIndex <= 0)
+            {
+                result.RemoveAt(i);
+            }
+        }
+
+        return result;
+    }
+
+    public float GetSpawnRadius(float radiusMultiplier = 1f)
+    {
+        float baseRadius = Config != null ? Mathf.Max(0.1f, Config.spawnRadius) : 3f;
+        return baseRadius * Mathf.Max(1f, radiusMultiplier);
+    }
+
     public bool IsCircleOnGround(Vector3 center, float radius)
     {
         if (Config == null || Config.groundMask.value == 0)
@@ -87,9 +115,17 @@ public class EnemySpawnPoint : MonoBehaviour
             return;
 
         cachedCandidates.Clear();
-        cachedCandidates.Add(new SpawnCandidate(transform.position, 0));
+        BuildCandidates(cachedCandidates, 1f);
 
-        float spawnRadius = Config != null ? Mathf.Max(0.1f, Config.spawnRadius) : 3f;
+        candidatesDirty = false;
+    }
+
+    private void BuildCandidates(List<SpawnCandidate> candidates, float radiusMultiplier)
+    {
+        candidates.Clear();
+        candidates.Add(new SpawnCandidate(transform.position, 0));
+
+        float spawnRadius = GetSpawnRadius(radiusMultiplier);
         float pointSpacing = Config != null ? Mathf.Max(0.1f, Config.pointSpacing) : 1f;
         int ringCount = Mathf.FloorToInt(spawnRadius / pointSpacing);
 
@@ -103,11 +139,9 @@ public class EnemySpawnPoint : MonoBehaviour
             {
                 float angle = Mathf.PI * 2f * i / pointCount + offset;
                 Vector3 localOffset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
-                cachedCandidates.Add(new SpawnCandidate(transform.position + localOffset, ring));
+                candidates.Add(new SpawnCandidate(transform.position + localOffset, ring));
             }
         }
-
-        candidatesDirty = false;
     }
 
     private void OnValidate()
