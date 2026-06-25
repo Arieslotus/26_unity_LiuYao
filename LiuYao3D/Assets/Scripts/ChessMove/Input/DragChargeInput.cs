@@ -20,6 +20,9 @@ public class DragChargeInput : MonoBehaviour
     [SerializeField] private ChargeInputConfig chargeConfig;
     [SerializeField] private ChessTurnController turnController;
 
+    [Tooltip("蓄力阶段显示的提示UI")]
+    [SerializeField] private GameObject chargeHintUI;
+
     [Header("射线平面")]
     [Tooltip("输入投射所使用的逻辑平面高度")]
     [SerializeField] private float inputPlaneY = 0f;
@@ -73,6 +76,11 @@ public class DragChargeInput : MonoBehaviour
         {
             Debug.LogError("[DragChargeInput] 未绑定 ChargeInputConfig。");
         }
+
+        if (chargeHintUI != null)
+        {
+            chargeHintUI.SetActive(false);
+        }
     }
 
     private void Update()
@@ -118,6 +126,7 @@ public class DragChargeInput : MonoBehaviour
 
     private void OnDisable()
     {
+        SetChargeHintVisible(false);
         UnsubscribeGameFlow();
         ResetAllChargeState();
         ClearTrajectory();
@@ -186,6 +195,7 @@ public class DragChargeInput : MonoBehaviour
         }
 
         isCharging = true;
+        SetChargeHintVisible(true);
         CameraFeedbackController.Instance?.BeginChargeFocus(piece.transform.position);
         currentStage = ChargeStage.Distance;
         currentPower = 0f;
@@ -437,6 +447,7 @@ public class DragChargeInput : MonoBehaviour
             piece.RestoreFaceImmediate(chargeStartFaceState);
         }
 
+        SetChargeHintVisible(false);
         ResetAllChargeState();
         ClearTrajectory();
         CameraFeedbackController.Instance?.EndChargeFocus();
@@ -454,6 +465,7 @@ public class DragChargeInput : MonoBehaviour
 
     private void ResetAllChargeState()
     {
+        SetChargeHintVisible(false);
         ResetChargeStateKeepFace();
 
         hasTriggeredChargeFlip = false;
@@ -594,6 +606,14 @@ public class DragChargeInput : MonoBehaviour
     private bool CanAcceptGameplayInput()
     {
         return GameFlowController.Instance == null || GameFlowController.Instance.CanAcceptGameplayInput;
+    }
+
+    private void SetChargeHintVisible(bool visible)
+    {
+        if (chargeHintUI == null)
+            return;
+
+        chargeHintUI.SetActive(visible);
     }
 
     public bool IsCharging => isCharging;

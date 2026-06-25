@@ -15,6 +15,10 @@ public class CoinReplacementModelItem : MonoBehaviour
     [Tooltip("鼠标悬停时的上浮旋转效果。为空时自动查找子物体。")]
     [SerializeField] private HoverFloatRotateEffect hoverEffect;
 
+    [Header("Selection Outline")]
+    [Tooltip("Runtime outline material appended to the coin renderer when selected.")]
+    [SerializeField] private Material selectionOutlineMaterial;
+
     [Header("选中反馈")]
     [SerializeField] private Vector3 normalScale = Vector3.one;
     [SerializeField] private Vector3 selectedScale = new Vector3(1.2f, 1.2f, 1.2f);
@@ -24,6 +28,7 @@ public class CoinReplacementModelItem : MonoBehaviour
 
     private CoinDefinition definition;
     private bool selected;
+    private bool outlineVisible;
     private Vector3 targetLocalPosition;
 
     public CoinDefinition Definition => definition;
@@ -48,6 +53,7 @@ public class CoinReplacementModelItem : MonoBehaviour
         }
 
         ApplySelectedState(false);
+        SetSelectionOutlineVisible(false);
     }
 
     public void Bind(CoinDefinition coinDefinition)
@@ -56,6 +62,7 @@ public class CoinReplacementModelItem : MonoBehaviour
         targetLocalPosition = transform.localPosition;
         ApplyDefinitionVisual();
         ApplySelectedState(false);
+        SetSelectionOutlineVisible(false);
 
         if (debugLog)
         {
@@ -69,6 +76,44 @@ public class CoinReplacementModelItem : MonoBehaviour
     public void SetSelected(bool value)
     {
         ApplySelectedState(value);
+    }
+
+    public void SetSelectionOutlineMaterial(Material material)
+    {
+        if (selectionOutlineMaterial == material)
+            return;
+
+        bool restoreOutline = outlineVisible;
+        if (restoreOutline)
+        {
+            RemoveOutlineMaterial();
+        }
+
+        selectionOutlineMaterial = material;
+
+        if (restoreOutline)
+        {
+            AddOutlineMaterial();
+        }
+    }
+
+    public void SetSelectionOutlineVisible(bool visible)
+    {
+        if (outlineVisible == visible)
+            return;
+
+        Debug.Log($"Outline Visible -> {visible}");
+
+        outlineVisible = visible;
+
+        if (outlineVisible)
+        {
+            AddOutlineMaterial();
+        }
+        else
+        {
+            RemoveOutlineMaterial();
+        }
     }
 
     public void SetHovered(bool value)
@@ -96,7 +141,83 @@ public class CoinReplacementModelItem : MonoBehaviour
 
         if (definition.coinMaterial != null)
         {
+            bool restoreOutline = outlineVisible;
+            if (restoreOutline)
+            {
+                RemoveOutlineMaterial();
+            }
+
             coinRenderer.sharedMaterial = definition.coinMaterial;
+
+            if (restoreOutline)
+            {
+                AddOutlineMaterial();
+            }
         }
+    }
+
+    private void AddOutlineMaterial()
+    {
+        if (coinRenderer == null || selectionOutlineMaterial == null)
+            return;
+
+        Material[] materials = coinRenderer.materials;
+        for (int i = 0; i < materials.Length; i++)
+        {
+            if (IsOutlineMaterial(materials[i]))
+                return;
+        }
+
+        Material[] nextMaterials = new Material[materials.Length + 1];
+        for (int i = 0; i < materials.Length; i++)
+        {
+            nextMaterials[i] = materials[i];
+        }
+
+        nextMaterials[nextMaterials.Length - 1] = selectionOutlineMaterial;
+        coinRenderer.materials = nextMaterials;
+    }
+
+    private void RemoveOutlineMaterial()
+    {
+        if (coinRenderer == null || selectionOutlineMaterial == null)
+            return;
+
+        Material[] materials = coinRenderer.materials;
+        int removeCount = 0;
+
+        for (int i = 0; i < materials.Length; i++)
+        {
+            if (IsOutlineMaterial(materials[i]))
+            {
+                removeCount++;
+            }
+        }
+
+        if (removeCount <= 0)
+            return;
+
+        Material[] nextMaterials = new Material[materials.Length - removeCount];
+        int nextIndex = 0;
+        for (int i = 0; i < materials.Length; i++)
+        {
+            if (IsOutlineMaterial(materials[i]))
+                continue;
+
+            nextMaterials[nextIndex] = materials[i];
+            nextIndex++;
+        }
+
+        coinRenderer.materials = nextMaterials;
+    }
+
+    private bool IsOutlineMaterial(Material material)
+    {
+        if (material == null || selectionOutlineMaterial == null)
+            return false;
+
+        string runtimeName = material.name.Replace(" (Instance)", "");
+
+        return runtimeName == selectionOutlineMaterial.name;
     }
 }

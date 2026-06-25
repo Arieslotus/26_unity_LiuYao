@@ -132,6 +132,7 @@ MonoBehaviour:
   coinRenderer: {fileID: 684239048828943967}
   scaleRoot: {fileID: 3485424198760054086}
   hoverEffect: {fileID: 0}
+  selectionOutlineMaterial: {fileID: 0}
   normalScale: {x: 1, y: 1, z: 1}
   selectedScale: {x: 1.2, y: 1.2, z: 1.2}
   debugLog: 0
@@ -259,8 +260,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 1.6182904, y: 0.9999999, z: 0.9999998}
+  m_Center: {x: -0.30914447, y: 0, z: 0}
 --- !u!1 &3559810427704671806
 GameObject:
   m_ObjectHideFlags: 0

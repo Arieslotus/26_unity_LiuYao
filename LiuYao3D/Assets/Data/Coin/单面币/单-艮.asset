@@ -20,4 +20,4 @@ MonoBehaviour:
   backTrigram: 4
   frontSprite: {fileID: 1953709966, guid: ff0f39d4c1714864fa14de5517df396f, type: 3}
   backSprite: {fileID: 1953709966, guid: ff0f39d4c1714864fa14de5517df396f, type: 3}
-  coinMaterial: {fileID: 2100000, guid: de1ed30d088fc974eb442b66872cc966, type: 2}
+  coinMaterial: {fileID: 2100000, guid: f7e53d093875a27419db3905fbf04c55, type: 2}

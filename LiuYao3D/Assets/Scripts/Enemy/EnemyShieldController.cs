@@ -22,6 +22,9 @@ public class EnemyShieldController : MonoBehaviour
     [Tooltip("敌人身上用于显示护盾的 Image 组件。")]
     [SerializeField] private Image shieldImage;
 
+    [Header("护盾类型图标")]
+    [SerializeField] private Image shieldTypeIconImage;
+
     [Tooltip("护盾破裂 Animator，建议挂在 ShieldRoot 上。留空时会从护盾 Image 的父级自动查找。")]
     [SerializeField] private Animator shieldBreakAnimator;
 
@@ -124,6 +127,14 @@ public class EnemyShieldController : MonoBehaviour
         if (!TryGenerateNextShield(roundIndex, true))
         {
             ScheduleShieldGenerationRetry(roundIndex);
+        }
+    }
+
+    private void Awake()
+    {
+        if (shieldTypeIconImage != null)
+        {
+            shieldTypeIconImage.gameObject.SetActive(false);
         }
     }
 
@@ -492,6 +503,14 @@ public class EnemyShieldController : MonoBehaviour
             shieldImage.sprite = shieldSprite;
         }
 
+        if (shieldTypeIconImage != null)
+        {
+            shieldTypeIconImage.sprite =
+                trigramVisualDatabase.GetIcon(shieldType);
+
+            shieldTypeIconImage.gameObject.SetActive(true);
+        }
+
         ResetShieldVisualState();
         shieldImage.enabled = true;
     }
@@ -504,6 +523,10 @@ public class EnemyShieldController : MonoBehaviour
             return;
 
         shieldImage.enabled = false;
+        if (shieldTypeIconImage != null)
+        {
+            shieldTypeIconImage.gameObject.SetActive(false);
+        }
         SetShieldAnimatorEnabled(false);
     }
 

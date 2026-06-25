@@ -40,10 +40,10 @@ MonoBehaviour:
     spawnAtRound: 0
     spawnWhenPreviousWaveCleared: 1
     enemies:
-    - enemyDefinition: {fileID: 11400000, guid: 4602ca3f93dc90e4bb122f27d16ced84, type: 2}
+    - enemyDefinition: {fileID: 11400000, guid: 39490ca5bd1f92749853317415a69ac0, type: 2}
       count: 1
       spawnPointId: 31
-    - enemyDefinition: {fileID: 11400000, guid: 4602ca3f93dc90e4bb122f27d16ced84, type: 2}
+    - enemyDefinition: {fileID: 11400000, guid: af281acf6d74d814d83c1c8eb298dda4, type: 2}
       count: 1
       spawnPointId: 32
     - enemyDefinition: {fileID: 11400000, guid: 4602ca3f93dc90e4bb122f27d16ced84, type: 2}

@@ -34,6 +34,10 @@ public class CoinModelShelf : MonoBehaviour
     [SerializeField] private bool enableHover = true;
     [SerializeField] private bool enableSelection;
 
+    [Header("选中描边")]
+    [Tooltip("选中时追加到硬币 Renderer 上的 Outline 材质")]
+    [SerializeField] private Material selectionOutlineMaterial;
+
     [Header("说明")]
     [Tooltip("开启后，鼠标移到硬币上时显示说明面板。")]
     [SerializeField] private bool enableInfoPanel;
@@ -106,6 +110,8 @@ public class CoinModelShelf : MonoBehaviour
             CoinReplacementModelItem item = Instantiate(itemPrefab, itemRoot);
             item.transform.localPosition = firstPosition + direction * (itemSpacing * i);
             item.Bind(definitions[i]);
+            item.SetSelectionOutlineMaterial(selectionOutlineMaterial);
+            item.SetSelectionOutlineVisible(false);
             spawnedItems.Add(item);
         }
 
@@ -137,6 +143,8 @@ public class CoinModelShelf : MonoBehaviour
         if (item == null)
             return;
 
+        Debug.Log($"SetSelected {item.name} -> {selected}");
+
         if (selected)
         {
             if (!selectedItems.Contains(item))
@@ -150,6 +158,7 @@ public class CoinModelShelf : MonoBehaviour
         }
 
         item.SetSelected(selected);
+        item.SetSelectionOutlineVisible(selected);
     }
 
     public void ClearSelection()
@@ -159,6 +168,7 @@ public class CoinModelShelf : MonoBehaviour
             if (selectedItems[i] != null)
             {
                 selectedItems[i].SetSelected(false);
+                selectedItems[i].SetSelectionOutlineVisible(false);
             }
         }
 

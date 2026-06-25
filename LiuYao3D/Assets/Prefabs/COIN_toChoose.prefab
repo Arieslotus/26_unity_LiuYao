@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 2737559169397393301}
   - component: {fileID: 1119373490409223588}
   - component: {fileID: 684239048828943967}
+  - component: {fileID: 9167957160527929706}
   m_Layer: 0
   m_Name: model
   m_TagString: Untagged
@@ -83,6 +84,27 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &9167957160527929706
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 130505434191525362}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2488d6895a01f9249b5700906577fdc9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 0}
+  hoverDirectionSpace: 0
+  hoverDirection: {x: -1, y: 0, z: 0}
+  hoverDistance: 0.1
+  moveSpeed: 8
+  rotateLocalAxis: {x: 0, y: 1, z: 0}
+  rotateSpeed: 120
+  rotateOnlyWhenHovered: 1
+  restoreRotationOnExit: 1
 --- !u!1 &1848568583470563752
 GameObject:
   m_ObjectHideFlags: 0
@@ -93,7 +115,6 @@ GameObject:
   m_Component:
   - component: {fileID: 3700100116146138585}
   - component: {fileID: 4910723970580315362}
-  - component: {fileID: 9168548793434161616}
   m_Layer: 0
   m_Name: COIN_toChoose
   m_TagString: Untagged
@@ -131,31 +152,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   coinRenderer: {fileID: 684239048828943967}
   scaleRoot: {fileID: 3485424198760054086}
-  hoverEffect: {fileID: 0}
+  hoverEffect: {fileID: 9167957160527929706}
+  selectionOutlineMaterial: {fileID: 2100000, guid: b8e0f4d6a9c24fb897e1d203456789ab, type: 2}
   normalScale: {x: 1, y: 1, z: 1}
   selectedScale: {x: 1.2, y: 1.2, z: 1.2}
   debugLog: 0
---- !u!114 &9168548793434161616
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1848568583470563752}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2488d6895a01f9249b5700906577fdc9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  target: {fileID: 2737559169397393301}
-  hoverDirectionSpace: 0
-  hoverDirection: {x: 0, y: 1, z: 0}
-  hoverDistance: 0.2
-  moveSpeed: 8
-  rotateLocalAxis: {x: 1, y: 0, z: 0}
-  rotateSpeed: 90
-  rotateOnlyWhenHovered: 1
-  restoreRotationOnExit: 1
 --- !u!1 &2680198301330473813
 GameObject:
   m_ObjectHideFlags: 0
@@ -259,8 +260,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 1.7369982, y: 1, z: 1}
+  m_Center: {x: -0.36849907, y: 0, z: 0}
 --- !u!1 &3559810427704671806
 GameObject:
   m_ObjectHideFlags: 0
