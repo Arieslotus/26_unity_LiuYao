@@ -6274,13 +6274,17 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1107473640}
     m_Modifications:
+    - target: {fileID: 684239048828943967, guid: aab7fb437c916f44e8da5ee24ee676bc, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: e31a7b14a773e774fa510b6e9c273ba4, type: 2}
     - target: {fileID: 1848568583470563752, guid: aab7fb437c916f44e8da5ee24ee676bc, type: 3}
       propertyPath: m_Name
       value: COIN_shaking
       objectReference: {fileID: 0}
     - target: {fileID: 1848568583470563752, guid: aab7fb437c916f44e8da5ee24ee676bc, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3700100116146138585, guid: aab7fb437c916f44e8da5ee24ee676bc, type: 3}
       propertyPath: m_LocalPosition.x
@@ -6296,19 +6300,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3700100116146138585, guid: aab7fb437c916f44e8da5ee24ee676bc, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.7071068
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3700100116146138585, guid: aab7fb437c916f44e8da5ee24ee676bc, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.7071068
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3700100116146138585, guid: aab7fb437c916f44e8da5ee24ee676bc, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: 0.70710677
       objectReference: {fileID: 0}
     - target: {fileID: 3700100116146138585, guid: aab7fb437c916f44e8da5ee24ee676bc, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0.70710677
       objectReference: {fileID: 0}
     - target: {fileID: 3700100116146138585, guid: aab7fb437c916f44e8da5ee24ee676bc, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -6316,11 +6320,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3700100116146138585, guid: aab7fb437c916f44e8da5ee24ee676bc, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
+      value: 90
       objectReference: {fileID: 0}
     - target: {fileID: 3700100116146138585, guid: aab7fb437c916f44e8da5ee24ee676bc, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
+      value: -90
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7721,6 +7725,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   currentState: 0
   roundStartDelay: 0.5
+  enemyTurnStartDelay: 0.5
   enemies:
   - {fileID: 0}
   playerTurnController: {fileID: 878315663}
@@ -12762,6 +12767,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2085527063}
     m_Modifications:
+    - target: {fileID: 684239048828943967, guid: a071431c1580ec344a7cde2da16be404, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: e31a7b14a773e774fa510b6e9c273ba4, type: 2}
     - target: {fileID: 1848568583470563752, guid: a071431c1580ec344a7cde2da16be404, type: 3}
       propertyPath: m_Name
       value: COIN1

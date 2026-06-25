@@ -24,6 +24,12 @@ MonoBehaviour:
   enableCoinPreImpactSlowMotion: 1
   coinPreImpactLookAheadTime: 0.02
   coinPreImpactTimeScale: 0.1
+  enableImpactCameraFeedback: 1
+  enableImpactCameraOffset: 1
+  impactCameraMaxZoomMultiplier: 1.7
+  impactCameraMaxOffsetDistance: 2.5
+  impactCameraFollowSpeed: 2
+  impactCameraReturnDuration: 0.18
   enableCoinHitPause: 1
   coinHitPauseTimeScale: 0.05
-  coinHitPauseDuration: 0.5
+  coinHitPauseDuration: 0.7
