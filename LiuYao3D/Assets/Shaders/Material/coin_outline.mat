@@ -68,7 +68,7 @@ Material:
     - _Cutoff: 0.5
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
-    - _EmissionIntensity: 1
+    - _EmissionIntensity: 0
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
@@ -79,8 +79,8 @@ Material:
     - _OutlineEnabled: 1
     - _OutlineExpandMode: 2
     - _OutlineGlowEnabled: 1
-    - _OutlineGlowIntensity: 3.6
-    - _OutlineWidth: 5
+    - _OutlineGlowIntensity: 6
+    - _OutlineWidth: 3
     - _Parallax: 0.02
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1

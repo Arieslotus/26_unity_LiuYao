@@ -1,34 +1,10 @@
 /// <summary>
-/// Coin selected outline shader with Standard lighting, normal map, emission and adjustable outline.
+/// Outline-only shader for selected coin visualization.
 /// </summary>
-Shader "Custom/Coin Selected Outline"
+Shader "Custom/Coin Selection Outline Only"
 {
     Properties
     {
-        [Header(Base Maps)]
-        _Color ("Base Color", Color) = (1,1,1,1)
-        _MainTex ("Albedo", 2D) = "white" {}
-
-        [Header(Normal)]
-        [Normal] _BumpMap ("Normal Map", 2D) = "bump" {}
-        _BumpScale ("Normal Scale", Range(0, 2)) = 1
-
-        [Header(Metallic Smoothness)]
-        _Metallic ("Metallic", Range(0, 1)) = 0
-        _Glossiness ("Smoothness", Range(0, 1)) = 0.5
-        _MetallicGlossMap ("Metallic(R) Smoothness(A)", 2D) = "white" {}
-        [Toggle(_METALLICGLOSSMAP)] _UseMetallicGlossMap ("Use Metallic Map", Float) = 0
-
-        [Header(Occlusion)]
-        _OcclusionMap ("Occlusion", 2D) = "white" {}
-        _OcclusionStrength ("Occlusion Strength", Range(0, 1)) = 1
-
-        [Header(Body Emission)]
-        [HDR] _EmissionColor ("Emission Color", Color) = (0,0,0,1)
-        _EmissionMap ("Emission Map", 2D) = "white" {}
-        [Toggle(_EMISSION_ON)] _UseEmission ("Use Emission", Float) = 0
-        _EmissionIntensity ("Emission Intensity", Range(0, 10)) = 1
-
         [Header(Selection Outline)]
         [HDR] _OutlineColor ("Outline Color", Color) = (1,0.78,0.22,1)
         _OutlineWidth ("Outline Width", Range(0, 20)) = 4
@@ -43,10 +19,11 @@ Shader "Custom/Coin Selected Outline"
     {
         Tags
         {
-            "RenderType" = "Opaque"
-            "Queue" = "Geometry"
+            "RenderType" = "Transparent"
+            "Queue" = "Transparent+10"
+            "IgnoreProjector" = "True"
         }
-        LOD 300
+        LOD 100
 
         Pass
         {
@@ -138,6 +115,12 @@ Shader "Custom/Coin Selected Outline"
             float _OutlineGlowEnabled;
             float _OutlineGlowIntensity;
 
+            float2 SafeNormalize2(float2 value, float2 fallback)
+            {
+                float lenSq = dot(value, value);
+                return lenSq > 0.000001 ? value * rsqrt(lenSq) : fallback;
+            }
+
             v2f vert(appdata v)
             {
                 v2f o;
@@ -146,7 +129,10 @@ Shader "Custom/Coin Selected Outline"
                 viewNormal.z = -0.5;
 
                 float4 clipPos = UnityObjectToClipPos(v.vertex);
-                float2 outlineDirection = normalize(TransformViewToProjection(normalize(viewNormal).xy));
+                float2 outlineDirection = SafeNormalize2(
+                    TransformViewToProjection(normalize(viewNormal).xy),
+                    float2(0, 1)
+                );
                 float2 pixelSize = 2.0 / _ScreenParams.xy;
                 clipPos.xy += outlineDirection * _OutlineWidth * pixelSize * clipPos.w * _OutlineEnabled;
 
@@ -166,65 +152,5 @@ Shader "Custom/Coin Selected Outline"
             }
             ENDCG
         }
-
-        CGPROGRAM
-        #pragma surface surf Standard fullforwardshadows
-        #pragma target 3.0
-        #pragma shader_feature_local _METALLICGLOSSMAP
-        #pragma shader_feature_local _EMISSION_ON
-
-        sampler2D _MainTex;
-        sampler2D _BumpMap;
-        sampler2D _MetallicGlossMap;
-        sampler2D _OcclusionMap;
-        sampler2D _EmissionMap;
-
-        fixed4 _Color;
-        half _BumpScale;
-        half _Metallic;
-        half _Glossiness;
-        half _OcclusionStrength;
-        fixed4 _EmissionColor;
-        half _EmissionIntensity;
-
-        struct Input
-        {
-            float2 uv_MainTex;
-            float2 uv_BumpMap;
-            float2 uv_MetallicGlossMap;
-            float2 uv_OcclusionMap;
-            float2 uv_EmissionMap;
-        };
-
-        void surf(Input IN, inout SurfaceOutputStandard o)
-        {
-            fixed4 albedo = tex2D(_MainTex, IN.uv_MainTex) * _Color;
-            o.Albedo = albedo.rgb;
-            o.Alpha = albedo.a;
-
-            o.Normal = UnpackScaleNormal(tex2D(_BumpMap, IN.uv_BumpMap), _BumpScale);
-
-            #if defined(_METALLICGLOSSMAP)
-                fixed4 metallicGloss = tex2D(_MetallicGlossMap, IN.uv_MetallicGlossMap);
-                o.Metallic = metallicGloss.r * _Metallic;
-                o.Smoothness = metallicGloss.a * _Glossiness;
-            #else
-                o.Metallic = _Metallic;
-                o.Smoothness = _Glossiness;
-            #endif
-
-            half occlusion = tex2D(_OcclusionMap, IN.uv_OcclusionMap).g;
-            o.Occlusion = lerp(1.0h, occlusion, _OcclusionStrength);
-
-            #if defined(_EMISSION_ON)
-                fixed3 emission = tex2D(_EmissionMap, IN.uv_EmissionMap).rgb * _EmissionColor.rgb;
-                o.Emission = emission * _EmissionIntensity;
-            #else
-                o.Emission = 0;
-            #endif
-        }
-        ENDCG
     }
-
-    FallBack "Standard"
 }
