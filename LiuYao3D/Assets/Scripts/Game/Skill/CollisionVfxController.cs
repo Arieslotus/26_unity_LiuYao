@@ -73,8 +73,8 @@ public class CollisionVfxController : MonoBehaviour
         if (!ValidateConfig() || coin == null)
             return;
 
-        if (cause == CoinLossCause.Operation)
-            return;
+        //if (cause == CoinLossCause.Operation)
+        //    return;
 
         Transform parent = config.parentDamagedVfxToTarget ? coin.transform : null;
         Vector3 position = hitPoint != Vector3.zero ? hitPoint : coin.transform.position;

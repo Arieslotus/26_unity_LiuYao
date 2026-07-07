@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8756f6088a2c8d940a43a69064ecac6e, type: 3}
   m_Name: CollisionVfxConfig
   m_EditorClassIdentifier: 
-  coinCollisionPrefab: {fileID: 7893139646171172390, guid: 51da201bb67d10446817a72c986bfa0f, type: 3}
-  coinEnemyCollisionPrefab: {fileID: 4628685328733551452, guid: d99a9bd361ea3164883c6c5074356e54, type: 3}
+  coinCollisionPrefab: {fileID: 2944396702758532163, guid: e190bf97c041e58448af6b043116cba0, type: 3}
+  coinEnemyCollisionPrefab: {fileID: 1758473627833946668, guid: 9b21333b068a5084ba09535839bee3c8, type: 3}
   collisionLifetime: 1
   shockwavePrefabs:
   - trigram: 1
@@ -35,8 +35,8 @@ MonoBehaviour:
   shockwaveInterval: 0.1
   shockwaveLifetime: 2
   enemyDamagedPrefab: {fileID: 4535006216103734310, guid: 98c4704d0fd7211449bcf5c451095a60, type: 3}
-  coinDamagedPrefab: {fileID: 2944396702758532163, guid: e190bf97c041e58448af6b043116cba0, type: 3}
-  damagedLifetime: 0.5
+  coinDamagedPrefab: {fileID: 194062, guid: 8c27aeead6d968e4ba986702d6b84335, type: 3}
+  damagedLifetime: 1
   coinHealedVfx:
     prefab: {fileID: 9017484664307500583, guid: 1245b8d2997d5b34fb1637be70a7eb05, type: 3}
     targetType: 7
